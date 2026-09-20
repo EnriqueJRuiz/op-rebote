@@ -41,7 +41,7 @@ export function Sidebar() {
 
   return (
     <>
-      <div className={STYLES.mobileTrigger}>
+      <div className={`${STYLES.mobileTrigger} ${mobileOpen ? "hidden" : ""}`}>
         <button
           type="button"
           onClick={() => setMobileOpen((isOpen) => !isOpen)}
