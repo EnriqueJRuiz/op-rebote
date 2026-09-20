@@ -49,6 +49,14 @@ export class SupabaseCompaniesRepository {
       error,
     });
 
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    console.log("SUPABASE KEY DEBUG", {
+      exists: !!key,
+      length: key?.length,
+      prefix: key?.slice(0, 10),
+    });
+
     if (error) {
       throw new Error(
         `Error leyendo empresas: ${error.message}`
