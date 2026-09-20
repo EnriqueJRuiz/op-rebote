@@ -39,28 +39,14 @@ export class SupabaseCompaniesRepository {
 }
 
   async getCompanies(): Promise<SupabaseCompanyRow[]> {
-     const { data, error } = await this.supabase
-    .from(APP_CONFIG.DB.TABLES.EMPRESAS)
-    .select("*");
-
-    console.log("SUPABASE DEBUG", {
-      table: APP_CONFIG.DB.TABLES.EMPRESAS,
-      rows: data?.length ?? 0,
-      error,
-    });
-
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    console.log("SUPABASE KEY DEBUG", {
-      exists: !!key,
-      length: key?.length,
-      prefix: key?.slice(0, 10),
-    });
+    const { data, error } = await this.supabase
+      .from(APP_CONFIG.DB.TABLES.EMPRESAS)
+      .select("id, ticker, nombre, tipo_activo, es_dividendo, sector, categoria")
+      .order(APP_CONFIG.DB.COLUMNS.TICKER, { ascending: true });
 
     if (error) {
-      throw new Error(
-        `Error leyendo empresas: ${error.message}`
-      );
+      console.error("Error al consultar las empresas en Supabase:", error.message);
+      throw new Error("No se pudieron recuperar las empresas de la base de datos");
     }
 
     return (data as SupabaseCompanyRow[]) || [];
