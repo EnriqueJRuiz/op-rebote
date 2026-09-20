@@ -7,7 +7,7 @@ import { APP_CONFIG } from "@/domain/constants";
 export class SupabaseCompaniesRepository {
   private supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   /**

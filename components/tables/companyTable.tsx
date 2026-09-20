@@ -57,7 +57,7 @@ export function CompanyTable({ empresas }: CompanyTableProps) {
   return (
     <DataTable 
       title="Universo de Empresas"
-      subtitle="Listado sincronizado desde Supabase"
+      subtitle="Listado de empresas con información relevante para análisis de swing trading."
       data={empresas}
       columns={columns}
       rowKey={(e) => e.id}
