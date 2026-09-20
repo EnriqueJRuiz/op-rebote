@@ -2,6 +2,8 @@ import { SyncButton } from "@/components/sync-button";
 import { CompanyTable } from "@/components/tables/companyTable";
 import { SupabaseCompaniesRepository } from "@/infrastructure/repositories/supabase-companies.repository";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // 1. Obtenemos las empresas directamente desde Supabase en el servidor
   const repository = new SupabaseCompaniesRepository();
