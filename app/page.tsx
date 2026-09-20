@@ -3,6 +3,8 @@ import { CompanyTable } from "@/components/tables/companyTable";
 import { SupabaseCompaniesRepository } from "@/infrastructure/repositories/supabase-companies.repository";
 
 export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
 
 export default async function Home() {
   // 1. Obtenemos las empresas directamente desde Supabase en el servidor
