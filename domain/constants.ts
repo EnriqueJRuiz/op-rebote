@@ -35,5 +35,6 @@ export const APP_CONFIG = {
 
 export const APP_ROUTES = {
   HOME: "/",
-  TABLA_EMPRESAS: "/",
+  OPORTUNIDADES: "/oportunidades",
+  EMPRESAS_RADAR: "/empresas-radar",
 } as const;

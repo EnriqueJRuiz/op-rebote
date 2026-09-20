@@ -24,8 +24,8 @@ export async function handleSyncMarketAction() {
     // 3. Guardamos en Supabase las que no existan
     await companiesRepo.saveNewCompanies(universo);
 
-    // 4. Refrescar la ruta principal donde está la tabla
-    revalidatePath(APP_ROUTES.TABLA_EMPRESAS); 
+    // 4. Refrescar la ruta donde se muestran las empresas
+    revalidatePath(APP_ROUTES.EMPRESAS_RADAR);
 
     return { 
       success: true, 
