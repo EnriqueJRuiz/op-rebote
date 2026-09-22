@@ -97,8 +97,8 @@ export class SupabaseCompaniesRepository {
       .limit(1);
 
     if (latestError) {
-      if (this.isScanHistorySchemaUnavailable(latestError.code)) {
-        console.warn("El histórico aún no tiene el esquema de lotes; se muestran oportunidades vacías.");
+      if (this.isScanHistorySchemaUnavailable(latestError.code) || this.isTransientSupabaseError(latestError)) {
+        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.");
         return [];
       }
       throw new Error(`No se pudo localizar el último escaneo: ${latestError.message}`);
@@ -114,7 +114,10 @@ export class SupabaseCompaniesRepository {
       .eq("es_valido", true);
 
     if (error) {
-      if (this.isScanHistorySchemaUnavailable(error.code)) return [];
+      if (this.isScanHistorySchemaUnavailable(error.code) || this.isTransientSupabaseError(error)) {
+        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.");
+        return [];
+      }
       throw new Error(`No se pudieron recuperar las oportunidades: ${error.message}`);
     }
 
@@ -151,6 +154,13 @@ export class SupabaseCompaniesRepository {
 
   private isScanHistorySchemaUnavailable(code?: string): boolean {
     return code === "42703" || code === "42P01" || code === "PGRST204";
+  }
+
+  private isTransientSupabaseError(error: { code?: string; message?: string }): boolean {
+    const message = error.message?.toLowerCase() ?? "";
+    return ["522", "502", "503", "504", "timed out", "timeout", "fetch failed"].some(
+      (marker) => message.includes(marker)
+    );
   }
 
   private toDatabaseMetadata(metadata: CompanyMetadata) {

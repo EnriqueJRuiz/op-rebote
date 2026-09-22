@@ -12,7 +12,7 @@ export default async function OpportunitiesPage() {
   try {
     latestOpportunities = await repository.getLatestOpportunities();
   } catch (error) {
-    console.error("No se pudo cargar el último lote de oportunidades:", error);
+    console.warn("No se pudo cargar el último lote de oportunidades:", error);
   }
 
   return (
