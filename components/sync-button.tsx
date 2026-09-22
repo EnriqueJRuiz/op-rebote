@@ -2,6 +2,7 @@
 "use client"; // <-- ¡Esta línea debe estar obligatoriamente en la parte más alta del archivo!
 
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { handleSyncMarketAction } from "@/app/actions/sync-market";
 import { useRouter } from "next/navigation";
 import { LoadingOverlay } from "@/components/loading-overlay";
@@ -29,16 +30,17 @@ export function SyncButton() {
 };
 
   return (
-    <div className="mb-6 flex flex-col gap-2">
-      {loading && <LoadingOverlay message="Actualizando empresas radar..." />}
+    <div className="flex flex-col items-start gap-2 sm:items-end">
+      {loading && <LoadingOverlay message="Actualizando empresas para el radar..." />}
       <button
         onClick={handleClick}
         disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-4 py-2 rounded transition-colors w-fit"
+        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-50 hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Buscando en Yahoo y guardando..." : "Sincronizar Universo en Supabase"}
+        <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+        {loading ? "Actualizando..." : "Actualizar radar"}
       </button>
-      {message && <p className="text-sm text-gray-300">{message}</p>}
+      {message && <p className="text-right text-sm text-slate-500">{message}</p>}
     </div>
   );
 }

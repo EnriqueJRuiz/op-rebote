@@ -14,24 +14,23 @@ export default async function EmpresasRadarPage() {
   const empresasMid = empresas.filter((empresa) => empresa.categoria === APP_CONFIG.CATEGORIES.MID);
 
   return (
-    <main className="min-h-screen bg-gray-950 p-8 text-white">
+    <main className="min-h-screen bg-slate-50 p-8 text-slate-800">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-2 text-3xl font-bold">Empresas radar</h1>
-        <p className="mb-6 text-gray-400">Empresas que han pasado la primera criba.</p>
-
-        <div className="mb-6">
+        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="mb-2 text-3xl font-bold">Empresas radar</h1>
+            <p className="text-slate-500">Empresas que se han detectado como candidatas para ser incluidas en el radar.</p>
+          </div>
           <SyncButton />
         </div>
 
         <div className="space-y-10">
           <CompanyTable
             title="Empresas TOP"
-            subtitle="Empresas TOP que han pasado la primera criba."
             empresas={empresasTop}
           />
           <CompanyTable
             title="Empresas MID"
-            subtitle="Empresas MID que han pasado la primera criba."
             empresas={empresasMid}
           />
         </div>

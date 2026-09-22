@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
@@ -8,7 +9,13 @@ import { StockCandidate } from "@/domain/models/trading";
 import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
 import { LoadingOverlay } from "@/components/loading-overlay";
 
-export function SearchReboundsButton({ initialOpportunities }: { initialOpportunities: StockCandidate[] }) {
+interface SearchReboundsButtonProps {
+  initialOpportunities: StockCandidate[];
+  title: string;
+  description: string;
+}
+
+export function SearchReboundsButton({ initialOpportunities, title, description }: SearchReboundsButtonProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<StockCandidate[]>(initialOpportunities);
@@ -31,16 +38,25 @@ export function SearchReboundsButton({ initialOpportunities }: { initialOpportun
   };
 
   return (
-    <div className="mb-6 flex flex-col gap-2">
+    <div>
       {loading && <LoadingOverlay message="Buscando oportunidades..." />}
-      <button
-        onClick={handleClick}
-        disabled={loading}
-        className="w-fit rounded bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? "Buscando oportunidades..." : "Buscar nuevas oportunidades"}
-      </button>
-      {message && <p className="text-sm text-gray-300">{message}</p>}
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold">{title}</h1>
+          <p className="text-slate-500">{description}</p>
+        </div>
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <button
+            onClick={handleClick}
+            disabled={loading}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+            {loading ? "Buscando..." : "Actualizar oportunidades"}
+          </button>
+          {message && <p className="text-right text-sm text-slate-500">{message}</p>}
+        </div>
+      </div>
       <ReboundOpportunities
         top={opportunities.filter((opportunity) => opportunity.categoria === "TOP")}
         mid={opportunities.filter((opportunity) => opportunity.categoria === "MID")}

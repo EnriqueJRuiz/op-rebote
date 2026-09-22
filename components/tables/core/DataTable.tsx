@@ -70,48 +70,50 @@ export function DataTable<T>({
   };
 
   return (
-    <section className={`text-white ${containerClassName}`}>
-      {title && <h2 className="mb-2 text-2xl font-bold">{title}</h2>}
-      {subtitle && <p className="mb-6 text-gray-400">{subtitle}</p>}
-      <div className={`${mobileRow ? "hidden md:block" : "block"} overflow-x-auto rounded-lg border border-gray-800 bg-gray-900 shadow-lg`}>
+    <section className={`overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm shadow-slate-200/60 ${containerClassName}`}>
+      {(title || subtitle) && <header className="border-b border-slate-200 bg-slate-100/80 px-5 py-4">
+        {title && <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>}
+        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+      </header>}
+      <div className={`${mobileRow ? "hidden md:block" : "block"} overflow-x-auto`}>
         <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-gray-800 bg-gray-900/50 text-sm text-gray-400">
+          <thead className="bg-blue-50/70">
+            <tr className="border-b border-blue-100 text-sm text-slate-600">
               {columns.map((column, index) => (
                 <th key={column.header} className="p-4">
-                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex items-center gap-2 hover:text-white" title={`Ordenar por ${column.header.toLowerCase()}`}>
+                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-blue-700" title={`Ordenar por ${column.header.toLowerCase()}`}>
                     {column.header}{sortIndex === index && (sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </button> : column.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-800 text-sm">
+          <tbody className="divide-y divide-slate-100 text-sm">
             {visibleData.map((item) => (
-              <tr key={rowKey(item)} className="hover:bg-gray-850">
+              <tr key={rowKey(item)} className="transition-colors hover:bg-blue-50/45">
                 {columns.map((column) => <td key={column.header} className={`p-4 ${column.cellClassName ?? ""}`}>{column.render(item)}</td>)}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {mobileRow && <div className="space-y-2 md:hidden">{visibleData.map((item) => {
+      {mobileRow && <div className="divide-y divide-slate-100 px-4 md:hidden">{visibleData.map((item) => {
         const key = rowKey(item);
         const expanded = expandedKey === key;
         return <div key={key}>{mobileRow(item, expanded, () => setExpandedKey(expanded ? null : key))}</div>;
       })}</div>}
-      {data.length === 0 && <p className="rounded-lg border border-dashed border-gray-700 px-4 py-8 text-center text-sm text-gray-500">{emptyMessage}</p>}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-400">
-        <span>{firstRecord}-{lastRecord} de {data.length} {recordsLabel}</span>
-        <div className="flex items-center gap-3">
+      {data.length === 0 && <p className="border-t border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">{emptyMessage}</p>}
+      <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-100/80 px-4 py-3 text-sm text-slate-500 sm:px-5 sm:py-4">
+        <span className="whitespace-nowrap">{firstRecord}-{lastRecord} de {data.length}<span className="hidden sm:inline"> {recordsLabel}</span></span>
+        <div className="flex items-center gap-2 sm:gap-3">
           <label className="flex items-center gap-2" htmlFor={`${title ?? "data-table"}-page-size`}>Ver
-            <select id={`${title ?? "data-table"}-page-size`} value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setCurrentPage(1); setExpandedKey(null); }} className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-gray-200">
+            <select id={`${title ?? "data-table"}-page-size`} value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setCurrentPage(1); setExpandedKey(null); }} className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
               {availablePageSizes.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="rounded border border-gray-700 p-2 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página anterior" title="Página anterior"><ChevronLeft size={16} /></button>
-          <span>Página {safePage} de {pageCount}</span>
-          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="rounded border border-gray-700 p-2 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página siguiente" title="Página siguiente"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página anterior" title="Página anterior"><ChevronLeft size={16} /></button>
+          <span className="whitespace-nowrap"><span className="hidden sm:inline">Página </span>{safePage} <span className="hidden sm:inline">de </span><span className="sm:hidden">/ </span>{pageCount}</span>
+          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página siguiente" title="Página siguiente"><ChevronRight size={16} /></button>
         </div>
       </div>
     </section>

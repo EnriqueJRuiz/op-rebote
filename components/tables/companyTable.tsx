@@ -7,16 +7,15 @@ import { SupabaseCompanyRow } from "@/infrastructure/repositories/supabase-compa
 interface CompanyTableProps {
   empresas: SupabaseCompanyRow[];
   title: string;
-  subtitle: string;
 }
 
 const STYLES = {
-  tickerPill: "inline-flex justify-center items-center w-24 font-mono font-bold text-blue-400 bg-blue-950/40 px-2 py-1 rounded border border-blue-800/50 text-xs",
-  companyName: "font-semibold text-white tracking-wide",
-  secondaryText: "text-gray-300",
-  badgeBase: "px-2 py-1 border rounded text-xs inline-block text-center",
-  badgeTrue: "bg-green-900/50 text-green-400 border-green-700",
-  badgeFalse: "bg-gray-800 text-gray-400 border-gray-700",
+  tickerPill: "inline-flex w-24 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 font-mono text-xs font-bold text-blue-700",
+  companyName: "font-semibold tracking-wide text-slate-800",
+  secondaryText: "text-slate-600",
+  badgeBase: "inline-block rounded-lg border px-2 py-1 text-center text-xs",
+  badgeTrue: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  badgeFalse: "border-slate-200 bg-slate-50 text-slate-500",
 };
 
 function formatMarketCap(value?: number) {
@@ -27,7 +26,7 @@ function formatMarketCap(value?: number) {
   return value.toLocaleString("es-ES");
 }
 
-export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
+export function CompanyTable({ empresas, title }: CompanyTableProps) {
   const renderDividend = (empresa: SupabaseCompanyRow) => (
     <span className={`${STYLES.badgeBase} ${empresa.es_dividendo ? STYLES.badgeTrue : STYLES.badgeFalse}`}>
       {empresa.es_dividendo ? "Sí" : "No"}
@@ -43,19 +42,19 @@ export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
     { header: "¿Dividendo?", render: renderDividend },
   ];
 
-  return <DataTable title={title} subtitle={subtitle} data={empresas} columns={columns} rowKey={(empresa) => empresa.id} initialSortIndex={0} recordsLabel="empresas" emptyMessage="No hay empresas en esta categoría."
+  return <DataTable title={title} data={empresas} columns={columns} rowKey={(empresa) => empresa.id} initialSortIndex={0} recordsLabel="empresas" emptyMessage="No hay empresas en esta categoría."
     mobileRow={(empresa, expanded, toggle) => (
-      <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
-        <button type="button" onClick={toggle} className="flex w-full items-center justify-between gap-3 p-4 text-left" aria-expanded={expanded}>
-          <span className="truncate font-semibold text-white">{empresa.nombre}</span>
-          <ChevronDown className={`shrink-0 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`} size={18} />
+      <div className="overflow-hidden last:border-b-0">
+        <button type="button" onClick={toggle} className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-blue-50/45" aria-expanded={expanded}>
+          <span className="truncate font-semibold text-slate-800">{empresa.nombre}</span>
+          <ChevronDown className={`shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`} size={18} />
         </button>
-        {expanded && <div className="grid grid-cols-2 gap-3 border-t border-gray-800 px-4 py-4 text-sm">
-          <div><p className="text-gray-500">Ticker</p><p className="mt-1"><span className={STYLES.tickerPill}>{empresa.ticker}</span></p></div>
-          <div><p className="text-gray-500">Sector</p><p className="text-gray-200">{empresa.sector || "Desconocido"}</p></div>
-          <div><p className="text-gray-500">Tipo</p><p className="text-gray-200">{empresa.tipo_activo || "-"}</p></div>
-          <div><p className="text-gray-500">Capitalización</p><p className="text-gray-200">{formatMarketCap(empresa.capitalizacion)}</p></div>
-          <div><p className="text-gray-500">Dividendo</p><p className="mt-1">{renderDividend(empresa)}</p></div>
+        {expanded && <div className="grid grid-cols-2 gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 text-sm">
+          <div><p className="text-slate-500">Ticker</p><p className="mt-1"><span className={STYLES.tickerPill}>{empresa.ticker}</span></p></div>
+          <div><p className="text-slate-500">Sector</p><p className="text-slate-700">{empresa.sector || "Desconocido"}</p></div>
+          <div><p className="text-slate-500">Tipo</p><p className="text-slate-700">{empresa.tipo_activo || "-"}</p></div>
+          <div><p className="text-slate-500">Capitalización</p><p className="text-slate-700">{formatMarketCap(empresa.capitalizacion)}</p></div>
+          <div><p className="text-slate-500">Dividendo</p><p className="mt-1">{renderDividend(empresa)}</p></div>
         </div>}
       </div>
     )}

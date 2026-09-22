@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, ChevronLeft, ChevronRight, Home, Menu, Target, X } from "lucide-react";
+import { Building2, ChartNoAxesCombined, ChevronLeft, ChevronRight, Home, Target } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,17 +13,16 @@ const NAVIGATION_LINKS = [
 ] as const;
 
 const STYLES = {
-  mobileTrigger: "fixed left-0 top-0 z-40 flex h-14 w-14 items-center justify-center border-b border-r border-gray-800 bg-gray-900 md:hidden",
-  iconButton: "rounded p-2 text-gray-300 hover:bg-gray-800 hover:text-white",
-  mobileBackdrop: "fixed inset-0 z-30 bg-black/70 md:hidden",
-  mobilePanel: "fixed left-0 top-0 z-30 flex h-full w-72 flex-col border-r border-gray-800 bg-gray-900 p-4 shadow-2xl transition-transform duration-200 md:hidden",
-  desktopPanel: "hidden min-h-screen shrink-0 flex-col border-r border-gray-800 bg-gray-900 p-3 transition-[width] duration-200 md:flex",
-  header: "mb-8 flex items-center justify-between gap-2 px-2 py-2",
-  brand: "font-semibold tracking-wide text-white",
+  mobileTrigger: "fixed left-0 top-5 z-40 flex h-11 w-9 items-center justify-center rounded-r-md border-y border-r border-slate-200 bg-white text-slate-600 shadow-none md:hidden",
+  mobileBackdrop: "fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-[1px] md:hidden",
+  mobilePanel: "fixed left-0 top-0 z-30 flex h-full w-72 flex-col overflow-visible border-r border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/80 transition-transform duration-200 md:hidden",
+  desktopPanel: "relative hidden min-h-screen shrink-0 flex-col overflow-visible border-r border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/80 transition-[width] duration-300 ease-out md:flex",
+  header: "mb-8 flex items-center justify-between gap-2 border-b border-slate-200/80 px-2 py-2 pb-4",
+  brand: "font-semibold tracking-wide text-slate-800",
   navigation: "space-y-2",
-  link: "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
-  activeLink: "bg-blue-950/60 text-blue-300",
-  inactiveLink: "text-gray-400 hover:bg-gray-800 hover:text-white",
+  link: "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+  activeLink: "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100",
+  inactiveLink: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
 } as const;
 
 interface NavigationProps {
@@ -41,15 +40,17 @@ export function Sidebar() {
 
   return (
     <>
-      <div className={`${STYLES.mobileTrigger} ${mobileOpen ? "hidden" : ""}`}>
+      <div className={`${STYLES.mobileTrigger} transition-opacity duration-200 ${mobileOpen ? "pointer-events-none opacity-0" : "opacity-100 delay-200"}`}>
         <button
           type="button"
-          onClick={() => setMobileOpen((isOpen) => !isOpen)}
-          className={STYLES.iconButton}
-          aria-label={mobileOpen ? "Cerrar navegación" : "Abrir navegación"}
-          title={mobileOpen ? "Cerrar navegación" : "Abrir navegación"}
+          onClick={() => setMobileOpen(true)}
+          className="group flex h-full w-full cursor-pointer items-center justify-center"
+          aria-label="Abrir navegación"
+          title="Abrir navegación"
         >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          <span className="rounded-md p-1 transition-colors duration-200 group-hover:bg-blue-50 group-hover:text-blue-700">
+            <ChevronRight size={16} />
+          </span>
         </button>
       </div>
 
@@ -67,21 +68,34 @@ export function Sidebar() {
         <Navigation pathname={pathname} onNavigate={closeMobileNavigation} />
       </aside>
 
-      <aside className={`${STYLES.desktopPanel} ${collapsed ? "w-16" : "w-64"}`}>
-        <div className={STYLES.header}>
-          {!collapsed && <span className={STYLES.brand}>Op Rebote</span>}
-          <button
-            type="button"
-            onClick={() => setCollapsed((isCollapsed) => !isCollapsed)}
-            className={STYLES.iconButton}
-            aria-label={collapsed ? "Expandir navegación" : "Encoger navegación"}
-            title={collapsed ? "Expandir navegación" : "Encoger navegación"}
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
-        </div>
-        <Navigation pathname={pathname} collapsed={collapsed} />
-      </aside>
+      <div className="relative hidden min-h-screen self-stretch md:block">
+        <aside className={`${STYLES.desktopPanel} h-full ${collapsed ? "w-20" : "w-45"}`}>
+          <div className={STYLES.header}>
+            <span className={`flex min-w-0 items-center gap-2 transition-transform duration-300 ease-out ${collapsed ? "translate-x-[5px]" : "translate-x-0"}`}>
+              <ChartNoAxesCombined size={18} className="shrink-0 text-slate-800" aria-hidden="true" />
+              <span className={`${STYLES.brand} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${collapsed ? "max-w-0 opacity-0" : "max-w-32 opacity-100"}`}>
+                Op Rebote
+              </span>
+            </span>
+          </div>
+
+          <div className="flex-1">
+            <Navigation pathname={pathname} collapsed={collapsed} />
+          </div>
+        </aside>
+
+        <button
+          type="button"
+          onClick={() => setCollapsed((isCollapsed) => !isCollapsed)}
+          aria-label={collapsed ? "Expandir navegación" : "Encoger navegación"}
+          title={collapsed ? "Expandir navegación" : "Encoger navegación"}
+          className={`group absolute -right-8.5 top-5 z-20 flex h-11 w-9 cursor-pointer items-center justify-center border-y border-r border-slate-200 border-l-0 bg-white text-slate-600 shadow-none ${collapsed ? "translate-x-[-3px] scale-[0.97]" : "translate-x-0 scale-100"} rounded-l-none rounded-r-md`}
+        >
+          <span className="rounded-md p-1 transition-colors duration-200 group-hover:bg-blue-50 group-hover:text-blue-700">
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </span>
+        </button>
+      </div>
     </>
   );
 }
@@ -89,15 +103,20 @@ export function Sidebar() {
 function SidebarHeader({ onClose }: { onClose: () => void }) {
   return (
     <div className={STYLES.header}>
-      <span className={STYLES.brand}>Op Rebote</span>
+      <span className="flex items-center gap-2">
+        <ChartNoAxesCombined size={18} className="shrink-0 text-slate-800" aria-hidden="true" />
+        <span className={STYLES.brand}>Op Rebote</span>
+      </span>
       <button
         type="button"
         onClick={onClose}
-        className={STYLES.iconButton}
+        className="group absolute -right-8.5 top-5 z-20 flex h-11 w-9 cursor-pointer items-center justify-center rounded-l-none rounded-r-md border-y border-r border-slate-200 border-l-0 bg-white text-slate-600 shadow-none"
         aria-label="Cerrar navegación"
         title="Cerrar navegación"
       >
-        <X size={18} />
+        <span className="rounded-md p-1 transition-colors duration-200 group-hover:bg-blue-50 group-hover:text-blue-700">
+          <ChevronLeft size={16} />
+        </span>
       </button>
     </div>
   );
@@ -118,8 +137,12 @@ function Navigation({ pathname, collapsed = false, onNavigate }: NavigationProps
             className={linkClassName}
             title={collapsed ? label : undefined}
           >
-            <Icon size={18} aria-hidden="true" />
-            {!collapsed && <span>{label}</span>}
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+              <Icon size={18} aria-hidden="true" />
+            </span>
+            <span className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"}`}>
+              {label}
+            </span>
           </Link>
         );
       })}
