@@ -1,15 +1,15 @@
 import { SyncButton } from "@/components/sync-button";
 import { CompanyTable } from "@/components/tables/companyTable";
 import { APP_CONFIG } from "@/domain/constants";
-import { SupabaseCompaniesRepository } from "@/infrastructure/repositories/supabase-companies.repository";
+import { createApplicationDependencies } from "@/infrastructure/composition";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = 0;
 
 export default async function EmpresasRadarPage() {
-  const repository = new SupabaseCompaniesRepository();
-  const empresas = await repository.getCompanies();
+  const { companiesRepository } = createApplicationDependencies();
+  const empresas = await companiesRepository.getCompanies();
   const empresasTop = empresas.filter((empresa) => empresa.categoria === APP_CONFIG.CATEGORIES.TOP);
   const empresasMid = empresas.filter((empresa) => empresa.categoria === APP_CONFIG.CATEGORIES.MID);
 

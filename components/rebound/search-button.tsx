@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { StockCandidate } from "@/domain/models/trading";
-import { ReboundOpportunities } from "@/components/rebound/opportunities";
+import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
 import { LoadingOverlay } from "@/components/loading-overlay";
 
 export function SearchReboundsButton({ initialOpportunities }: { initialOpportunities: StockCandidate[] }) {

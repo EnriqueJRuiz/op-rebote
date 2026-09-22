@@ -2,19 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 
-import { ScanMarketUseCase } from "@/application/use-cases/scan-market.use-case";
 import { APP_ROUTES } from "@/domain/constants";
 import { StockCandidate } from "@/domain/models/trading";
-import { SupabaseCompaniesRepository } from "@/infrastructure/repositories/supabase-companies.repository";
-import { YahooFinanceAdapter } from "@/infrastructure/yahoo-finance/yahoo-finance.adapter";
+import { createApplicationDependencies } from "@/infrastructure/composition";
 
 const MAX_CONCURRENT_COMPANIES = 8;
 
 export async function handleSearchReboundsAction() {
   try {
-    const marketAdapter = new YahooFinanceAdapter();
-    const companiesRepository = new SupabaseCompaniesRepository();
-    const scanUseCase = new ScanMarketUseCase(marketAdapter);
+    const { marketRepository, companiesRepository, scanMarket } = createApplicationDependencies();
     const companies = await companiesRepository.getCompanies();
     const loteId = crypto.randomUUID();
 
@@ -28,7 +24,7 @@ export async function handleSearchReboundsAction() {
           !company.sector ||
           company.sector === "Desconocido" ||
           !company.fundamentales_actualizados_en;
-        const snapshot = await marketAdapter.getCompanySnapshot(company.ticker, metadataMissing);
+        const snapshot = await marketRepository.getCompanySnapshot(company.ticker, metadataMissing);
 
         const metadataChanged =
           snapshot.metadata && (
@@ -45,7 +41,7 @@ export async function handleSearchReboundsAction() {
           );
         }
 
-        const candidate = scanUseCase.evaluateStockData({
+        const candidate = scanMarket.evaluateStockData({
           ...snapshot.stock,
           categoria: company.categoria,
         });

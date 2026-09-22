@@ -1,10 +1,11 @@
 // infrastructure/repositories/supabase-companies.repository.ts
 import { createClient } from "@supabase/supabase-js";
+import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
 import { CompanyMetadata, StockCandidate, UniverseStock} from "@/domain/models/trading";
 import { SupabaseCompanyRow } from "./supabase-companies.types";
 import { APP_CONFIG } from "@/domain/constants";
 
-export class SupabaseCompaniesRepository {
+export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
   private supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
