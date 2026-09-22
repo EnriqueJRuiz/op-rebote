@@ -97,7 +97,10 @@ export class SupabaseCompaniesRepository {
       .limit(1);
 
     if (latestError) {
-      if (latestError.code === "42703") return [];
+      if (this.isScanHistorySchemaUnavailable(latestError.code)) {
+        console.warn("El histórico aún no tiene el esquema de lotes; se muestran oportunidades vacías.");
+        return [];
+      }
       throw new Error(`No se pudo localizar el último escaneo: ${latestError.message}`);
     }
 
@@ -111,6 +114,7 @@ export class SupabaseCompaniesRepository {
       .eq("es_valido", true);
 
     if (error) {
+      if (this.isScanHistorySchemaUnavailable(error.code)) return [];
       throw new Error(`No se pudieron recuperar las oportunidades: ${error.message}`);
     }
 
@@ -143,6 +147,10 @@ export class SupabaseCompaniesRepository {
         categoria: company!.categoria,
         esValido: true,
       }));
+  }
+
+  private isScanHistorySchemaUnavailable(code?: string): boolean {
+    return code === "42703" || code === "42P01" || code === "PGRST204";
   }
 
   private toDatabaseMetadata(metadata: CompanyMetadata) {

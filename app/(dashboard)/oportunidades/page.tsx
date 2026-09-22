@@ -1,4 +1,5 @@
 import { SearchReboundsButton } from "@/components/rebound/search-button";
+import { StockCandidate } from "@/domain/models/trading";
 import { SupabaseCompaniesRepository } from "@/infrastructure/repositories/supabase-companies.repository";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +7,13 @@ export const revalidate = 0;
 
 export default async function OpportunitiesPage() {
   const repository = new SupabaseCompaniesRepository();
-  const latestOpportunities = await repository.getLatestOpportunities();
+  let latestOpportunities: StockCandidate[] = [];
+
+  try {
+    latestOpportunities = await repository.getLatestOpportunities();
+  } catch (error) {
+    console.error("No se pudo cargar el último lote de oportunidades:", error);
+  }
 
   return (
     <main className="min-h-screen p-8">
