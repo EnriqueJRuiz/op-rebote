@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { SupabaseCompanyRow } from "@/infrastructure/repositories/upabase-companies.types";
+import { SupabaseCompanyRow } from "@/infrastructure/repositories/supabase-companies.types";
 
 interface CompanyTableProps {
   empresas: SupabaseCompanyRow[];
@@ -22,6 +22,14 @@ const STYLES = {
 const PAGE_SIZE = 10;
 type SortKey = "ticker" | "nombre";
 type SortDirection = "asc" | "desc";
+
+function formatMarketCap(value?: number) {
+  if (!value) return "-";
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(1)} T`;
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)} B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)} M`;
+  return value.toLocaleString("es-ES");
+}
 
 export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,9 +99,9 @@ export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
                   Nombre {renderSortIcon("nombre")}
                 </button>
               </th>
+              <th className="p-4">Tipo</th>
               <th className="p-4">Sector</th>
-              <th className="p-4">Precio</th>
-              <th className="p-4">Volumen</th>
+              <th className="p-4">Capitalización</th>
               <th className="p-4">¿Dividendo?</th>
             </tr>
           </thead>
@@ -102,9 +110,9 @@ export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
               <tr key={empresa.id} className="hover:bg-gray-850">
                 <td className="p-4"><span className={STYLES.tickerPill}>{empresa.ticker}</span></td>
                 <td className={`p-4 ${STYLES.companyName}`}>{empresa.nombre}</td>
+                <td className={`p-4 ${STYLES.secondaryText}`}>{empresa.tipo_activo || "-"}</td>
                 <td className={`p-4 ${STYLES.secondaryText}`}>{empresa.sector || "Desconocido"}</td>
-                <td className={`p-4 ${STYLES.secondaryText}`}>${empresa.precio?.toFixed(2) ?? "0.00"}</td>
-                <td className={`p-4 ${STYLES.secondaryText}`}>{empresa.volumen?.toLocaleString() ?? 0}</td>
+                <td className={`p-4 ${STYLES.secondaryText}`}>{formatMarketCap(empresa.capitalizacion)}</td>
                 <td className="p-4">{renderDividend(empresa)}</td>
               </tr>
             ))}
@@ -134,8 +142,8 @@ export function CompanyTable({ empresas, title, subtitle }: CompanyTableProps) {
               {expanded && (
                 <div className="grid grid-cols-2 gap-3 border-t border-gray-800 px-4 py-4 text-sm">
                   <div><p className="text-gray-500">Sector</p><p className="text-gray-200">{empresa.sector || "Desconocido"}</p></div>
-                  <div><p className="text-gray-500">Precio</p><p className="text-gray-200">${empresa.precio?.toFixed(2) ?? "0.00"}</p></div>
-                  <div><p className="text-gray-500">Volumen</p><p className="text-gray-200">{empresa.volumen?.toLocaleString() ?? 0}</p></div>
+                  <div><p className="text-gray-500">Tipo</p><p className="text-gray-200">{empresa.tipo_activo || "-"}</p></div>
+                  <div><p className="text-gray-500">Capitalización</p><p className="text-gray-200">{formatMarketCap(empresa.capitalizacion)}</p></div>
                   <div><p className="text-gray-500">Dividendo</p><p className="mt-1">{renderDividend(empresa)}</p></div>
                 </div>
               )}

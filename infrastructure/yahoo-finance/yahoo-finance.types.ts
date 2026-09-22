@@ -6,6 +6,8 @@ export interface YahooFormattedNumber {
   longFmt?: string;
 }
 
+export type YahooNumericValue = number | YahooFormattedNumber;
+
 export interface YahooScreenerQuote {
   symbol: string;
   quoteType?: string;
@@ -58,4 +60,47 @@ export interface YahooScreenerRequest {
   query: YahooScreenerQuery;
   userId: string;
   userIdType: "guid";
+}
+
+export interface YahooCompanyQuote {
+  quoteType?: string;
+  currency?: string;
+  exchange?: string;
+  fullExchangeName?: string;
+  regularMarketPrice?: YahooNumericValue;
+  regularMarketVolume?: YahooNumericValue;
+  marketCap?: YahooNumericValue;
+  dividendRate?: YahooNumericValue;
+  dividendYield?: YahooNumericValue;
+  trailingAnnualDividendRate?: YahooNumericValue;
+  trailingAnnualDividendYield?: YahooNumericValue;
+}
+
+export interface YahooCompanySummary {
+  assetProfile?: {
+    sector?: string;
+    industry?: string;
+    country?: string;
+    website?: string;
+  };
+  summaryDetail?: {
+    dividendRate?: YahooNumericValue;
+    dividendYield?: YahooNumericValue;
+    trailingAnnualDividendRate?: YahooNumericValue;
+    trailingAnnualDividendYield?: YahooNumericValue;
+  };
+  price?: {
+    marketCap?: YahooNumericValue;
+    currency?: string;
+    exchangeName?: string;
+  };
+  financialData?: {
+    currentRatio?: YahooNumericValue;
+    debtToEquity?: YahooNumericValue;
+    returnOnEquity?: YahooNumericValue;
+    profitMargins?: YahooNumericValue;
+    freeCashflow?: YahooNumericValue;
+    totalCash?: YahooNumericValue;
+    totalDebt?: YahooNumericValue;
+  };
 }

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { handleSyncMarketAction } from "@/app/actions/sync-market";
 import { useRouter } from "next/navigation";
+import { LoadingOverlay } from "@/components/loading-overlay";
 
 export function SyncButton() {
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export function SyncButton() {
     if (result.success) {
       router.refresh(); // 2. Refresca los datos y la vista de la tabla automáticamente
     }
-  } catch (error) {
+  } catch {
     setMessage("Error al sincronizar con el mercado.");
   } finally {
     setLoading(false);
@@ -29,6 +30,7 @@ export function SyncButton() {
 
   return (
     <div className="mb-6 flex flex-col gap-2">
+      {loading && <LoadingOverlay message="Actualizando empresas radar..." />}
       <button
         onClick={handleClick}
         disabled={loading}

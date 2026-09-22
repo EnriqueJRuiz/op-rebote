@@ -22,6 +22,8 @@ export class YahooScreenerMapper {
       pais: quote.region,
       sector: undefined,
       industria: undefined,
+      tipoActivo: quote.quoteType,
+      moneda: quote.currency,
       marketCap: quote.marketCap?.raw ?? 0,
       precio: quote.regularMarketPrice?.raw ?? 0,
       volumen: quote.regularMarketVolume?.raw ?? 0,

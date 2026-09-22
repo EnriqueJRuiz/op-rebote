@@ -2,11 +2,17 @@ import YahooFinance from "yahoo-finance2";
 import { RSI } from "technicalindicators";
 
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
-import { StockCandidate, UniverseStock } from "@/domain/models/trading";
+import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { APP_CONFIG } from "@/domain/constants";
 
-import { YahooScreenerQuery, YahooScreenerRequest, } from "./yahoo-finance.types";
+import {
+  YahooCompanyQuote,
+  YahooCompanySummary,
+  YahooNumericValue,
+  YahooScreenerQuery,
+  YahooScreenerRequest,
+} from "./yahoo-finance.types";
 import { YahooScreenerClient } from "./yahoo-screener.client";
 import { YahooScreenerMapper } from "./yahoo-screener.mapper";
 import { YahooUniverseFilter } from "./yahoo-universe.filter";
@@ -24,25 +30,100 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
   async getStockData(ticker: string): Promise<StockCandidate> {
     try {
-      const [quote, closes] = await Promise.all([
-        this.fetchQuote(ticker),
-        this.fetchHistoricalCloses(ticker),
-      ]);
-
-      const rsi = this.calculateRsi(closes);
-
-      return {
-        ticker,
-        nombre: quote.longName ?? quote.shortName ?? ticker,
-        precio: quote.regularMarketPrice ?? 0,
-        rsi,
-        volumen: quote.regularMarketVolume ?? 0,
-        esValido: false,
-      };
+      return (await this.getCompanySnapshot(ticker)).stock;
     } catch (error) {
       console.error(`Error al obtener datos reales para ${ticker}:`, error);
       throw new Error(`No se pudo procesar el ticker ${ticker}`);
     }
+  }
+
+  async getCompanySnapshot(ticker: string, includeMetadata = true): Promise<{
+    stock: StockCandidate;
+    metadata?: CompanyMetadata;
+  }> {
+    const [quoteResult, closes, summaryResult] = await Promise.all([
+      this.fetchQuote(ticker),
+      this.fetchHistoricalCloses(ticker),
+      includeMetadata
+        ? this.yf.quoteSummary(ticker, {
+            modules: ["price", "assetProfile", "summaryDetail", "financialData"],
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const quote = quoteResult as unknown as YahooCompanyQuote & {
+      longName?: string;
+      shortName?: string;
+      regularMarketPrice?: number;
+      regularMarketVolume?: number;
+    };
+    const summary = summaryResult as unknown as YahooCompanySummary | null;
+    if (!includeMetadata || !summary) {
+      return {
+        stock: {
+          ticker,
+          nombre: quote.longName ?? quote.shortName ?? ticker,
+          precio: this.getYahooNumber(quote.regularMarketPrice),
+          rsi: this.calculateRsi(closes),
+          volumen: this.getYahooNumber(quote.regularMarketVolume),
+          capitalizacion: this.getYahooNumber(quote.marketCap),
+          esValido: false,
+        },
+      };
+    }
+    const dividendValues = [
+      summary.summaryDetail?.dividendRate,
+      summary.summaryDetail?.dividendYield,
+      summary.summaryDetail?.trailingAnnualDividendRate,
+      summary.summaryDetail?.trailingAnnualDividendYield,
+      quote.dividendRate,
+      quote.dividendYield,
+      quote.trailingAnnualDividendRate,
+      quote.trailingAnnualDividendYield,
+    ];
+    const paysDividend = dividendValues.some((value) => this.getYahooNumber(value) > 0);
+    const financialData = summary.financialData;
+    const marketCap = this.getYahooNumber(summary.price?.marketCap) || this.getYahooNumber(quote.marketCap);
+
+    return {
+      stock: {
+        ticker,
+        nombre: quote.longName ?? quote.shortName ?? ticker,
+        precio: this.getYahooNumber(quote.regularMarketPrice),
+        rsi: this.calculateRsi(closes),
+        volumen: this.getYahooNumber(quote.regularMarketVolume),
+        capitalizacion: marketCap,
+        esValido: false,
+      },
+      metadata: {
+        tipoActivo: quote.quoteType ?? APP_CONFIG.DB.DEFAULTS.ASSET_TYPE,
+        esDividendo: paysDividend,
+        sector: summary.assetProfile?.sector ?? APP_CONFIG.DB.DEFAULTS.SECTOR,
+        dividendRate: this.getYahooNumber(summary.summaryDetail?.dividendRate),
+        dividendYield: this.getYahooNumber(summary.summaryDetail?.dividendYield),
+        industria: summary.assetProfile?.industry,
+        pais: summary.assetProfile?.country,
+        bolsa: summary.price?.exchangeName ?? quote.fullExchangeName ?? quote.exchange,
+        moneda: summary.price?.currency ?? quote.currency,
+        web: summary.assetProfile?.website,
+        capitalizacion: marketCap,
+        currentRatio: this.getYahooNumber(financialData?.currentRatio),
+        debtToEquity: this.getYahooNumber(financialData?.debtToEquity),
+        returnOnEquity: this.getYahooNumber(financialData?.returnOnEquity),
+        profitMargin: this.getYahooNumber(financialData?.profitMargins),
+        freeCashFlow: this.getYahooNumber(financialData?.freeCashflow),
+        totalCash: this.getYahooNumber(financialData?.totalCash),
+        totalDebt: this.getYahooNumber(financialData?.totalDebt),
+      },
+    };
+  }
+
+  private getYahooNumber(value: YahooNumericValue | undefined): number {
+    return typeof value === "number" ? value : value?.raw ?? 0;
+  }
+
+  async getCompanyMetadata(ticker: string): Promise<CompanyMetadata> {
+    return (await this.getCompanySnapshot(ticker, true)).metadata!;
   }
 
   async getInitialUniverse(): Promise<UniverseStock[]> {

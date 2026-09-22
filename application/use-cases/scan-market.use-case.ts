@@ -27,14 +27,14 @@ export class ScanMarketUseCase {
     try {
       const stockData = await this.marketRepository.getStockData(ticker);
       
-      return this.evaluateTradingRules(stockData);
+      return this.evaluateStockData(stockData);
     } catch (error) {
       console.error(`Error procesando el ticker ${ticker} en el caso de uso:`, error);
       return null;
     }
   }
 
-  private evaluateTradingRules(stockData: StockCandidate): StockCandidate {
+  evaluateStockData(stockData: StockCandidate): StockCandidate {
     const { MIN_DAILY_VOLUME, OVERSOLD_THRESHOLD } = TRADING_RULES;
 
     const cumpleVolumen = stockData.volumen >= MIN_DAILY_VOLUME;
