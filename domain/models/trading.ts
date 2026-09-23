@@ -1,5 +1,8 @@
 import { APP_CONFIG } from "../constants";
 
+export type TierLevel = 'TIER_0' | 'TIER_1' | typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
+export type ExitRule = 'HOLD_DIVIDEND' | 'FULL_SELL_100' | 'PARTIAL_80_20';
+
 export interface Company {
   ticker: string;
   nombre: string;
@@ -13,6 +16,12 @@ export interface StockCandidate extends Company {
   esValido: boolean;
   motivoDescarte?: string;
   categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
+  tier?: TierLevel;
+  esDividendKing?: boolean;
+  reglaSalida?: ExitRule;
+  currentRatio?: number;
+  debtToEquity?: number;
+  returnOnEquity?: number;
 }
 
 export interface CompanyMetadata {
@@ -47,4 +56,11 @@ export interface UniverseStock extends Company {
   tipoActivo?: string;
   moneda?: string;
   categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
+}
+
+export interface MarketScanResult {
+  tier0: StockCandidate[]; // Dividend Kings / Inquebrantables
+  tier1: StockCandidate[]; // Máximos estándares
+  top: StockCandidate[];   // Radar TOP
+  mid: StockCandidate[];   // Radar MID
 }

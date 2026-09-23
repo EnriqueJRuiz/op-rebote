@@ -83,6 +83,10 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         rsi: stock.rsi,
         capitalizacion: stock.capitalizacion ?? null,
         es_valido: stock.esValido,
+        // Nuevos campos de nuestra hoja de ruta
+        tier: stock.tier ?? null,
+        es_dividend_king: stock.esDividendKing ?? false,
+        regla_salida: stock.reglaSalida ?? null,
       });
 
     if (error) {
@@ -110,7 +114,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, rsi, capitalizacion, es_valido, empresas(ticker, nombre, categoria)")
+      .select("precio, volumen, rsi, capitalizacion, es_valido, tier, es_dividend_king, regla_salida, empresas(ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
@@ -127,14 +131,17 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       volumen: number;
       rsi: number;
       capitalizacion?: number;
+      tier?: any;
+      es_dividend_king?: boolean;
+      regla_salida?: any;
       empresas: {
         ticker: string;
         nombre: string;
-        categoria?: "TOP" | "MID";
+        categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
       } | Array<{
         ticker: string;
         nombre: string;
-        categoria?: "TOP" | "MID";
+        categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
       }> | null;
     };
 
@@ -150,6 +157,9 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         capitalizacion: row.capitalizacion,
         categoria: company!.categoria,
         esValido: true,
+        tier: row.tier,
+        esDividendKing: row.es_dividend_king,
+        reglaSalida: row.regla_salida,
       }));
   }
 
