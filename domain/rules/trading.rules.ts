@@ -1,5 +1,5 @@
 import { TierLevel, ExitRule } from '../models/trading';
-import { APP_CONFIG } from "@/domain/constants";
+import { APP_CONFIG, DIVIDEND_TIERS, DividendTier } from "@/domain/constants";
 
 export const TRADING_RULES = {
   OVERSOLD_THRESHOLD: 30,
@@ -15,7 +15,8 @@ export const TRADING_RULES = {
 
 export interface EvaluationContext {
   rsi: number;
-  esDividendKing: boolean;
+  esValido: boolean;
+  dividendTier: DividendTier | undefined;
   origenCategoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
 }
 
@@ -29,24 +30,27 @@ export interface EvaluationResult {
  */
 export function evaluateCandidateTierAndExit(input: {
   rsi: number;
-  esDividendKing: boolean;
+  esValido: boolean;
+  dividendTier: DividendTier | undefined;
   origenCategoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
 }): EvaluationResult {
-  const { rsi, esDividendKing, origenCategoria } = input;
+  const { rsi, esValido, dividendTier, origenCategoria } = input;
 
   // 1. TIER 0: Dividend Kings / Inquebrantables
-  if (esDividendKing) {
+  if (dividendTier === DIVIDEND_TIERS.KING) {
     return {
       tier: 'TIER_0',
       reglaSalida: 'HOLD_DIVIDEND',
     };
   }
 
-  // 2. TIER 1: Máximos estándares (activos TOP con RSI muy bajo o criterios estrictos)
-  if (origenCategoria === APP_CONFIG.CATEGORIES.TOP && rsi <= 25) {
+  // 2. TIER 1: candidatos no-King que superan los filtros más exigentes
+  if (esValido && rsi <= 25) {
     return {
       tier: 'TIER_1',
-      reglaSalida: 'FULL_SELL_100',
+      reglaSalida: origenCategoria === APP_CONFIG.CATEGORIES.MID
+        ? 'FULL_SELL_100'
+        : 'PARTIAL_80_20',
     };
   }
 

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
 import { CompanyMetadata, StockCandidate, UniverseStock} from "@/domain/models/trading";
 import { SupabaseCompanyRow } from "./supabase-companies.types";
-import { APP_CONFIG } from "@/domain/constants";
+import { APP_CONFIG, getDividendTier } from "@/domain/constants";
 
 export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
   private supabase = createClient(
@@ -25,6 +25,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
     bolsa: stock.exchange,
     capitalizacion: stock.marketCap,
     categoria: stock.categoria || APP_CONFIG.CATEGORIES.MID, 
+    dividend_tier: getDividendTier(stock.ticker),
   }));
 
   const { error } = await this.supabase
@@ -61,6 +62,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       .from(APP_CONFIG.DB.TABLES.EMPRESAS)
       .update({
         nombre,
+        dividend_tier: getDividendTier(ticker),
         ...this.toDatabaseMetadata(metadata),
       })
       .eq(APP_CONFIG.DB.COLUMNS.TICKER, ticker);
@@ -73,19 +75,15 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
   async saveScanResult(companyId: number, stock: StockCandidate, loteId: string): Promise<void> {
     const { error } = await this.supabase
       .from("historico_escaneos")
-      .upsert({
+      .insert({
         empresa_id: companyId,
         lote_id: loteId,
-        escaneado_en: new Date().toISOString(),
-        fecha: new Date().toISOString().slice(0, 10),
         precio: stock.precio,
         volumen: Math.round(stock.volumen),
         rsi: stock.rsi,
         capitalizacion: stock.capitalizacion ?? null,
         es_valido: stock.esValido,
-        // Nuevos campos de nuestra hoja de ruta
-        tier: stock.tier ?? null,
-        es_dividend_king: stock.esDividendKing ?? false,
+        tier: stock.tier ?? "NULL",
         regla_salida: stock.reglaSalida ?? null,
       });
 
@@ -103,7 +101,10 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     if (latestError) {
       if (this.isScanHistorySchemaUnavailable(latestError.code) || this.isTransientSupabaseError(latestError)) {
-        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.");
+        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.", {
+          code: latestError.code,
+          message: latestError.message,
+        });
         return [];
       }
       throw new Error(`No se pudo localizar el último escaneo: ${latestError.message}`);
@@ -114,13 +115,16 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, rsi, capitalizacion, es_valido, tier, es_dividend_king, regla_salida, empresas(ticker, nombre, categoria)")
+      .select("precio, volumen, rsi, capitalizacion, es_valido, tier, regla_salida, empresas(ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
     if (error) {
       if (this.isScanHistorySchemaUnavailable(error.code) || this.isTransientSupabaseError(error)) {
-        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.");
+        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.", {
+          code: error.code,
+          message: error.message,
+        });
         return [];
       }
       throw new Error(`No se pudieron recuperar las oportunidades: ${error.message}`);
@@ -132,7 +136,6 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       rsi: number;
       capitalizacion?: number;
       tier?: any;
-      es_dividend_king?: boolean;
       regla_salida?: any;
       empresas: {
         ticker: string;
@@ -158,7 +161,6 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         categoria: company!.categoria,
         esValido: true,
         tier: row.tier,
-        esDividendKing: row.es_dividend_king,
         reglaSalida: row.regla_salida,
       }));
   }
@@ -203,7 +205,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       .from(APP_CONFIG.DB.TABLES.EMPRESAS)
       .select(`id, ticker, nombre, tipo_activo, es_dividendo, dividend_rate, dividend_yield, sector, industria
         , pais, bolsa, moneda, web, categoria, capitalizacion, current_ratio, debt_to_equity, return_on_equity
-        , profit_margin, free_cash_flow, total_cash, total_debt, fundamentales_actualizados_en`)
+        , profit_margin, free_cash_flow, total_cash, total_debt, dividend_tier, fundamentales_actualizados_en`)
       .order(APP_CONFIG.DB.COLUMNS.TICKER, { ascending: true });
 
     if (error) {

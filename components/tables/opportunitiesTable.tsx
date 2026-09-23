@@ -3,6 +3,8 @@ import { ChevronDown } from "lucide-react";
 import { Column, DataTable } from "@/components/tables/core/DataTable";
 
 interface ReboundOpportunitiesProps {
+  tier0: StockCandidate[];
+  tier1: StockCandidate[];
   top: StockCandidate[];
   mid: StockCandidate[];
 }
@@ -44,9 +46,11 @@ function OpportunityBlock({ title, opportunities }: { title: string; opportuniti
   />;
 }
 
-export function ReboundOpportunities({ top, mid }: ReboundOpportunitiesProps) {
+export function ReboundOpportunities({ tier0, tier1, top, mid }: ReboundOpportunitiesProps) {
   return (
     <div className="grid gap-6">
+      <OpportunityBlock title="TIER_0" opportunities={tier0} />
+      <OpportunityBlock title="TIER_1" opportunities={tier1} />
       <OpportunityBlock title="TOP" opportunities={top} />
       <OpportunityBlock title="MID" opportunities={mid} />
     </div>

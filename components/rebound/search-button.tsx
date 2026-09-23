@@ -37,6 +37,22 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
     }
   };
 
+   const tier0 = opportunities.filter(
+    (opportunity) => opportunity.tier === "TIER_0"
+  );
+
+  const tier1 = opportunities.filter(
+    (opportunity) => opportunity.tier === "TIER_1"
+  );
+
+  const top = opportunities.filter(
+    (opportunity) => opportunity.tier === "TOP"
+  );
+
+  const mid = opportunities.filter(
+    (opportunity) => opportunity.tier === "MID"
+  );
+
   return (
     <div>
       {loading && <LoadingOverlay message="Buscando oportunidades..." />}
@@ -58,8 +74,10 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
         </div>
       </div>
       <ReboundOpportunities
-        top={opportunities.filter((opportunity) => opportunity.categoria === "TOP")}
-        mid={opportunities.filter((opportunity) => opportunity.categoria === "MID")}
+        tier0={tier0}
+        tier1={tier1}
+        top={top}
+        mid={mid}
       />
     </div>
   );

@@ -27,19 +27,9 @@ export class ScanMarketUseCase {
     for (const baseCandidate of validCandidates) {
       if (!baseCandidate.esValido) continue;
 
-      const evaluacion = evaluateCandidateTierAndExit({
-        rsi: baseCandidate.rsi,
-        esDividendKing: baseCandidate.esDividendKing ?? false,
-        origenCategoria: baseCandidate.categoria,
-      });
+      const evaluatedCandidate = this.classifyCandidate(baseCandidate);
 
-      const evaluatedCandidate: StockCandidate = {
-        ...baseCandidate,
-        tier: evaluacion.tier,
-        reglaSalida: evaluacion.reglaSalida,
-      };
-
-      switch (evaluacion.tier) {
+      switch (evaluatedCandidate.tier) {
         case 'TIER_0':
           scanResult.tier0.push(evaluatedCandidate);
           break;
@@ -86,13 +76,28 @@ export class ScanMarketUseCase {
     const reasons: string[] = [];
     if (!cumpleVolumen) reasons.push(`Volumen insuficiente (< ${TRADING_RULES.MIN_DAILY_VOLUME.toLocaleString()}).`);
     if (!cumpleRsi) reasons.push(`RSI fuera de rango (> ${TRADING_RULES.OVERSOLD_THRESHOLD}).`);
-if (!cumpleLiquidez) reasons.push(`Liquidez baja (Current Ratio < ${TRADING_RULES.MIN_CURRENT_RATIO}).`);
+    if (!cumpleLiquidez) reasons.push(`Liquidez baja (Current Ratio < ${TRADING_RULES.MIN_CURRENT_RATIO}).`);
     if (!cumpleDeuda) reasons.push(`Endeudamiento excesivo (Debt/Equity > ${TRADING_RULES.MAX_DEBT_TO_EQUITY}).`);
 
     return {
       ...stockData,
       esValido: cumpleVolumen && cumpleRsi,
       motivoDescarte: reasons.length > 0 ? reasons.join(" ") : undefined,
+    };
+  }
+
+  classifyCandidate(stock: StockCandidate): StockCandidate {
+    const evaluacion = evaluateCandidateTierAndExit({
+      rsi: stock.rsi,
+      esValido: stock.esValido,
+      dividendTier: stock.dividendTier,
+      origenCategoria: stock.categoria,
+    });
+
+    return {
+      ...stock,
+      tier: evaluacion.tier,
+      reglaSalida: evaluacion.reglaSalida,
     };
   }
 }

@@ -1,10 +1,11 @@
-import { APP_CONFIG } from "@/domain/constants";
+import { APP_CONFIG, DividendTier } from "@/domain/constants";
 export interface SupabaseCompanyRow {
   id: number;
   ticker: string;
   nombre: string;
   tipo_activo?: string;
   es_dividendo?: boolean;
+  dividend_tier?: DividendTier;
   dividend_rate?: number;
   dividend_yield?: number;
   sector?: string;
