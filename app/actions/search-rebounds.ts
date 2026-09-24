@@ -75,6 +75,9 @@ export async function handleSearchReboundsAction() {
           const rawStock: StockCandidate = {
             ...snapshot.stock,
             categoria: company.categoria,
+            currentRatio: snapshot.metadata?.currentRatio ?? company.current_ratio,
+            debtToEquity: snapshot.metadata?.debtToEquity ?? company.debt_to_equity,
+            returnOnEquity: snapshot.metadata?.returnOnEquity ?? company.return_on_equity,
             dividendTier,
             esValido: false,
           };

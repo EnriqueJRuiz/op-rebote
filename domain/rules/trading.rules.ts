@@ -9,7 +9,7 @@ export const TRADING_RULES = {
   MAX_MA_DEVIATION_PCT: 10,
   PROFIT_TARGET_PCT: 8,
   MIN_CURRENT_RATIO: 1.0, 
-  MAX_DEBT_TO_EQUITY: 2.5,     
+  MAX_DEBT_TO_EQUITY: 250,     
   MIN_ROE: 0,
 } as const;
 

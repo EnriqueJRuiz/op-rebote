@@ -67,21 +67,22 @@ export class ScanMarketUseCase {
 
   evaluateStockData(stockData: StockCandidate): StockCandidate {
     const { MIN_DAILY_VOLUME, OVERSOLD_THRESHOLD } = TRADING_RULES;
-
     const cumpleVolumen = stockData.volumen >= MIN_DAILY_VOLUME;
     const cumpleRsi = stockData.rsi <= OVERSOLD_THRESHOLD;
-    const cumpleLiquidez = stockData.currentRatio === undefined || stockData.currentRatio >= TRADING_RULES.MIN_CURRENT_RATIO;
-    const cumpleDeuda = stockData.debtToEquity === undefined || stockData.debtToEquity <= TRADING_RULES.MAX_DEBT_TO_EQUITY;
+    const cumpleLiquidez = stockData.currentRatio !== undefined && stockData.currentRatio >= TRADING_RULES.MIN_CURRENT_RATIO;
+    const cumpleDeuda = stockData.debtToEquity !== undefined && stockData.debtToEquity <= TRADING_RULES.MAX_DEBT_TO_EQUITY;
+    const cumpleRentabilidad = stockData.returnOnEquity !== undefined && stockData.returnOnEquity > TRADING_RULES.MIN_ROE;
 
     const reasons: string[] = [];
     if (!cumpleVolumen) reasons.push(`Volumen insuficiente (< ${TRADING_RULES.MIN_DAILY_VOLUME.toLocaleString()}).`);
     if (!cumpleRsi) reasons.push(`RSI fuera de rango (> ${TRADING_RULES.OVERSOLD_THRESHOLD}).`);
     if (!cumpleLiquidez) reasons.push(`Liquidez baja (Current Ratio < ${TRADING_RULES.MIN_CURRENT_RATIO}).`);
     if (!cumpleDeuda) reasons.push(`Endeudamiento excesivo (Debt/Equity > ${TRADING_RULES.MAX_DEBT_TO_EQUITY}).`);
+    if (!cumpleRentabilidad) reasons.push(`Rentabilidad insuficiente (ROE <= ${TRADING_RULES.MIN_ROE}).`);
 
     return {
       ...stockData,
-      esValido: cumpleVolumen && cumpleRsi,
+      esValido: cumpleVolumen && cumpleRsi && cumpleLiquidez && cumpleDeuda && cumpleRentabilidad,
       motivoDescarte: reasons.length > 0 ? reasons.join(" ") : undefined,
     };
   }
