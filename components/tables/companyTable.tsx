@@ -2,10 +2,10 @@
 
 import { ChevronDown } from "lucide-react";
 import { Column, DataTable } from "@/components/tables/core/DataTable";
-import { SupabaseCompanyRow } from "@/infrastructure/repositories/supabase-companies.types";
+import { CompanyRecord } from "@/domain/models/trading";
 
 interface CompanyTableProps {
-  empresas: SupabaseCompanyRow[];
+  empresas: CompanyRecord[];
   title: string;
 }
 
@@ -27,13 +27,13 @@ function formatMarketCap(value?: number) {
 }
 
 export function CompanyTable({ empresas, title }: CompanyTableProps) {
-  const renderDividend = (empresa: SupabaseCompanyRow) => (
+  const renderDividend = (empresa: CompanyRecord) => (
     <span className={`${STYLES.badgeBase} ${empresa.es_dividendo ? STYLES.badgeTrue : STYLES.badgeFalse}`}>
       {empresa.es_dividendo ? "Sí" : "No"}
     </span>
   );
 
-  const columns: Column<SupabaseCompanyRow>[] = [
+  const columns: Column<CompanyRecord>[] = [
     { header: "Ticker", sortValue: (empresa) => empresa.ticker, render: (empresa) => <span className={STYLES.tickerPill}>{empresa.ticker}</span> },
     { header: "Nombre", sortValue: (empresa) => empresa.nombre, render: (empresa) => empresa.nombre, cellClassName: STYLES.companyName },
     { header: "Tipo", render: (empresa) => empresa.tipo_activo || "-", cellClassName: STYLES.secondaryText },

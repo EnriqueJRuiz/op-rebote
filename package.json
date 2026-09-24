@@ -1,6 +1,6 @@
 {
   "name": "op-rebote",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -26,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

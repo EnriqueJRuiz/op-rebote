@@ -1,8 +1,7 @@
 // infrastructure/repositories/supabase-companies.repository.ts
 import { createClient } from "@supabase/supabase-js";
 import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
-import { CompanyMetadata, StockCandidate, UniverseStock} from "@/domain/models/trading";
-import { SupabaseCompanyRow } from "./supabase-companies.types";
+import { CompanyMetadata, CompanyRecord, StockCandidate, UniverseStock} from "@/domain/models/trading";
 import { APP_CONFIG, getDividendTier } from "@/domain/constants";
 
 export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
@@ -200,7 +199,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
     };
   }
 
-  async getCompanies(): Promise<SupabaseCompanyRow[]> {
+  async getCompanies(): Promise<CompanyRecord[]> {
     const { data, error } = await this.supabase
       .from(APP_CONFIG.DB.TABLES.EMPRESAS)
       .select(`id, ticker, nombre, tipo_activo, es_dividendo, dividend_rate, dividend_yield, sector, industria
@@ -213,7 +212,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       throw new Error("No se pudieron recuperar las empresas de la base de datos");
     }
 
-    return (data as SupabaseCompanyRow[]) || [];
+    return (data as CompanyRecord[]) || [];
   }
 
 }
