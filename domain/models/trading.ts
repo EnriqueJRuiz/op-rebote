@@ -35,6 +35,12 @@ export interface CompanyRecord extends Company {
   fundamentales_actualizados_en?: string;
 }
 
+export interface CompanyScanQuote {
+  companyId: number;
+  price: number;
+  previousDayPrice?: number;
+}
+
 export interface StockCandidate extends Company {
   rsi: number;
   capitalizacion?: number;

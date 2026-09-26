@@ -1,7 +1,7 @@
 // infrastructure/repositories/supabase-companies.repository.ts
 import { createClient } from "@supabase/supabase-js";
 import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
-import { CompanyMetadata, CompanyRecord, StockCandidate, UniverseStock} from "@/domain/models/trading";
+import { CompanyMetadata, CompanyRecord, CompanyScanQuote, StockCandidate, UniverseStock} from "@/domain/models/trading";
 import { APP_CONFIG, getDividendTier } from "@/domain/constants";
 
 export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
@@ -90,6 +90,77 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
     if (error) {
       throw new Error(`No se pudo guardar el escaneo de ${stock.ticker}: ${error.message}`);
     }
+  }
+
+  async getLatestScanQuotes(): Promise<CompanyScanQuote[]> {
+    type ScanBatchReference = { lote_id: string; fecha: string };
+    type ScanPriceRow = { empresa_id: number; precio: number };
+
+    const { data: latestRows, error: latestError } = await this.supabase
+      .from("historico_escaneos")
+      .select("lote_id, fecha")
+      .order("escaneado_en", { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      if (this.isScanHistorySchemaUnavailable(latestError.code) || this.isTransientSupabaseError(latestError)) {
+        return [];
+      }
+      throw new Error(`No se pudo localizar el último escaneo: ${latestError.message}`);
+    }
+
+    const latestBatch = (latestRows as ScanBatchReference[] | null)?.[0];
+    if (!latestBatch) return [];
+
+    const previousDate = new Date(`${latestBatch.fecha}T00:00:00.000Z`);
+    if (Number.isNaN(previousDate.getTime())) return [];
+    previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+    const previousDateString = previousDate.toISOString().slice(0, 10);
+
+    const { data: previousBatchRows, error: previousBatchError } = await this.supabase
+      .from("historico_escaneos")
+      .select("lote_id, fecha")
+      .eq("fecha", previousDateString)
+      .order("escaneado_en", { ascending: false })
+      .limit(1);
+
+    if (previousBatchError && !this.isScanHistorySchemaUnavailable(previousBatchError.code) && !this.isTransientSupabaseError(previousBatchError)) {
+      throw new Error(`No se pudo localizar el escaneo del día anterior: ${previousBatchError.message}`);
+    }
+
+    const previousBatch = (previousBatchRows as ScanBatchReference[] | null)?.[0];
+    const { data: currentRows, error: currentError } = await this.supabase
+      .from("historico_escaneos")
+      .select("empresa_id, precio")
+      .eq("lote_id", latestBatch.lote_id);
+
+    if (currentError) {
+      if (this.isScanHistorySchemaUnavailable(currentError.code) || this.isTransientSupabaseError(currentError)) {
+        return [];
+      }
+      throw new Error(`No se pudieron recuperar los precios del último escaneo: ${currentError.message}`);
+    }
+
+    let previousRows: ScanPriceRow[] = [];
+    if (previousBatch) {
+      const { data, error } = await this.supabase
+        .from("historico_escaneos")
+        .select("empresa_id, precio")
+        .eq("lote_id", previousBatch.lote_id);
+
+      if (error && !this.isScanHistorySchemaUnavailable(error.code) && !this.isTransientSupabaseError(error)) {
+        throw new Error(`No se pudieron recuperar los precios del día anterior: ${error.message}`);
+      }
+      previousRows = (data as ScanPriceRow[] | null) ?? [];
+    }
+
+    const previousPrices = new Map(previousRows.map((row) => [row.empresa_id, Number(row.precio)]));
+
+    return ((currentRows as ScanPriceRow[] | null) ?? []).map((row) => ({
+      companyId: row.empresa_id,
+      price: Number(row.precio),
+      previousDayPrice: previousPrices.get(row.empresa_id),
+    }));
   }
 
   async getLatestOpportunities(): Promise<StockCandidate[]> {

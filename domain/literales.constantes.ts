@@ -32,13 +32,16 @@ export const UI_TEXT = {
     submit: "Entrar",
   },
   buttons: {
-    sync: "Actualizar radar",
-    syncing: "Actualizando...",
+    sync: "Buscar empresas",
+    syncing: "Buscando...",
+    updateQuotes: "Actualizar cotizaciones",
+    updatingQuotes: "Escaneando...",
     search: "Actualizar oportunidades",
     searching: "Buscando...",
   },
   loading: {
-    sync: "Actualizando empresas para el radar...",
+    sync: "Buscando empresas candidatas...",
+    updateQuotes: "Escaneando empresas del radar...",
     search: "Buscando oportunidades...",
   },
   table: {
@@ -58,10 +61,26 @@ export const UI_TEXT = {
       rsi: "RSI",
       volume: "Volumen",
       recentFloor: "Suelo reciente",
-      type: "Tipo",
+      lastPrice: "Último precio",
+      previousDayChange: "Variación respecto al último escaneo del día anterior",
       sector: "Sector",
-      marketCap: "Capitalización",
       dividend: "Dividendo",
+      dividendYield: "Rentabilidad por dividendo",
+      searchByNameOrTicker: "Buscar por nombre o ticker",
+    },
+    filters: {
+      priceAriaLabel: "Filtrar por variación del precio",
+      priceAll: "Variación: todas",
+      priceUp: "Variación: al alza",
+      priceDown: "Variación: a la baja",
+      dividendAriaLabel: "Filtrar por dividendo",
+      dividendAll: "Dividendo: todos",
+      dividendYes: "Con dividendo",
+      dividendNo: "Sin dividendo",
+      sectorAriaLabel: "Filtrar por sector",
+      sectorAll: "Todos los sectores",
+      clear: "Limpiar filtros",
+      noResults: "No hay empresas que coincidan con los filtros.",
     },
     values: {
       dividendYes: "Sí",
@@ -73,11 +92,7 @@ export const UI_TEXT = {
       noData: "Sin datos",
     },
     formatting: {
-      marketCapUnits: {
-        trillion: "T",
-        billion: "B",
-        million: "M",
-      },
+      percentageUnit: "%",
     },
     pagination: {
       companyRecords: "empresas",
@@ -93,6 +108,7 @@ export const UI_TEXT = {
     emptyStates: {
       default: "No hay registros para mostrar.",
       companies: "No hay empresas en esta categoría.",
+      noCompaniesMatchSearch: "No hay empresas que coincidan con la búsqueda.",
       opportunities: "No hay oportunidades que cumplan el segundo filtro.",
     },
     sorting: {
@@ -107,6 +123,7 @@ export const UI_TEXT = {
   feedback: {
     syncError: "Error al sincronizar con el mercado.",
     searchError: "Error al buscar oportunidades.",
+    radarScanComplete: "Escaneo completado; historial actualizado.",
     noYahooCompanies: "No se encontraron empresas en Yahoo.",
     syncDatabaseError: "Hubo un error al guardar en la base de datos.",
     searchFailure: "No se pudieron buscar nuevas oportunidades.",
