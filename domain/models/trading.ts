@@ -47,6 +47,7 @@ export interface StockCandidate extends Company {
   currentRatio?: number;
   debtToEquity?: number;
   returnOnEquity?: number;
+  volumenRelativo?: number;
 }
 
 export interface CompanyMetadata {

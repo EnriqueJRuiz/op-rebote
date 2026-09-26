@@ -37,13 +37,16 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     }
   }
 
-  async getCompanySnapshot(ticker: string, includeMetadata = true): Promise<{
+ async getCompanySnapshot(ticker: string, includeMetadata = true): Promise<{
     stock: StockCandidate;
     metadata?: CompanyMetadata;
   }> {
-    const [quoteResult, closes, summaryResult] = await Promise.all([
+    const [quoteResult, chartResult, summaryResult] = await Promise.all([
       this.fetchQuote(ticker),
-      this.fetchHistoricalCloses(ticker),
+      this.yf.chart(ticker, {
+        period1: this.getHistoryStartDate(),
+        interval: "1d",
+      }),
       includeMetadata
         ? this.yf.quoteSummary(ticker, {
             modules: ["price", "assetProfile", "summaryDetail", "financialData"],
@@ -51,26 +54,46 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
         : Promise.resolve(null),
     ]);
 
+    const closes = chartResult.quotes
+      .map((q) => q.close)
+      .filter((close): close is number => close !== null && close !== undefined);
+
+    // CÁLCULO DEL VOLUMEN RELATIVO (Últimos 30 días)
+    const historicalVolumes = chartResult.quotes
+      .map((q) => q.volume)
+      .filter((v): v is number => v !== null && v !== undefined);
+
+    const avgVolume = historicalVolumes.length > 30 
+      ? historicalVolumes.slice(-30).reduce((a, b) => a + b, 0) / 30 
+      : (historicalVolumes.length > 0 ? historicalVolumes.reduce((a, b) => a + b, 0) / historicalVolumes.length : 1);
+
     const quote = quoteResult as unknown as YahooCompanyQuote & {
       longName?: string;
       shortName?: string;
       regularMarketPrice?: number;
       regularMarketVolume?: number;
     };
+
+    const volumenActual = this.getYahooNumber(quote.regularMarketVolume);
+    const volumenRelativo = Number((volumenActual / (avgVolume || 1)).toFixed(2));
     const summary = summaryResult as unknown as YahooCompanySummary | null;
+    const marketCap = this.getYahooNumber(summary?.price?.marketCap) || this.getYahooNumber(quote.marketCap);
+
+    const baseStock: StockCandidate = {
+      ticker,
+      nombre: quote.longName ?? quote.shortName ?? ticker,
+      precio: this.getYahooNumber(quote.regularMarketPrice),
+      rsi: this.calculateRsi(closes),
+      volumen: volumenActual,
+      capitalizacion: marketCap,
+      esValido: false,
+      volumenRelativo, // <--- AÑADIDO AQUÍ
+    };
+
     if (!includeMetadata || !summary) {
-      return {
-        stock: {
-          ticker,
-          nombre: quote.longName ?? quote.shortName ?? ticker,
-          precio: this.getYahooNumber(quote.regularMarketPrice),
-          rsi: this.calculateRsi(closes),
-          volumen: this.getYahooNumber(quote.regularMarketVolume),
-          capitalizacion: this.getYahooNumber(quote.marketCap),
-          esValido: false,
-        },
-      };
+      return { stock: baseStock };
     }
+
     const dividendValues = [
       summary.summaryDetail?.dividendRate,
       summary.summaryDetail?.dividendYield,
@@ -83,18 +106,9 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     ];
     const paysDividend = dividendValues.some((value) => this.getYahooNumber(value) > 0);
     const financialData = summary.financialData;
-    const marketCap = this.getYahooNumber(summary.price?.marketCap) || this.getYahooNumber(quote.marketCap);
 
     return {
-      stock: {
-        ticker,
-        nombre: quote.longName ?? quote.shortName ?? ticker,
-        precio: this.getYahooNumber(quote.regularMarketPrice),
-        rsi: this.calculateRsi(closes),
-        volumen: this.getYahooNumber(quote.regularMarketVolume),
-        capitalizacion: marketCap,
-        esValido: false,
-      },
+      stock: baseStock,
       metadata: {
         tipoActivo: quote.quoteType ?? APP_CONFIG.DB.DEFAULTS.ASSET_TYPE,
         esDividendo: paysDividend,
