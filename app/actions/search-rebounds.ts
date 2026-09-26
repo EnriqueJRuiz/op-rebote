@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { APP_ROUTES, getDividendTier } from "@/domain/constants";
+import { UI_TEXT } from "@/domain/literales.constantes";
 import { StockCandidate } from "@/domain/models/trading";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
@@ -116,7 +117,7 @@ export async function handleSearchReboundsAction() {
     return {
       success: true,
       opportunities,
-      message: `Se analizaron ${companies.length} empresas del radar y se encontraron ${opportunities.length} rebotes.`,
+      message: UI_TEXT.feedback.searchCompleted(companies.length, opportunities.length),
     };
   } catch (error) {
     console.error("Error al buscar oportunidades de rebote:", error);
@@ -124,7 +125,7 @@ export async function handleSearchReboundsAction() {
     return {
       success: false,
       opportunities: [],
-      message: "No se pudieron buscar nuevas oportunidades.",
+      message: UI_TEXT.feedback.searchFailure,
     };
   }
 }

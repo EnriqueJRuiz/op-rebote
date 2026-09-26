@@ -2,6 +2,7 @@
 
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { ReactNode, useState } from "react";
+import { UI_TEXT } from "@/domain/literales.constantes";
 
 export interface Column<T> {
   header: string;
@@ -38,7 +39,7 @@ function compareValues(first: string | number | null | undefined, second: string
 export function DataTable<T>({
   title, subtitle, data, columns, rowKey,
   pageSizeOptions = [10, 25, 50, 100], initialPageSize = 10, initialSortIndex = null,
-  recordsLabel = "registros", emptyMessage = "No hay registros para mostrar.", containerClassName = "", mobileRow,
+  recordsLabel = UI_TEXT.table.pagination.defaultRecords, emptyMessage = UI_TEXT.table.emptyStates.default, containerClassName = "", mobileRow,
 }: DataTableProps<T>) {
   const availablePageSizes = pageSizeOptions.length > 0 ? pageSizeOptions : [10, 25, 50, 100];
   const defaultPageSize = availablePageSizes.includes(initialPageSize) ? initialPageSize : availablePageSizes[0];
@@ -81,7 +82,7 @@ export function DataTable<T>({
             <tr className="border-b border-blue-100 text-sm text-slate-600">
               {columns.map((column, index) => (
                 <th key={column.header} className="p-4">
-                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-blue-700" title={`Ordenar por ${column.header.toLowerCase()}`}>
+                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-blue-700" title={UI_TEXT.table.sorting.byColumn(column.header)}>
                     {column.header}{sortIndex === index && (sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </button> : column.header}
                 </th>
@@ -104,16 +105,16 @@ export function DataTable<T>({
       })}</div>}
       {data.length === 0 && <p className="border-t border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">{emptyMessage}</p>}
       <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-100/80 px-4 py-3 text-sm text-slate-500 sm:px-5 sm:py-4">
-        <span className="whitespace-nowrap">{firstRecord}-{lastRecord} de {data.length}<span className="hidden sm:inline"> {recordsLabel}</span></span>
+        <span className="whitespace-nowrap">{firstRecord}-{lastRecord} {UI_TEXT.table.pagination.pageOf} {data.length}<span className="hidden sm:inline"> {recordsLabel}</span></span>
         <div className="flex items-center gap-2 sm:gap-3">
-          <label className="flex items-center gap-2" htmlFor={`${title ?? "data-table"}-page-size`}>Ver
+          <label className="flex items-center gap-2" htmlFor={`${title ?? "data-table"}-page-size`}>{UI_TEXT.table.pagination.pageSize}
             <select id={`${title ?? "data-table"}-page-size`} value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setCurrentPage(1); setExpandedKey(null); }} className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
               {availablePageSizes.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página anterior" title="Página anterior"><ChevronLeft size={16} /></button>
-          <span className="whitespace-nowrap"><span className="hidden sm:inline">Página </span>{safePage} <span className="hidden sm:inline">de </span><span className="sm:hidden">/ </span>{pageCount}</span>
-          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página siguiente" title="Página siguiente"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.previousPage} title={UI_TEXT.table.pagination.previousPage}><ChevronLeft size={16} /></button>
+          <span className="whitespace-nowrap"><span className="hidden sm:inline">{UI_TEXT.table.pagination.page} </span>{safePage} <span className="hidden sm:inline">{UI_TEXT.table.pagination.pageOf} </span><span className="sm:hidden">{UI_TEXT.table.pagination.mobilePageSeparator} </span>{pageCount}</span>
+          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.nextPage} title={UI_TEXT.table.pagination.nextPage}><ChevronRight size={16} /></button>
         </div>
       </div>
     </section>

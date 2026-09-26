@@ -4,6 +4,7 @@
 import { createApplicationDependencies } from "@/infrastructure/composition";
 import { revalidatePath } from "next/cache";
 import { APP_ROUTES } from "@/domain/constants";
+import { UI_TEXT } from "@/domain/literales.constantes";
 
 export async function handleSyncMarketAction() {
   try {
@@ -11,7 +12,7 @@ export async function handleSyncMarketAction() {
     const processedCompanies = await syncMarketUniverse.execute();
 
     if (processedCompanies === 0) {
-      return { success: false, message: "No se encontraron empresas en Yahoo." };
+      return { success: false, message: UI_TEXT.feedback.noYahooCompanies };
     }
 
     // 4. Refrescar la ruta donde se muestran las empresas
@@ -19,10 +20,10 @@ export async function handleSyncMarketAction() {
 
     return { 
       success: true, 
-      message: `¡Sincronización completada! Se procesaron ${processedCompanies} empresas del mercado.` 
+      message: UI_TEXT.feedback.syncCompleted(processedCompanies)
     };
   } catch (error) {
     console.error("Error en handleSyncMarketAction:", error);
-    return { success: false, message: "Hubo un error al guardar en la base de datos." };
+    return { success: false, message: UI_TEXT.feedback.syncDatabaseError };
   }
 }

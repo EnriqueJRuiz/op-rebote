@@ -1,6 +1,7 @@
 import { SyncButton } from "@/components/sync-button";
 import { CompanyTable } from "@/components/tables/companyTable";
 import { APP_CONFIG } from "@/domain/constants";
+import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
 export const dynamic = "force-dynamic";
@@ -18,19 +19,19 @@ export default async function EmpresasRadarPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">Empresas radar</h1>
-            <p className="text-slate-500">Empresas que se han detectado como candidatas para ser incluidas en el radar.</p>
+            <h1 className="mb-2 text-3xl font-bold">{UI_TEXT.pages.companies.title}</h1>
+            <p className="text-slate-500">{UI_TEXT.pages.companies.description}</p>
           </div>
           <SyncButton />
         </div>
 
         <div className="space-y-10">
           <CompanyTable
-            title="Empresas TOP"
+            title={UI_TEXT.table.titles.TOP}
             empresas={empresasTop}
           />
           <CompanyTable
-            title="Empresas MID"
+            title={UI_TEXT.table.titles.MID}
             empresas={empresasMid}
           />
         </div>

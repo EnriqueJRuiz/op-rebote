@@ -58,6 +58,12 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       .map((q) => q.close)
       .filter((close): close is number => close !== null && close !== undefined);
 
+    const recentLows = chartResult.quotes
+      .slice(-6, -1)
+      .map((quote) => quote.low)
+      .filter((low): low is number => low !== null && low !== undefined && low > 0);
+    const minimoReciente = recentLows.length > 0 ? Math.min(...recentLows) : undefined;
+
     // CÁLCULO DEL VOLUMEN RELATIVO (Últimos 30 días)
     const historicalVolumes = chartResult.quotes
       .map((q) => q.volume)
@@ -88,6 +94,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       capitalizacion: marketCap,
       esValido: false,
       volumenRelativo, // <--- AÑADIDO AQUÍ
+      minimoReciente,
     };
 
     if (!includeMetadata || !summary) {

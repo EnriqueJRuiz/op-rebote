@@ -81,6 +81,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         volumen: Math.round(stock.volumen),
         rsi: stock.rsi,
         capitalizacion: stock.capitalizacion ?? null,
+        minimo_reciente: stock.minimoReciente ?? null,
         es_valido: stock.esValido,
         tier: stock.tier ?? "NULL",
         regla_salida: stock.reglaSalida ?? null,
@@ -114,7 +115,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, rsi, capitalizacion, es_valido, tier, regla_salida, empresas(ticker, nombre, categoria)")
+      .select("precio, volumen, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
@@ -134,6 +135,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       volumen: number;
       rsi: number;
       capitalizacion?: number;
+      minimo_reciente?: number | null;
       tier?: any;
       regla_salida?: any;
       empresas: {
@@ -157,6 +159,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         volumen: row.volumen,
         rsi: row.rsi,
         capitalizacion: row.capitalizacion,
+        minimoReciente: row.minimo_reciente ?? undefined,
         categoria: company!.categoria,
         esValido: true,
         tier: row.tier,

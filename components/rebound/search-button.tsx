@@ -8,6 +8,7 @@ import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { StockCandidate } from "@/domain/models/trading";
 import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
 import { LoadingOverlay } from "@/components/loading-overlay";
+import { UI_TEXT } from "@/domain/literales.constantes";
 
 interface SearchReboundsButtonProps {
   initialOpportunities: StockCandidate[];
@@ -31,7 +32,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
       setOpportunities(result.opportunities ?? []);
       if (result.success) router.refresh();
     } catch {
-      setMessage("Error al buscar oportunidades.");
+      setMessage(UI_TEXT.feedback.searchError);
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
 
   return (
     <div>
-      {loading && <LoadingOverlay message="Buscando oportunidades..." />}
+      {loading && <LoadingOverlay message={UI_TEXT.loading.search} />}
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="mb-2 text-3xl font-bold">{title}</h1>
@@ -68,7 +69,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
-            {loading ? "Buscando..." : "Actualizar oportunidades"}
+            {loading ? UI_TEXT.buttons.searching : UI_TEXT.buttons.search}
           </button>
           {message && <p className="text-right text-sm text-slate-500">{message}</p>}
         </div>

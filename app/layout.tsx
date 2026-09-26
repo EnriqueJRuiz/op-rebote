@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { UI_TEXT } from "@/domain/literales.constantes";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Op rebote en bolsa",
-  description: "Oportunidades de rebote en bolsa para torpes y no tan torpes. Swing trading y gestión de universo de acciones.",
+  title: UI_TEXT.metadata.title,
+  description: UI_TEXT.metadata.description,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang={UI_TEXT.metadata.language}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

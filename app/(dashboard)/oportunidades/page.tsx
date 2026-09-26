@@ -1,5 +1,6 @@
 import { SearchReboundsButton } from "@/components/rebound/search-button";
 import { StockCandidate } from "@/domain/models/trading";
+import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,8 @@ export default async function OpportunitiesPage() {
       <div className="mx-auto max-w-5xl">
         <SearchReboundsButton
           initialOpportunities={latestOpportunities}
-          title="Oportunidades de rebote"
-          description="Empresas candidatas a oportunidades de rebote."
+          title={UI_TEXT.pages.opportunities.title}
+          description={UI_TEXT.pages.opportunities.description}
         />
       </div>
     </main>
