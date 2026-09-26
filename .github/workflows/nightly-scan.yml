@@ -1,0 +1,16 @@
+name: Nightly Market Scan & Sync
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 23:00 UTC (ajusta si lo prefieres en otra hora)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # Permite probarlo manualmente haciendo clic en la pestaña "Actions" de GitHub
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Server Endpoint
+        run: |
+          curl -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

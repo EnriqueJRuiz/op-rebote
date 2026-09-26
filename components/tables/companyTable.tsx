@@ -11,11 +11,12 @@ interface CompanyTableProps {
   empresas: CompanyRecord[];
   title: string;
   scanQuotes: CompanyScanQuote[];
+  sectores: string[];
 }
 
 const STYLES = {
-  ticker: "font-mono text-sm font-medium text-blue-700",
-  companyName: "font-semibold text-slate-900",
+  ticker: "inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-700",
+  companyName: "font-bold text-slate-900",
   secondaryText: "text-slate-600",
   dividendYes: "text-emerald-600",
   dividendNo: "text-rose-600",
@@ -102,19 +103,18 @@ function normalizeSearch(value: string) {
     .toLocaleLowerCase("es-ES");
 }
 
-export function CompanyTable({ empresas, title, scanQuotes }: CompanyTableProps) {
+export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>(FILTER_ALL);
   const [dividendFilter, setDividendFilter] = useState<DividendFilter>(FILTER_ALL);
-  const [sectorFilter, setSectorFilter] = useState(FILTER_ALL);
+  const [sectorFilter, setSectorFilter] = useState<string>(FILTER_ALL);
   const normalizedSearchTerm = normalizeSearch(searchTerm.trim());
   
   const scanQuoteByCompanyId = new Map(scanQuotes.map((quote) => [quote.companyId, quote]));
-  const sectors = [...new Set(empresas.map(getCompanySector))]
-    .sort((first, second) => first.localeCompare(second, "es"));
+  const sectorLabel = UI_TEXT.table.columns.sector;
   const sectorOptions: FilterOption<string>[] = [
-    { value: FILTER_ALL, label: UI_TEXT.table.filters.sectorAll },
-    ...sectors.map((sector) => ({ value: sector, label: sector })),
+    { value: FILTER_ALL, label: `${sectorLabel}: Todos` },
+    ...sectores.map((sector) => ({ value: sector, label: `${sectorLabel}: ${sector}` })),
   ];
 
   const visibleCompanies = empresas.filter((empresa) => {
@@ -257,7 +257,7 @@ export function CompanyTable({ empresas, title, scanQuotes }: CompanyTableProps)
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {/* Búsqueda */}
-        <div className="relative w-full sm:max-w-sm">
+        <div className="relative w-full sm:min-w-60 sm:flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} aria-hidden="true" />
 
           <label htmlFor={searchInputId} className="sr-only" > {UI_TEXT.table.columns.searchByNameOrTicker} </label>
@@ -267,29 +267,39 @@ export function CompanyTable({ empresas, title, scanQuotes }: CompanyTableProps)
         </div>
 
         {/* Último precio */}
-        <select value={priceFilter} onChange={(event) =>  setPriceFilter(event.target.value as "all" | "up" | "down") }
-          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          aria-label="Filtrar por último precio"
-        >
-          <option value="all">Último precio: Todos</option>
-          <option value="up">Último precio: Subida</option>
-          <option value="down">Último precio: Bajada</option>
-        </select>
+        <TableFilterSelect
+          id={`company-price-${title.toLowerCase().replace(/\s+/g, "-")}`}
+          label={UI_TEXT.table.filters.priceAriaLabel}
+          value={priceFilter}
+          options={PRICE_FILTER_OPTIONS}
+          onChange={setPriceFilter}
+          className="sm:min-w-48 sm:flex-none"
+        />
+
+        {/* Sector */}
+        <TableFilterSelect
+          id={sectorInputId}
+          label={UI_TEXT.table.filters.sectorAriaLabel}
+          value={sectorFilter}
+          options={sectorOptions}
+          onChange={setSectorFilter}
+          className="sm:min-w-48 sm:flex-none"
+        />
 
         {/* Dividendo */}
-        <select value={dividendFilter} onChange={(event) => setDividendFilter(event.target.value as "all" | "yes" | "no") }
-          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          aria-label="Filtrar por dividendo"
-        >
-          <option value="all">Dividendo: Todos</option>
-          <option value="yes">Dividendo: Sí</option>
-          <option value="no">Dividendo: No</option>
-        </select>
+        <TableFilterSelect
+          id={`company-dividend-${title.toLowerCase().replace(/\s+/g, "-")}`}
+          label={UI_TEXT.table.filters.dividendAriaLabel}
+          value={dividendFilter}
+          options={DIVIDEND_FILTER_OPTIONS}
+          onChange={setDividendFilter}
+          className="sm:min-w-48 sm:flex-none"
+        />
       </div>
       <DataTable title={title} data={visibleCompanies} columns={columns} rowKey={(empresa) => empresa.id} initialSortIndex={0} recordsLabel={UI_TEXT.table.pagination.companyRecords} emptyMessage={normalizedSearchTerm ? UI_TEXT.table.emptyStates.noCompaniesMatchSearch : UI_TEXT.table.emptyStates.companies}
         mobileRow={(empresa, expanded, toggle) => (
           <div className="overflow-hidden last:border-b-0">
-            <button type="button" onClick={toggle} className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-blue-50/45" aria-expanded={expanded}>
+            <button type="button" onClick={toggle} className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-slate-50" aria-expanded={expanded}>
               <span className="truncate font-semibold text-slate-800">{empresa.nombre}</span>
               <ChevronDown className={`shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`} size={18} />
             </button>

@@ -1,4 +1,4 @@
-import { RadarActions } from "@/components/sync-button";
+import { SyncButton } from "@/components/sync-button";
 import { CompanyTable } from "@/components/tables/companyTable";
 import { APP_CONFIG } from "@/domain/constants";
 import { CompanyScanQuote } from "@/domain/models/trading";
@@ -11,11 +11,15 @@ export const revalidate = 0;
 
 export default async function EmpresasRadarPage() {
   const { companiesRepository } = createApplicationDependencies();
-  const [empresas, scanQuotes] = await Promise.all([
+  const [empresas, scanQuotes, sectores] = await Promise.all([
     companiesRepository.getCompanies(),
     companiesRepository.getLatestScanQuotes().catch((error) => {
       console.warn("No se pudieron cargar los últimos precios escaneados:", error);
       return [] as CompanyScanQuote[];
+    }),
+    companiesRepository.getSectors().catch((error) => {
+      console.warn("No se pudieron cargar los sectores:", error);
+      return [] as string[];
     }),
   ]);
   const empresasTop = empresas.filter((empresa) => empresa.categoria === APP_CONFIG.CATEGORIES.TOP);
@@ -23,13 +27,13 @@ export default async function EmpresasRadarPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 p-8 text-slate-800">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-bold">{UI_TEXT.pages.companies.title}</h1>
             <p className="text-slate-500">{UI_TEXT.pages.companies.description}</p>
           </div>
-          <RadarActions />
+          <SyncButton />
         </div>
 
         <div className="space-y-10">
@@ -37,11 +41,13 @@ export default async function EmpresasRadarPage() {
             title={UI_TEXT.table.titles.TOP}
             empresas={empresasTop}
             scanQuotes={scanQuotes}
+            sectores={sectores}
           />
           <CompanyTable
             title={UI_TEXT.table.titles.MID}
             empresas={empresasMid}
             scanQuotes={scanQuotes}
+            sectores={sectores}
           />
         </div>
       </div>

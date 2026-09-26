@@ -289,4 +289,29 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
     return (data as CompanyRecord[]) || [];
   }
 
+  /**
+   * Devuelve la lista de sectores distintos existentes en la tabla de empresas,
+   * ordenada alfabéticamente. Se excluyen valores vacíos o nulos.
+   */
+  async getSectors(): Promise<string[]> {
+    const { data, error } = await this.supabase
+      .from(APP_CONFIG.DB.TABLES.EMPRESAS)
+      .select("sector")
+      .not("sector", "is", null)
+      .neq("sector", "");
+
+    if (error) {
+      console.error("Error al consultar los sectores en Supabase:", error.message);
+      throw new Error("No se pudieron recuperar los sectores de la base de datos");
+    }
+
+    const sectores = new Set(
+      ((data as { sector: string | null }[] | null) ?? [])
+        .map((row) => row.sector?.trim())
+        .filter((sector): sector is string => Boolean(sector))
+    );
+
+    return [...sectores].sort((first, second) => first.localeCompare(second, "es"));
+  }
+
 }

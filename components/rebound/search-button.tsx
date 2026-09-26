@@ -57,7 +57,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
   return (
     <div>
       {loading && <LoadingOverlay message={UI_TEXT.loading.search} />}
-      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="mb-2 text-3xl font-bold">{title}</h1>
           <p className="text-slate-500">{description}</p>
@@ -66,7 +66,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
           <button
             onClick={handleClick}
             disabled={loading}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
             {loading ? UI_TEXT.buttons.searching : UI_TEXT.buttons.search}

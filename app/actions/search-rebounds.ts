@@ -11,8 +11,7 @@ const MAX_CONCURRENT_COMPANIES = 8;
 
 export async function handleSearchReboundsAction() {
   try {
-    const { marketRepository, companiesRepository, scanMarket } =
-      createApplicationDependencies();
+    const { marketRepository, companiesRepository, scanMarket } = createApplicationDependencies();
 
     const companies = await companiesRepository.getCompanies();
     const loteId = crypto.randomUUID();

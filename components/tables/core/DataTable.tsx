@@ -78,11 +78,11 @@ export function DataTable<T>({
       </header>}
       <div className={`${mobileRow ? "hidden md:block" : "block"} overflow-x-auto`}>
         <table className="w-full border-collapse text-left">
-          <thead className="bg-blue-50/70">
-            <tr className="border-b border-blue-100 text-sm text-slate-600">
+          <thead className="bg-slate-50">
+            <tr className="border-b border-slate-200 text-sm text-slate-600">
               {columns.map((column, index) => (
                 <th key={column.header} className="p-4">
-                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-blue-700" title={UI_TEXT.table.sorting.byColumn(column.header)}>
+                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-slate-900" title={UI_TEXT.table.sorting.byColumn(column.header)}>
                     {column.header}{sortIndex === index && (sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </button> : column.header}
                 </th>
@@ -91,7 +91,7 @@ export function DataTable<T>({
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
             {visibleData.map((item) => (
-              <tr key={rowKey(item)} className="transition-colors hover:bg-blue-50/45">
+              <tr key={rowKey(item)} className="transition-colors hover:bg-slate-50">
                 {columns.map((column) => <td key={column.header} className={`p-4 ${column.cellClassName ?? ""}`}>{column.render(item)}</td>)}
               </tr>
             ))}
@@ -112,9 +112,9 @@ export function DataTable<T>({
               {availablePageSizes.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.previousPage} title={UI_TEXT.table.pagination.previousPage}><ChevronLeft size={16} /></button>
+          <button type="button" onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.previousPage} title={UI_TEXT.table.pagination.previousPage}><ChevronLeft size={16} /></button>
           <span className="whitespace-nowrap"><span className="hidden sm:inline">{UI_TEXT.table.pagination.page} </span>{safePage} <span className="hidden sm:inline">{UI_TEXT.table.pagination.pageOf} </span><span className="sm:hidden">{UI_TEXT.table.pagination.mobilePageSeparator} </span>{pageCount}</span>
-          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.nextPage} title={UI_TEXT.table.pagination.nextPage}><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => goToPage(safePage + 1)} disabled={safePage === pageCount} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.pagination.nextPage} title={UI_TEXT.table.pagination.nextPage}><ChevronRight size={16} /></button>
         </div>
       </div>
     </section>
