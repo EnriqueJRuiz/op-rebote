@@ -11,7 +11,7 @@ const MAX_CONCURRENT_COMPANIES = 8;
 
 export async function handleSearchReboundsAction() {
   try {
-    const { marketRepository, companiesRepository, scanMarket } = createApplicationDependencies();
+    const { marketRepository, companiesRepository, scanMarket, runBacktest  } = createApplicationDependencies();
 
     const companies = await companiesRepository.getCompanies();
     const loteId = crypto.randomUUID();
@@ -97,6 +97,23 @@ export async function handleSearchReboundsAction() {
             classifiedCandidate,
             loteId
           );
+
+          // ==============================
+          // 5. BACKTEST (solo T0 / T1)
+          // ==============================
+          if (
+            classifiedCandidate.tier === "TIER_0" ||
+            classifiedCandidate.tier === "TIER_1"
+          ) {
+            try {
+              await runBacktest.execute(company.id, company.ticker);
+            } catch (backtestError) {
+              console.error(
+                `Error al calcular el backtest de ${company.ticker}:`,
+                backtestError
+              );
+            }
+          }
 
           return classifiedCandidate;
         })

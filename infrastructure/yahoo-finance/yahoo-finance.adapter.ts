@@ -16,6 +16,7 @@ import {
 import { YahooScreenerClient } from "./yahoo-screener.client";
 import { YahooScreenerMapper } from "./yahoo-screener.mapper";
 import { YahooUniverseFilter } from "./yahoo-universe.filter";
+import { HistoricalCandle } from "@/domain/models/backtest";
 
 export class YahooFinanceAdapter implements MarketRepositoryPort {
   private static readonly DEFAULT_RSI = APP_CONFIG.YAHOO_CONFIG.DEFAULT_RSI;
@@ -201,7 +202,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
   }
 
   private async getTopCaps(): Promise<UniverseStock[]> {
-console.log("\n=============================================");
+    console.log("\n=============================================");
     console.log("BUSQUEDA: TOP-CAPS");
     console.log("=============================================");
     const stocks = await this.getCandidatesByRegion(
@@ -271,6 +272,29 @@ console.log("\n=============================================");
     return Array.from(
       new Map(stocks.map((stock) => [stock.ticker, stock])).values()
     );
+  }
+
+  async getHistoricalCandles(ticker: string): Promise<HistoricalCandle[]> {
+    const chartResult = await this.yf.chart(ticker, {
+      period1: this.getBacktestStartDate(),
+      interval: "1d",
+    });
+
+    return chartResult.quotes
+      .filter((q) => q.close !== null && q.close !== undefined)
+      .map((q) => ({
+        fecha: q.date.toISOString().split("T")[0],
+        precio: q.close!,
+        alto: q.high ?? q.close!,
+        bajo: q.low ?? q.close!,
+        volumen: q.volume ?? 0,
+      }));
+  }
+
+  private getBacktestStartDate(): string {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - APP_CONFIG.YAHOO_CONFIG.BACKTEST_YEARS_OFFSET);
+    return date.toISOString().split("T")[0];
   }
   
 }

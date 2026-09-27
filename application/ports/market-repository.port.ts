@@ -1,4 +1,5 @@
 // application/ports/market-repository.port.ts
+import { HistoricalCandle } from "@/domain/models/backtest";
 import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
 
 export interface MarketRepositoryPort {
@@ -11,4 +12,6 @@ export interface MarketRepositoryPort {
     stock: StockCandidate;
     metadata?: CompanyMetadata;
   }>;
+
+  getHistoricalCandles(ticker: string): Promise<HistoricalCandle[]>;
 }

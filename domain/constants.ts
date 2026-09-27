@@ -11,6 +11,7 @@ export const APP_CONFIG = {
     DEFAULT_RSI: 50,
     RSI_PERIOD: 14,
     HISTORY_MONTHS_OFFSET: 3,
+    BACKTEST_YEARS_OFFSET: 5,
   },
 
   DB: {
@@ -70,3 +71,4 @@ export function getDividendTier(ticker: string): DividendTier {
   if ((DIVIDEND_ARISTOCRATS as readonly string[]).includes(ticker)) return DIVIDEND_TIERS.ARISTOCRAT;
   return null;
 }
+

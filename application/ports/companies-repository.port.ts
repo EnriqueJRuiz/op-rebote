@@ -1,3 +1,4 @@
+import { RsiSeriesPoint } from "@/domain/models/backtest";
 import { CompanyMetadata, CompanyRecord, CompanyScanQuote, StockCandidate, UniverseStock } from "@/domain/models/trading";
  
 export interface CompaniesRepositoryPort {
@@ -8,4 +9,5 @@ export interface CompaniesRepositoryPort {
   saveScanResult(companyId: number, stock: StockCandidate, loteId: string): Promise<void>;
   getLatestScanQuotes(): Promise<CompanyScanQuote[]>;
   getLatestOpportunities(): Promise<StockCandidate[]>;
+  getScanHistorySince(companyId: number, sinceFecha: string): Promise<RsiSeriesPoint[]>;
 }

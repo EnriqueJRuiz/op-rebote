@@ -3,8 +3,25 @@ import { createClient } from "@supabase/supabase-js";
 import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
 import { CompanyMetadata, CompanyRecord, CompanyScanQuote, StockCandidate, UniverseStock} from "@/domain/models/trading";
 import { APP_CONFIG, getDividendTier } from "@/domain/constants";
+import { RsiSeriesPoint } from "@/domain/models/backtest";
 
 export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
+  async getScanHistorySince(companyId: number, sinceFecha: string): Promise<RsiSeriesPoint[]> {
+    const { data, error } = await this.supabase
+      .from("historico_escaneos")
+      .select("fecha, precio, rsi, volumen")
+      .eq("empresa_id", companyId)
+      .gt("fecha", sinceFecha)
+      .order("fecha", { ascending: true });
+
+    if (error) {
+      throw new Error(`No se pudo leer el histórico de escaneos de la empresa ${companyId}: ${error.message}`);
+    }
+
+    return ((data as { fecha: string; precio: number; rsi: number; volumen: number }[] | null) ?? [])
+      .map((row) => ({ fecha: row.fecha, precio: row.precio, rsi: row.rsi, volumen: row.volumen }));
+  }
+  
   private supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -313,5 +330,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     return [...sectores].sort((first, second) => first.localeCompare(second, "es"));
   }
+
+  
 
 }
