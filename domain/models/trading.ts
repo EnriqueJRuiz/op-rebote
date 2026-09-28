@@ -55,6 +55,9 @@ export interface StockCandidate extends Company {
   returnOnEquity?: number;
   volumenRelativo?: number;
   minimoReciente?: number;
+  backtestCasos?: number;
+  backtestExitoPct?: number;
+  backtestDiasMedios?: number;
 }
 
 export interface CompanyMetadata {

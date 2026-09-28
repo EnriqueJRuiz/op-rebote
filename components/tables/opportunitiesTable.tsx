@@ -21,7 +21,10 @@ function getFloorDistancePercent(opportunity: StockCandidate): number | null {
 
 function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
   const distance = getFloorDistancePercent(opportunity);
-  if (distance === null) return <span className="text-slate-400">{UI_TEXT.table.values.noData}</span>;
+  
+  if (distance === null){
+    return <span className="text-slate-400">{UI_TEXT.table.values.noData}</span>;
+  }
 
   const label = distance < 0
     ? `${Math.abs(distance).toFixed(1)}% ${UI_TEXT.floor.underMinimum}`
@@ -37,6 +40,28 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
   );
 }
 
+function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
+  const { backtestCasos, backtestExitoPct, backtestDiasMedios } = opportunity;
+
+  if (backtestCasos === undefined) {
+    return <span className="text-slate-400">{UI_TEXT.table.values.noData}</span>;
+  }
+
+  const pocaMuestra = backtestCasos < 10;
+
+  return (
+    <div className="leading-tight">
+      <span className={`font-semibold ${pocaMuestra ? "text-amber-600" : "text-emerald-700"}`}>
+        {backtestExitoPct}% éxito
+      </span>
+      <span className="block text-xs text-slate-500">
+        {backtestCasos} casos · {backtestDiasMedios}d media
+        {pocaMuestra && <span className="ml-1 text-amber-600">(poca muestra)</span>}
+      </span>
+    </div>
+  );
+}
+
 function OpportunityBlock({ title, opportunities, subtitle }: { title: string; opportunities: StockCandidate[]; subtitle?: string }) {
   const columns: Column<StockCandidate>[] = [
     { header: UI_TEXT.table.columns.name, sortValue: (opportunity) => opportunity.nombre, render: (opportunity) => opportunity.nombre, cellClassName: "font-bold text-slate-900" },
@@ -45,6 +70,7 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
     { header: UI_TEXT.table.columns.rsi, sortValue: (opportunity) => opportunity.rsi, render: (opportunity) => opportunity.rsi.toFixed(2) },
     { header: UI_TEXT.table.columns.volume, sortValue: (opportunity) => opportunity.volumen, render: (opportunity) => opportunity.volumen.toLocaleString() },
     { header: UI_TEXT.table.columns.recentFloor, sortValue: getFloorDistancePercent, render: (opportunity) => <FloorDistance opportunity={opportunity} /> },
+    { header: UI_TEXT.table.columns.backtest, sortValue: (opportunity) => opportunity.backtestExitoPct, render: (opportunity) => <BacktestInfo opportunity={opportunity} /> },
   ];
 
   return <DataTable
@@ -66,11 +92,30 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
           <ChevronDown className={`shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`} size={18} />
         </button>
         {expanded && <div className="grid grid-cols-2 gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 text-sm">
-          <div><p className="text-slate-500">{UI_TEXT.table.columns.ticker}</p><p className="mt-1"><span className="inline-flex rounded-lg bg-indigo-50 px-2 py-1 font-mono text-xs font-bold text-indigo-700">{opportunity.ticker}</span></p></div>
-          <div><p className="text-slate-500">{UI_TEXT.table.columns.price}</p><p className="text-slate-700">{opportunity.precio.toFixed(2)}</p></div>
-          <div><p className="text-slate-500">{UI_TEXT.table.columns.rsi}</p><p className="text-slate-700">{opportunity.rsi.toFixed(2)}</p></div>
-          <div><p className="text-slate-500">{UI_TEXT.table.columns.volume}</p><p className="text-slate-700">{opportunity.volumen.toLocaleString()}</p></div>
-          <div><p className="text-slate-500">{UI_TEXT.table.columns.recentFloor}</p><p className="text-slate-700"><FloorDistance opportunity={opportunity} /></p></div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.ticker}</p>
+            <p className="mt-1"><span className="inline-flex rounded-lg bg-indigo-50 px-2 py-1 font-mono text-xs font-bold text-indigo-700">{opportunity.ticker}</span></p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.price}</p>
+            <p className="text-slate-700">{opportunity.precio.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.rsi}</p>
+            <p className="text-slate-700">{opportunity.rsi.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.volume}</p>
+            <p className="text-slate-700">{opportunity.volumen.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.recentFloor}</p>
+            <p className="text-slate-700"><FloorDistance opportunity={opportunity} /></p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.backtest}</p>
+            <p className="text-slate-700"><BacktestInfo opportunity={opportunity} /></p>
+          </div>
         </div>}
       </div>
     )}

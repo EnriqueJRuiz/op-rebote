@@ -67,6 +67,7 @@ export const UI_TEXT = {
       dividend: "Dividendo",
       dividendYield: "Rentabilidad por dividendo",
       searchByNameOrTicker: "Buscar por nombre o ticker",
+      backtest: "Backtest histórico",
     },
     filters: {
       priceAriaLabel: "Filtrar por variación del precio",
