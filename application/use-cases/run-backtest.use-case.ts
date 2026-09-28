@@ -1,13 +1,14 @@
+// application/use-cases/run-backtest.use-case.ts
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
 import { BacktestRepositoryPort } from "@/application/ports/backtest-repository.port";
-import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
+import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port"; // <-- cambiado
 import { runBacktest, continueBacktest } from "@/domain/rules/backtest.rules";
 
 export class RunBacktestUseCase {
   constructor(
     private marketRepository: MarketRepositoryPort,
     private backtestRepository: BacktestRepositoryPort,
-    private companiesRepository: CompaniesRepositoryPort
+    private scanHistoryRepository: ScanHistoryRepositoryPort // <-- cambiado (antes companiesRepository: CompaniesRepositoryPort)
   ) {}
 
   async execute(idEmpresa: number, ticker: string): Promise<void> {
@@ -21,10 +22,10 @@ export class RunBacktestUseCase {
       return;
     }
 
-    if (existente.fechaActualizacion === hoy) return; // ya actualizado hoy, no hacer nada
+    if (existente.fechaActualizacion === hoy) return;
 
-    const nuevasFilas = await this.companiesRepository.getScanHistorySince(idEmpresa, existente.fechaActualizacion);
-    if (nuevasFilas.length === 0) return; // sin días nuevos todavía
+    const nuevasFilas = await this.scanHistoryRepository.getScanHistorySince(idEmpresa, existente.fechaActualizacion); // <-- cambiado
+    if (nuevasFilas.length === 0) return;
 
     const summary = continueBacktest(existente, nuevasFilas);
     await this.backtestRepository.updateBacktest(idEmpresa, summary);

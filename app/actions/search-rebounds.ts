@@ -2,16 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 
-import { APP_ROUTES, getDividendTier } from "@/domain/constants";
+import { APP_CONFIG, APP_ROUTES, getDividendTier } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
-import { StockCandidate } from "@/domain/models/trading";
+import { CompanyRecord, StockCandidate } from "@/domain/models/trading";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
 const MAX_CONCURRENT_COMPANIES = 8;
 
+type ScanOutcome = { company: CompanyRecord; classifiedCandidate: StockCandidate };
+
 export async function handleSearchReboundsAction() {
   try {
-    const { marketRepository, companiesRepository, scanMarket, runBacktest  } = createApplicationDependencies();
+    const { marketRepository, companiesRepository, scanHistoryRepository, scanMarket, runBacktest } = createApplicationDependencies();
 
     const companies = await companiesRepository.getCompanies();
     const loteId = crypto.randomUUID();
@@ -29,7 +31,7 @@ export async function handleSearchReboundsAction() {
       );
 
       const batchResults = await Promise.allSettled(
-        batch.map(async (company) => {
+        batch.map(async (company): Promise<ScanOutcome> => {
           const dividendTier = getDividendTier(company.ticker);
           const dividendTierChanged = company.dividend_tier !== dividendTier;
 
@@ -40,9 +42,6 @@ export async function handleSearchReboundsAction() {
             !company.fundamentales_actualizados_en ||
             dividendTierChanged;
 
-          // ==============================
-          // 1. OBTENER TODO DE YAHOO
-          // ==============================
           const snapshot = await marketRepository.getCompanySnapshot(
             company.ticker,
             metadataMissing
@@ -69,9 +68,6 @@ export async function handleSearchReboundsAction() {
             );
           }
 
-          // ==============================
-          // 2. GUARDAR TODO
-          // ==============================
           const rawStock: StockCandidate = {
             ...snapshot.stock,
             categoria: company.categoria,
@@ -82,50 +78,57 @@ export async function handleSearchReboundsAction() {
             esValido: false,
           };
 
-          // ==============================
-          // 3. FILTRAR / EVALUAR
-          // ==============================
           const evaluatedCandidate = scanMarket.evaluateStockData(rawStock);
-
-          // ==============================
-          // 4. CLASIFICAR PARA EL FILTRO Y LA PANTALLA
-          // ==============================
           const classifiedCandidate = scanMarket.classifyCandidate(evaluatedCandidate);
 
-          await companiesRepository.saveScanResult(
-            company.id,
-            classifiedCandidate,
-            loteId
-          );
-
-          // ==============================
-          // 5. BACKTEST (solo T0 / T1)
-          // ==============================
-          if (
-            classifiedCandidate.tier === "TIER_0" ||
-            classifiedCandidate.tier === "TIER_1"
-          ) {
-            try {
-              await runBacktest.execute(company.id, company.ticker);
-            } catch (backtestError) {
-              console.error(
-                `Error al calcular el backtest de ${company.ticker}:`,
-                backtestError
-              );
-            }
-          }
-
-          return classifiedCandidate;
+          return { company, classifiedCandidate };
         })
       );
 
-      results.push(...batchResults);
+      const fulfilled = batchResults.filter(
+        (r): r is PromiseFulfilledResult<ScanOutcome> => r.status === "fulfilled"
+      );
+
+      if (fulfilled.length > 0) {
+        await scanHistoryRepository.saveScanResults(
+          fulfilled.map(({ value }) => ({
+            companyId: value.company.id,
+            stock: value.classifiedCandidate,
+            loteId,
+          }))
+        );
+      }
+
+      for (const { value } of fulfilled) {
+        const { company, classifiedCandidate } = value;
+
+        if (
+          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TIER_0 ||
+          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TIER_1 ||
+          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TOP ||
+          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.MID
+        ) {
+          try {
+            await runBacktest.execute(company.id, company.ticker);
+          } catch (backtestError) {
+            console.error(
+              `Error al calcular el backtest de ${company.ticker}:`,
+              backtestError
+            );
+          }
+        }
+      }
+
+      results.push(
+        ...batchResults.map((r): PromiseSettledResult<StockCandidate> =>
+          r.status === "fulfilled"
+            ? { status: "fulfilled", value: r.value.classifiedCandidate }
+            : r
+        )
+      );
     }
 
-    // ==============================
-    // 5. LEER EL ÚLTIMO LOTE DESDE LA BASE DE DATOS
-    // ==============================
-    const opportunities = await companiesRepository.getLatestOpportunities();
+    const opportunities = await scanHistoryRepository.getLatestOpportunities();
 
     revalidatePath(APP_ROUTES.OPORTUNIDADES);
     revalidatePath(APP_ROUTES.EMPRESAS_RADAR);

@@ -7,11 +7,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function OpportunitiesPage() {
-  const { companiesRepository } = createApplicationDependencies();
+  const { scanHistoryRepository } = createApplicationDependencies();
   let latestOpportunities: StockCandidate[] = [];
 
   try {
-    latestOpportunities = await companiesRepository.getLatestOpportunities();
+    latestOpportunities = await scanHistoryRepository.getLatestOpportunities();
   } catch (error) {
     console.warn("No se pudo cargar el último lote de oportunidades:", error);
   }

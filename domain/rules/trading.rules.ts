@@ -39,7 +39,7 @@ export function evaluateCandidateTierAndExit(input: {
   // 1. TIER 0: Dividend Kings / Inquebrantables
   if (dividendTier === DIVIDEND_TIERS.KING) {
     return {
-      tier: 'TIER_0',
+      tier: APP_CONFIG.CATEGORIES.TIER_0,
       reglaSalida: 'HOLD_DIVIDEND',
     };
   }
@@ -47,7 +47,7 @@ export function evaluateCandidateTierAndExit(input: {
   // 2. TIER 1: candidatos no-King que superan los filtros más exigentes
   if (esValido && rsi <= 25) {
     return {
-      tier: 'TIER_1',
+      tier: APP_CONFIG.CATEGORIES.TIER_1,
       reglaSalida: origenCategoria === APP_CONFIG.CATEGORIES.MID
         ? 'FULL_SELL_100'
         : 'PARTIAL_80_20',
@@ -57,13 +57,13 @@ export function evaluateCandidateTierAndExit(input: {
   // 3. TOP / MID estándar
   if (origenCategoria === APP_CONFIG.CATEGORIES.TOP) {
     return {
-      tier: 'TOP',
+      tier: APP_CONFIG.CATEGORIES.TOP,
       reglaSalida: 'PARTIAL_80_20',
     };
   }
 
   return {
-    tier: 'MID',
+    tier: APP_CONFIG.CATEGORIES.MID,
     reglaSalida: 'PARTIAL_80_20',
   };
 }

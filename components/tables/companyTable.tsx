@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChessBishop, ChevronDown, Crown, RotateCcw, Search } from "lucide-react";
+import { ChessBishop, ChevronDown, Crown, Search } from "lucide-react";
 import { Column, DataTable } from "@/components/tables/core/DataTable";
 import { DIVIDEND_TIERS } from "@/domain/constants";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
+import { UI_STYLES } from "@/styles/ui-styles";
 
 interface CompanyTableProps {
   empresas: CompanyRecord[];
@@ -14,12 +15,9 @@ interface CompanyTableProps {
   sectores: string[];
 }
 
+// Solo lo que NO tiene equivalente en UI_STYLES (colores propios del tier de dividendo)
 const STYLES = {
-  ticker: "inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-700",
   companyName: "font-bold text-slate-900",
-  secondaryText: "text-slate-600",
-  dividendYes: "text-emerald-600",
-  dividendNo: "text-rose-600",
   dividendKing: "text-amber-500",
   dividendAristocrat: "text-slate-500",
 };
@@ -68,11 +66,11 @@ function TableFilterSelect<Value extends string>({
         id={id}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value as Value)}
-        className="h-10 w-full appearance-none rounded-md border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm text-slate-700 shadow-sm outline-none transition-colors hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        className={UI_STYLES.filter.select}
       >
         {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} aria-hidden="true" />
+      <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 ${UI_STYLES.filter.icon}`} size={15} aria-hidden="true" />
     </div>
   );
 }
@@ -142,22 +140,11 @@ export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyT
   });
   const searchInputId = `company-search-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sectorInputId = `company-sector-${title.toLowerCase().replace(/\s+/g, "-")}`;
-  const hasActiveFilters = Boolean(normalizedSearchTerm)
-    || priceFilter !== FILTER_ALL
-    || dividendFilter !== FILTER_ALL
-    || sectorFilter !== FILTER_ALL;
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setPriceFilter(FILTER_ALL);
-    setDividendFilter(FILTER_ALL);
-    setSectorFilter(FILTER_ALL);
-  };
-
+  
   const renderScannedPrice = (empresa: CompanyRecord) => {
     const quote = scanQuoteByCompanyId.get(empresa.id);
     if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) {
-      return <span className={STYLES.secondaryText}>{UI_TEXT.table.values.notAvailable}</span>;
+      return <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>;
     }
 
     const changePercent = quote.previousDayPrice && quote.previousDayPrice > 0
@@ -166,9 +153,9 @@ export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyT
     const changeStyle = changePercent === undefined
       ? ""
       : changePercent > 0
-        ? "text-emerald-700"
+        ? UI_STYLES.badge.success
         : changePercent < 0
-          ? "text-rose-700"
+          ? UI_STYLES.badge.danger
           : "text-slate-500";
 
     return (
@@ -247,9 +234,9 @@ export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyT
 
   const columns: Column<CompanyRecord>[] = [
     { header: UI_TEXT.table.columns.name, sortValue: (empresa) => empresa.nombre, render: (empresa) => <span className={STYLES.companyName}>{empresa.nombre}</span> },
-    { header: UI_TEXT.table.columns.ticker, sortValue: (empresa) => empresa.ticker, render: (empresa) => <span className={STYLES.ticker}>{empresa.ticker}</span> },
+    { header: UI_TEXT.table.columns.ticker, sortValue: (empresa) => empresa.ticker, render: (empresa) => <span className={UI_STYLES.badge.ticker}>{empresa.ticker}</span> },
     { header: UI_TEXT.table.columns.lastPrice, sortValue: (empresa) => scanQuoteByCompanyId.get(empresa.id)?.price, render: renderScannedPrice },
-    { header: UI_TEXT.table.columns.sector, render: (empresa) => empresa.sector || UI_TEXT.table.values.unknownSector, cellClassName: STYLES.secondaryText },
+    { header: UI_TEXT.table.columns.sector, render: (empresa) => empresa.sector || UI_TEXT.table.values.unknownSector, cellClassName: UI_STYLES.text.secondary },
     { header: UI_TEXT.table.columns.dividend, render: renderDividend },
   ];
 
@@ -258,11 +245,11 @@ export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyT
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {/* Búsqueda */}
         <div className="relative w-full sm:min-w-60 sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} aria-hidden="true" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${UI_STYLES.filter.icon}`} size={16} aria-hidden="true" />
 
           <label htmlFor={searchInputId} className="sr-only" > {UI_TEXT.table.columns.searchByNameOrTicker} </label>
           <input id={searchInputId} type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={UI_TEXT.table.columns.searchByNameOrTicker}
-            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className={UI_STYLES.filter.input}
           />
         </div>
 
@@ -298,16 +285,16 @@ export function CompanyTable({ empresas, title, scanQuotes, sectores }: CompanyT
       </div>
       <DataTable title={title} data={visibleCompanies} columns={columns} rowKey={(empresa) => empresa.id} initialSortIndex={0} recordsLabel={UI_TEXT.table.pagination.companyRecords} emptyMessage={normalizedSearchTerm ? UI_TEXT.table.emptyStates.noCompaniesMatchSearch : UI_TEXT.table.emptyStates.companies}
         mobileRow={(empresa, expanded, toggle) => (
-          <div className="overflow-hidden last:border-b-0">
-            <button type="button" onClick={toggle} className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-slate-50" aria-expanded={expanded}>
-              <span className="truncate font-semibold text-slate-800">{empresa.nombre}</span>
-              <ChevronDown className={`shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`} size={18} />
+          <div className={UI_STYLES.table.mobileRow}>
+            <button type="button" onClick={toggle} className={UI_STYLES.table.mobileRowButton} aria-expanded={expanded}>
+              <span className={UI_STYLES.table.mobileRowTitle}>{empresa.nombre}</span>
+              <ChevronDown className={`${UI_STYLES.table.mobileRowIcon} ${expanded ? "rotate-180" : ""}`} size={18} />
             </button>
-            {expanded && <div className="grid grid-cols-2 gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 text-sm">
-              <div><p className="text-slate-500">{UI_TEXT.table.columns.ticker}</p><p className={`mt-1 ${STYLES.ticker}`}>{empresa.ticker}</p></div>
-              <div><p className="text-slate-500">{UI_TEXT.table.columns.lastPrice}</p><p className="mt-1">{renderScannedPrice(empresa)}</p></div>
-              <div><p className="text-slate-500">{UI_TEXT.table.columns.sector}</p><p className="text-slate-700">{empresa.sector || UI_TEXT.table.values.unknownSector}</p></div>
-              <div><p className="text-slate-500">{UI_TEXT.table.columns.dividend}</p><p className="mt-1">{renderDividend(empresa)}</p></div>
+            {expanded && <div className={UI_STYLES.table.mobileDetails}>
+              <div><p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.ticker}</p><p className={`mt-1 ${UI_STYLES.badge.ticker}`}>{empresa.ticker}</p></div>
+              <div><p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.lastPrice}</p><p className="mt-1">{renderScannedPrice(empresa)}</p></div>
+              <div><p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sector}</p><p className={UI_STYLES.table.mobileValue}>{empresa.sector || UI_TEXT.table.values.unknownSector}</p></div>
+              <div><p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.dividend}</p><p className="mt-1">{renderDividend(empresa)}</p></div>
             </div>}
           </div>
         )}

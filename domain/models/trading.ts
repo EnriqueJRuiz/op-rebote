@@ -1,6 +1,5 @@
 import { APP_CONFIG, DividendTier } from "../constants";
 
-export type TierLevel = 'TIER_0' | 'TIER_1' | typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
 export type ExitRule = 'HOLD_DIVIDEND' | 'FULL_SELL_100' | 'PARTIAL_80_20';
 
 export interface Company {
@@ -9,6 +8,12 @@ export interface Company {
   precio: number;
   volumen: number;
 }
+
+export type TierLevel =
+  | typeof APP_CONFIG.CATEGORIES.TIER_0
+  | typeof APP_CONFIG.CATEGORIES.TIER_1
+  | typeof APP_CONFIG.CATEGORIES.TOP
+  | typeof APP_CONFIG.CATEGORIES.MID;
 
 export interface CompanyRecord extends Company {
   id: number;

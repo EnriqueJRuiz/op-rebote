@@ -1,4 +1,4 @@
-import { SyncButton } from "@/components/sync-button";
+import { SyncButton } from "@/components/buttons/sync-button";
 import { CompanyTable } from "@/components/tables/companyTable";
 import { APP_CONFIG } from "@/domain/constants";
 import { CompanyScanQuote } from "@/domain/models/trading";
@@ -10,10 +10,10 @@ export const dynamicParams = true;
 export const revalidate = 0;
 
 export default async function EmpresasRadarPage() {
-  const { companiesRepository } = createApplicationDependencies();
+  const { companiesRepository, scanHistoryRepository } = createApplicationDependencies();
   const [empresas, scanQuotes, sectores] = await Promise.all([
     companiesRepository.getCompanies(),
-    companiesRepository.getLatestScanQuotes().catch((error) => {
+    scanHistoryRepository.getLatestScanQuotes().catch((error) => {
       console.warn("No se pudieron cargar los últimos precios escaneados:", error);
       return [] as CompanyScanQuote[];
     }),

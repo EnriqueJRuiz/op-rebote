@@ -10,6 +10,7 @@ import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
 import { LoadingOverlay } from "@/components/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { APP_CONFIG } from "@/domain/constants";
 
 interface SearchReboundsButtonProps {
   initialOpportunities: StockCandidate[];
@@ -39,20 +40,20 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
     }
   };
 
-   const tier0 = opportunities.filter(
-    (opportunity) => opportunity.tier === "TIER_0"
+  const tier0 = opportunities.filter(
+    (opportunity) => opportunity.tier === APP_CONFIG.CATEGORIES.TIER_0
   );
 
   const tier1 = opportunities.filter(
-    (opportunity) => opportunity.tier === "TIER_1"
+    (opportunity) => opportunity.tier === APP_CONFIG.CATEGORIES.TIER_1
   );
 
   const top = opportunities.filter(
-    (opportunity) => opportunity.tier === "TOP"
+    (opportunity) => opportunity.tier === APP_CONFIG.CATEGORIES.TOP
   );
 
   const mid = opportunities.filter(
-    (opportunity) => opportunity.tier === "MID"
+    (opportunity) => opportunity.tier === APP_CONFIG.CATEGORIES.MID
   );
 
   return (

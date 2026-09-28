@@ -28,9 +28,11 @@ export const APP_CONFIG = {
   },
 
   CATEGORIES: {
-    TOP: "TOP" as const,
-    MID: "MID" as const,
-  },
+  TOP: "TOP" as const,
+  MID: "MID" as const,
+  TIER_0: "TIER_0" as const,
+  TIER_1: "TIER_1" as const,
+},
   
 } as const;
 

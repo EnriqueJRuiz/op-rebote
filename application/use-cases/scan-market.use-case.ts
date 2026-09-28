@@ -1,5 +1,6 @@
 // application/use-cases/scan-market.use-case.ts
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
+import { APP_CONFIG } from "@/domain/constants";
 import { StockCandidate, UniverseStock, MarketScanResult } from "@/domain/models/trading";
 import { TRADING_RULES, evaluateCandidateTierAndExit } from "@/domain/rules/trading.rules";
 
@@ -30,16 +31,16 @@ export class ScanMarketUseCase {
       const evaluatedCandidate = this.classifyCandidate(baseCandidate);
 
       switch (evaluatedCandidate.tier) {
-        case 'TIER_0':
+        case APP_CONFIG.CATEGORIES.TIER_0:
           scanResult.tier0.push(evaluatedCandidate);
           break;
-        case 'TIER_1':
+        case APP_CONFIG.CATEGORIES.TIER_1:
           scanResult.tier1.push(evaluatedCandidate);
           break;
-        case 'TOP':
+        case APP_CONFIG.CATEGORIES.TOP:
           scanResult.top.push(evaluatedCandidate);
           break;
-        case 'MID':
+        case APP_CONFIG.CATEGORIES.MID:
           scanResult.mid.push(evaluatedCandidate);
           break;
         default:
