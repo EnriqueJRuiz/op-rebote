@@ -203,7 +203,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(ticker, nombre, categoria)")
+      .select("precio, volumen, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(id, ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
@@ -226,21 +226,14 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       minimo_reciente?: number | null;
       tier?: any;
       regla_salida?: any;
-      empresas: {
-        ticker: string;
-        nombre: string;
-        categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
-      } | Array<{
-        ticker: string;
-        nombre: string;
-        categoria?: typeof APP_CONFIG.CATEGORIES.TOP | typeof APP_CONFIG.CATEGORIES.MID;
-      }> | null;
+      empresas: { id: number; ticker: string; nombre: string; categoria?: any } | Array<{ id: number; ticker: string; nombre: string; categoria?: any }> | null;
     };
 
-    return ((rows as StoredOpportunity[] | null) ?? [])
+    const opportunities = ((rows as StoredOpportunity[] | null) ?? [])
       .map((row) => ({ row, company: Array.isArray(row.empresas) ? row.empresas[0] : row.empresas }))
       .filter((item) => item.company !== null && item.company !== undefined)
       .map(({ row, company }) => ({
+        idEmpresa: company!.id,
         ticker: company!.ticker,
         nombre: company!.nombre,
         precio: row.precio,
@@ -253,6 +246,37 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
         tier: row.tier,
         reglaSalida: row.regla_salida,
       }));
+
+    const idsParaBacktest = opportunities
+      .filter((o) => o.tier === "TIER_0" || o.tier === "TIER_1")
+      .map((o) => o.idEmpresa);
+
+    let backtestPorEmpresa = new Map<number, { casos_totales: number; ganados: number; perdidos: number; estancados: number; dias_suma: number }>();
+
+    if (idsParaBacktest.length > 0) {
+      const { data: backtestRows } = await this.supabase
+        .from("backtest")
+        .select("id_empresa, casos_totales, ganados, perdidos, estancados, dias_suma")
+        .in("id_empresa", idsParaBacktest);
+
+      backtestPorEmpresa = new Map(
+        (backtestRows ?? []).map((b) => [b.id_empresa, b])
+      );
+    }
+
+    return opportunities.map(({ idEmpresa, ...opportunity }) => {
+      const bt = backtestPorEmpresa.get(idEmpresa);
+      if (!bt || bt.casos_totales === 0) return opportunity;
+
+      return {
+        ...opportunity,
+        backtestCasos: bt.casos_totales,
+        backtestExitoPct: Math.round((bt.ganados / bt.casos_totales) * 100),
+        backtestPerdidoPct: Math.round((bt.perdidos / bt.casos_totales) * 100),
+        backtestEstancadoPct: Math.round((bt.estancados / bt.casos_totales) * 100),
+        backtestDiasMedios: Math.round(bt.dias_suma / bt.casos_totales),
+      };
+    });
   }
 
   private isScanHistorySchemaUnavailable(code?: string): boolean {

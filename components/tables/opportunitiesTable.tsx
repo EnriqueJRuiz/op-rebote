@@ -41,7 +41,7 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
 }
 
 function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
-  const { backtestCasos, backtestExitoPct, backtestDiasMedios } = opportunity;
+  const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios } = opportunity;
 
   if (backtestCasos === undefined) {
     return <span className="text-slate-400">{UI_TEXT.table.values.noData}</span>;
@@ -51,9 +51,11 @@ function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
 
   return (
     <div className="leading-tight">
-      <span className={`font-semibold ${pocaMuestra ? "text-amber-600" : "text-emerald-700"}`}>
-        {backtestExitoPct}% éxito
-      </span>
+      <div className="flex gap-2 font-semibold">
+        <span className="text-emerald-700">{backtestExitoPct}% ganó</span>
+        <span className="text-amber-600">{backtestEstancadoPct}% estancó</span>
+        <span className="text-rose-700">{backtestPerdidoPct}% perdió</span>
+      </div>
       <span className="block text-xs text-slate-500">
         {backtestCasos} casos · {backtestDiasMedios}d media
         {pocaMuestra && <span className="ml-1 text-amber-600">(poca muestra)</span>}

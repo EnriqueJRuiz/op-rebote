@@ -57,6 +57,8 @@ export interface StockCandidate extends Company {
   minimoReciente?: number;
   backtestCasos?: number;
   backtestExitoPct?: number;
+  backtestPerdidoPct?: number;
+  backtestEstancadoPct?: number;
   backtestDiasMedios?: number;
 }
 
