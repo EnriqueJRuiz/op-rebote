@@ -8,6 +8,7 @@ import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { useRouter } from "next/navigation";
 import { LoadingOverlay } from "@/components/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
+import { UI_STYLES } from "@/styles/ui-styles";
 
 type RadarAction = "discover" | "scan";
 
@@ -49,7 +50,7 @@ export function SyncButton() {
           type="button"
           onClick={() => handleClick("discover")}
           disabled={activeAction !== null}
-          className="inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className={UI_STYLES.button.primaryFull}
         >
           <Search size={16} aria-hidden="true" />
           <span className="truncate">{activeAction === "discover" ? UI_TEXT.buttons.syncing : UI_TEXT.buttons.sync}</span>
@@ -58,7 +59,7 @@ export function SyncButton() {
           type="button"
           onClick={() => handleClick("scan")}
           disabled={activeAction !== null}
-          className="inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className={UI_STYLES.button.primaryFull}
         >
           <RefreshCw size={16} className={activeAction === "scan" ? "animate-spin" : ""} aria-hidden="true" />
           <span className="truncate">{activeAction === "scan" ? UI_TEXT.buttons.updatingQuotes : UI_TEXT.buttons.updateQuotes}</span>

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -9,6 +9,7 @@ import { StockCandidate } from "@/domain/models/trading";
 import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
 import { LoadingOverlay } from "@/components/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
+import { UI_STYLES } from "@/styles/ui-styles";
 
 interface SearchReboundsButtonProps {
   initialOpportunities: StockCandidate[];
@@ -66,7 +67,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
           <button
             onClick={handleClick}
             disabled={loading}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+            className={UI_STYLES.button.primaryFull}
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
             {loading ? UI_TEXT.buttons.searching : UI_TEXT.buttons.search}

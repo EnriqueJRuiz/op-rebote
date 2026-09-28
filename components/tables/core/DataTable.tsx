@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { UI_TEXT } from "@/domain/literales.constantes";
+import { UI_STYLES } from "@/styles/ui-styles";
 
 export interface Column<T> {
   header: string;
@@ -71,14 +72,14 @@ export function DataTable<T>({
   };
 
   return (
-    <section className={`overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm shadow-slate-200/60 ${containerClassName}`}>
+    <section className={UI_STYLES.table.container}>
       {(title || subtitle) && <header className="border-b border-slate-200 bg-slate-100/80 px-5 py-4">
         {title && <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>}
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       </header>}
       <div className={`${mobileRow ? "hidden md:block" : "block"} overflow-x-auto`}>
         <table className="w-full border-collapse text-left">
-          <thead className="bg-slate-50">
+          <thead className={UI_STYLES.table.thead}>
             <tr className="border-b border-slate-200 text-sm text-slate-600">
               {columns.map((column, index) => (
                 <th key={column.header} className="p-4">
@@ -104,7 +105,7 @@ export function DataTable<T>({
         return <div key={key}>{mobileRow(item, expanded, () => setExpandedKey(expanded ? null : key))}</div>;
       })}</div>}
       {data.length === 0 && <p className="border-t border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">{emptyMessage}</p>}
-      <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-100/80 px-4 py-3 text-sm text-slate-500 sm:px-5 sm:py-4">
+      <div className={UI_STYLES.table.footer}>
         <span className="whitespace-nowrap">{firstRecord}-{lastRecord} {UI_TEXT.table.pagination.pageOf} {data.length}<span className="hidden sm:inline"> {recordsLabel}</span></span>
         <div className="flex items-center gap-2 sm:gap-3">
           <label className="flex items-center gap-2" htmlFor={`${title ?? "data-table"}-page-size`}>{UI_TEXT.table.pagination.pageSize}

@@ -1,4 +1,4 @@
-import { SearchReboundsButton } from "@/components/rebound/search-button";
+import { SearchReboundsButton } from "@/components/buttons/search-button";
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
