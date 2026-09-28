@@ -41,6 +41,26 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
   );
 }
 
+function RelativeVolume({ opportunity }: { opportunity: StockCandidate }) {
+  const value = opportunity.volumenRelativo;
+
+  if (!Number.isFinite(value)) {
+    return (
+      <span className="text-slate-400">
+        {UI_TEXT.table.values.noData}
+      </span>
+    );
+  }
+
+  return (
+    <span className="font-medium text-slate-700">
+      {typeof value === "number" && Number.isFinite(value)
+        ? `${value.toFixed(2)}x`
+        : UI_TEXT.table.values.noData}
+    </span>
+  );
+}
+
 function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
   const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios } = opportunity;
 
@@ -92,6 +112,13 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
       , sortValue: (opportunity) => opportunity.volumen
       , render: (opportunity) => opportunity.volumen.toLocaleString() 
     },
+    {
+      header: UI_TEXT.table.columns.relativeVolume,
+      sortValue: (opportunity) => opportunity.volumenRelativo ?? -Infinity,
+      render: (opportunity) => (
+        <RelativeVolume opportunity={opportunity} />
+      ),
+    },
     { 
       header: UI_TEXT.table.columns.recentFloor
       , sortValue: getFloorDistancePercent
@@ -138,6 +165,10 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
           <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volume}</p>
             <p className={UI_STYLES.table.mobileValue}>{opportunity.volumen.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-slate-500">{UI_TEXT.table.columns.relativeVolume}</p>
+            <p className="text-slate-700"><RelativeVolume opportunity={opportunity} /></p>
           </div>
           <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>

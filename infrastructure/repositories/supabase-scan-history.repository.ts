@@ -20,6 +20,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         lote_id: loteId,
         precio: stock.precio,
         volumen: Math.round(stock.volumen),
+        volumen_relativo: stock.volumenRelativo ?? null,
         rsi: stock.rsi,
         capitalizacion: stock.capitalizacion ?? null,
         minimo_reciente: stock.minimoReciente ?? null,
@@ -152,7 +153,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(id, ticker, nombre, categoria)")
+      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(id, ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
@@ -170,6 +171,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
     type StoredOpportunity = {
       precio: number;
       volumen: number;
+      volumen_relativo?: number | null;
       rsi: number;
       capitalizacion?: number;
       minimo_reciente?: number | null;
@@ -187,6 +189,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         nombre: company!.nombre,
         precio: row.precio,
         volumen: row.volumen,
+        volumenRelativo: row.volumen_relativo ?? undefined,
         rsi: row.rsi,
         capitalizacion: row.capitalizacion,
         minimoReciente: row.minimo_reciente ?? undefined,

@@ -60,6 +60,7 @@ export const UI_TEXT = {
       price: "Precio",
       rsi: "RSI",
       volume: "Volumen",
+      relativeVolume: "Volumen relativo",
       recentFloor: "Suelo reciente",
       lastPrice: "Último precio",
       previousDayChange: "Variación respecto al último escaneo del día anterior",
