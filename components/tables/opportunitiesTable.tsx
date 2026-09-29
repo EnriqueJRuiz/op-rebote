@@ -41,6 +41,25 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
   );
 }
 
+function Sma200Distance({ opportunity }: { opportunity: StockCandidate }) {
+  const distance = opportunity.distSma200Pct;
+
+  if (distance === undefined || !Number.isFinite(distance)) {
+    return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
+  }
+
+  const label = `${distance >= 0 ? "+" : ""}${distance.toFixed(2)}%`;
+
+  return (
+    <span
+      className={distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : `font-medium ${UI_STYLES.badge.success}`}
+      title="Distancia del precio a la media móvil de 200 sesiones"
+    >
+      {label}
+    </span>
+  );
+}
+
 function RelativeVolume({ opportunity }: { opportunity: StockCandidate }) {
   const value = opportunity.volumenRelativo;
 
@@ -62,7 +81,9 @@ function RelativeVolume({ opportunity }: { opportunity: StockCandidate }) {
 }
 
 function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
-  const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios } = opportunity;
+  const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios, backtestSobreSma, backtestBajoSma } = opportunity;
+  const formatGroup = (group?: { casos: number; exitoPct: number }) =>
+    group ? `${group.exitoPct}% (${group.casos})` : "s/d";
 
   if (backtestCasos === undefined) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
@@ -81,6 +102,14 @@ function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
         {backtestCasos} casos · {backtestDiasMedios}d media
         {pocaMuestra && <span className={`ml-1 ${UI_STYLES.badge.warning}`}>(poca muestra)</span>}
       </span>
+      {(backtestSobreSma || backtestBajoSma) && (
+        <span
+          className={`block text-xs ${UI_STYLES.text.muted}`}
+          title="% de señales ganadoras (y nº de casos) según el precio estuviera por encima o por debajo de la SMA200 al dar la señal"
+        >
+          SMA200: sobre {formatGroup(backtestSobreSma)} · bajo {formatGroup(backtestBajoSma)}
+        </span>
+      )}
     </div>
   );
 }
@@ -123,6 +152,11 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
       header: UI_TEXT.table.columns.recentFloor
       , sortValue: getFloorDistancePercent
       , render: (opportunity) => <FloorDistance opportunity={opportunity} /> 
+    },
+    {
+      header: UI_TEXT.table.columns.sma200,
+      sortValue: (opportunity) => opportunity.distSma200Pct ?? -Infinity,
+      render: (opportunity) => <Sma200Distance opportunity={opportunity} />,
     },
     { 
       header: UI_TEXT.table.columns.backtest
@@ -173,6 +207,10 @@ function OpportunityBlock({ title, opportunities, subtitle }: { title: string; o
           <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>
             <p className={UI_STYLES.table.mobileValue}><FloorDistance opportunity={opportunity} /></p>
+          </div>
+          <div>
+            <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sma200}</p>
+            <p className={UI_STYLES.table.mobileValue}><Sma200Distance opportunity={opportunity} /></p>
           </div>
           <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.backtest}</p>

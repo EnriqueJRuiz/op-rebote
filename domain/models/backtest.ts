@@ -11,6 +11,24 @@ export interface RsiSeriesPoint {
   precio: number;
   volumen: number;
   rsi: number;
+  /** Media móvil simple de 200 sesiones; null si aún no hay 200 sesiones de histórico. */
+  sma200?: number | null;
+}
+
+/** Resultados acumulados de un grupo de señales (por encima o por debajo de la SMA200). */
+export interface BacktestGroup {
+  casos: number;
+  ganados: number;
+  perdidos: number;
+  estancados: number;
+  diasSuma: number;
+}
+
+export interface PendingSignal {
+  fecha: string;
+  precio: number;
+  /** true = precio >= SMA200 al dar la señal, false = por debajo, null = sin dato de SMA200. */
+  sobreSma: boolean | null;
 }
 
 export interface BacktestSummary {
@@ -19,5 +37,7 @@ export interface BacktestSummary {
   perdidos: number;
   estancados: number;
   diasSuma: number;
-  pendientes: { fecha: string; precio: number }[];
+  pendientes: PendingSignal[];
+  sobreSma: BacktestGroup;
+  bajoSma: BacktestGroup;
 }

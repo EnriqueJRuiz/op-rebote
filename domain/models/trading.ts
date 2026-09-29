@@ -65,6 +65,15 @@ export interface StockCandidate extends Company {
   backtestPerdidoPct?: number;
   backtestEstancadoPct?: number;
   backtestDiasMedios?: number;
+  distSma200Pct?: number;
+  backtestSobreSma?: {
+    casos: number;
+    exitoPct: number;
+  }
+  backtestBajoSma?: {
+    casos: number;
+    exitoPct: number;
+  }
 }
 
 export interface CompanyMetadata {
