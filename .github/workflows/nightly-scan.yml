@@ -4,7 +4,7 @@ on:
   schedule:
     # Se ejecuta cada 15 minutos desde las 7:00 hasta las 23:00 de lunes a viernes
     - cron: '0,15,30,45 7-23 * * 1-5'
-  workflow_dispatch: # Permite probarlo manualmente haciendo clic en la pestaña "Actions" de GitHub
+  workflow_dispatch: # Permite probarlo manualmente desde la pestaña "Actions" de GitHub
 
 jobs:
   run-cron:
@@ -14,9 +14,13 @@ jobs:
         run: |
           echo "🚀 Lanzando escaneo de Trade Republic..."
 
-          RESPONSE=$(curl -sS -L -w "\nHTTP_STATUS:%{http_code}" \
-            -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan?x-vercel-protection-bypass=${{ secrets.VERCEL_BYPASS_SECRET }}" \
+          STATUS=$(curl -sS -o response.txt -w "%{http_code}" \
+            -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
 
-          echo "📡 Respuesta de Vercel:"
-          echo "$RESPONSE"
+          echo "📡 HTTP $STATUS"
+          cat response.txt
+          echo
+
+          # Falla el job si el endpoint no responde 200 (así un error no parece éxito)
+          [ "$STATUS" = "200" ] || exit 1

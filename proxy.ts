@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   // Creamos el cliente de Supabase optimizado para el middleware
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -39,7 +39,8 @@ export async function proxy(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/api/cron') // protegido con CRON_SECRET en la propia ruta
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
