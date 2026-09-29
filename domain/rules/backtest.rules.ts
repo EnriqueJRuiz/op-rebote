@@ -1,11 +1,11 @@
 // domain/rules/backtest.rules.ts
 import { RSI } from "technicalindicators";
-import { APP_CONFIG } from "@/domain/constants";
+import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 import { TRADING_RULES } from "@/domain/rules/trading.rules";
 import { HistoricalCandle, RsiSeriesPoint, BacktestSummary } from "@/domain/models/backtest";
 
 export function buildRsiSeries(candles: HistoricalCandle[]): RsiSeriesPoint[] {
-  const period = APP_CONFIG.YAHOO_CONFIG.RSI_PERIOD;
+  const period = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;
   if (candles.length <= period) return [];
 
   const closes = candles.map((c) => c.precio);

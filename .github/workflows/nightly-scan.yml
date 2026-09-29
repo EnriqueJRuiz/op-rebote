@@ -1,10 +1,16 @@
-name: Trade Republic Market Sync (15 min)
+name: Trade Republic Market Sync
 
 on:
   schedule:
-    # Se ejecuta cada 15 minutos desde las 7:00 hasta las 23:00 de lunes a viernes
-    - cron: '0,15,30,45 7-23 * * 1-5'
-  workflow_dispatch: # Permite probarlo manualmente desde la pestaña "Actions" de GitHub
+    # Cada 30 min, 7:30-23:00 hora de España en verano e invierno (UTC)
+    - cron: '30 5 * * 1-5'
+    - cron: '0,30 6-21 * * 1-5'
+    - cron: '0 22 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: market-sync
+  cancel-in-progress: false
 
 jobs:
   run-cron:
@@ -12,15 +18,9 @@ jobs:
     steps:
       - name: Trigger Server Endpoint
         run: |
-          echo "🚀 Lanzando escaneo de Trade Republic..."
-
-          STATUS=$(curl -sS -o response.txt -w "%{http_code}" \
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
             -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
 
-          echo "📡 HTTP $STATUS"
-          cat response.txt
-          echo
-
-          # Falla el job si el endpoint no responde 200 (así un error no parece éxito)
-          [ "$STATUS" = "200" ] || exit 1
+          echo "HTTP $STATUS"
+          [ "$STATUS" = "200" ] || { echo "Error en el escaneo"; exit 1; }

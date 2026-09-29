@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { handleSyncMarketAction } from '@/app/actions/sync-market';
 import { handleSearchReboundsAction } from '@/app/actions/search-rebounds';
 
+export const maxDuration = 300;
+
 export async function GET(request: Request) {
   try {
     // Verificación de seguridad mediante token secreto

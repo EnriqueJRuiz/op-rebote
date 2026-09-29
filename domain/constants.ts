@@ -6,14 +6,6 @@ export const APP_CONFIG = {
   INITIAL_CAPITAL_TEST: 100,
   MONTHLY_CONTRIBUTION: 25,
 
-  // Nuevas constantes para el cálculo de Yahoo Finance / RSI
-  YAHOO_CONFIG: {
-    DEFAULT_RSI: 50,
-    RSI_PERIOD: 14,
-    HISTORY_MONTHS_OFFSET: 3,
-    BACKTEST_YEARS_OFFSET: 5,
-  },
-
   DB: {
     TABLES: {
       EMPRESAS: "empresas",
@@ -28,11 +20,11 @@ export const APP_CONFIG = {
   },
 
   CATEGORIES: {
-  TOP: "TOP" as const,
-  MID: "MID" as const,
-  TIER_0: "TIER_0" as const,
-  TIER_1: "TIER_1" as const,
-},
+    TOP: "TOP" as const,
+    MID: "MID" as const,
+    TIER_0: "TIER_0" as const,
+    TIER_1: "TIER_1" as const,
+  },
   
 } as const;
 
@@ -73,4 +65,3 @@ export function getDividendTier(ticker: string): DividendTier {
   if ((DIVIDEND_ARISTOCRATS as readonly string[]).includes(ticker)) return DIVIDEND_TIERS.ARISTOCRAT;
   return null;
 }
-

@@ -5,6 +5,7 @@ import { MarketRepositoryPort } from "@/application/ports/market-repository.port
 import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { APP_CONFIG } from "@/domain/constants";
+import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
 import {
   YahooCompanyQuote,
@@ -19,9 +20,9 @@ import { YahooUniverseFilter } from "./yahoo-universe.filter";
 import { HistoricalCandle } from "@/domain/models/backtest";
 
 export class YahooFinanceAdapter implements MarketRepositoryPort {
-  private static readonly DEFAULT_RSI = APP_CONFIG.YAHOO_CONFIG.DEFAULT_RSI;
-  private static readonly RSI_PERIOD = APP_CONFIG.YAHOO_CONFIG.RSI_PERIOD;
-  private static readonly HISTORY_MONTHS_OFFSET = APP_CONFIG.YAHOO_CONFIG.HISTORY_MONTHS_OFFSET;
+  private static readonly DEFAULT_RSI = STRATEGY_CONFIG.YAHOO.DEFAULT_RSI;
+  private static readonly RSI_PERIOD = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;
+  private static readonly HISTORY_MONTHS_OFFSET = STRATEGY_CONFIG.YAHOO.HISTORY_MONTHS_OFFSET;
   
   
   private readonly yf = new YahooFinance({ suppressNotices: ["yahooSurvey"], });
@@ -281,7 +282,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
   private getBacktestStartDate(): string {
     const date = new Date();
-    date.setFullYear(date.getFullYear() - APP_CONFIG.YAHOO_CONFIG.BACKTEST_YEARS_OFFSET);
+    date.setFullYear(date.getFullYear() - STRATEGY_CONFIG.YAHOO.BACKTEST_YEARS_OFFSET);
     return date.toISOString().split("T")[0];
   }
   

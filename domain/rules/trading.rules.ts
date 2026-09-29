@@ -1,17 +1,8 @@
 import { TierLevel, ExitRule } from '../models/trading';
 import { APP_CONFIG, DIVIDEND_TIERS, DividendTier } from "@/domain/constants";
+import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
-export const TRADING_RULES = {
-  OVERSOLD_THRESHOLD: 30,
-  MIN_DAILY_VOLUME: 500_000,
-  TIME_STOP_DAYS: 15,
-  MAX_STOP_LOSS_PCT: 7,
-  MAX_MA_DEVIATION_PCT: 10,
-  PROFIT_TARGET_PCT: 8,
-  MIN_CURRENT_RATIO: 1.0, 
-  MAX_DEBT_TO_EQUITY: 250,     
-  MIN_ROE: 0,
-} as const;
+export const TRADING_RULES = STRATEGY_CONFIG.TRADING;
 
 export interface EvaluationContext {
   rsi: number;
@@ -45,7 +36,7 @@ export function evaluateCandidateTierAndExit(input: {
   }
 
   // 2. TIER 1: candidatos no-King que superan los filtros más exigentes
-  if (esValido && rsi <= 25) {
+  if (esValido && rsi <= TRADING_RULES.TIER1_RSI_THRESHOLD) {
     return {
       tier: APP_CONFIG.CATEGORIES.TIER_1,
       reglaSalida: origenCategoria === APP_CONFIG.CATEGORIES.MID
