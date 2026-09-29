@@ -28,8 +28,8 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
   }
 
   const label = distance < 0
-    ? `${Math.abs(distance).toFixed(1)}% ${UI_TEXT.floor.underMinimum}`
-    : `${distance.toFixed(1)}% ${UI_TEXT.floor.overMinimum}`;
+    ? `${Math.abs(distance).toFixed(2)}% ${UI_TEXT.floor.underMinimum}`
+    : `${distance.toFixed(2)}% ${UI_TEXT.floor.overMinimum}`;
 
   return (
     <span className={distance < 0 

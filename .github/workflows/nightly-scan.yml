@@ -12,5 +12,11 @@ jobs:
     steps:
       - name: Trigger Server Endpoint
         run: |
-          curl -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          echo "🚀 Lanzando nightly scan..."
+
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          echo "📡 Respuesta de Vercel:"
+          echo "$RESPONSE"

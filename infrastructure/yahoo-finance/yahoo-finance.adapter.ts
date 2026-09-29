@@ -74,7 +74,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const avgVolume = historicalVolumes.length > 30 
       ? historicalVolumes.slice(-30).reduce((a, b) => a + b, 0) / 30 
       : (historicalVolumes.length > 0 ? historicalVolumes.reduce((a, b) => a + b, 0) / historicalVolumes.length : 1);
-    console.log(`avgVolume para ${ticker}:`, avgVolume );
     const quote = quoteResult as unknown as YahooCompanyQuote & {
       longName?: string;
       shortName?: string;
@@ -84,7 +83,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
     const volumenActual = this.getYahooNumber(quote.regularMarketVolume);
     const volumenRelativo = Number((volumenActual / (avgVolume || 1)).toFixed(2));
-    console.log(`volumenRelativo para ${ticker}:`, avgVolume );
     const summary = summaryResult as unknown as YahooCompanySummary | null;
     const marketCap = this.getYahooNumber(summary?.price?.marketCap) || this.getYahooNumber(quote.marketCap);
 

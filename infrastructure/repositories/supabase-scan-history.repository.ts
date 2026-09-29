@@ -45,6 +45,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           lote_id: loteId,
           precio: stock.precio,
           volumen: Math.round(stock.volumen),
+          volumen_relativo: stock.volumenRelativo ?? null,
           rsi: stock.rsi,
           capitalizacion: stock.capitalizacion ?? null,
           minimo_reciente: stock.minimoReciente ?? null,
