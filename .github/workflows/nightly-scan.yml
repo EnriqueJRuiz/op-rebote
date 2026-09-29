@@ -1,9 +1,9 @@
-name: Nightly Market Scan & Sync
+name: Trade Republic Market Sync (15 min)
 
 on:
   schedule:
-    # Se ejecuta todos los días a las 23:00 UTC (ajusta si lo prefieres en otra hora)
-    - cron: '0 23 * * *'
+    # Se ejecuta cada 15 minutos desde las 7:00 hasta las 23:00 de lunes a viernes
+    - cron: '0,15,30,45 7-23 * * 1-5'
   workflow_dispatch: # Permite probarlo manualmente haciendo clic en la pestaña "Actions" de GitHub
 
 jobs:
@@ -12,10 +12,11 @@ jobs:
     steps:
       - name: Trigger Server Endpoint
         run: |
-          echo "🚀 Lanzando nightly scan..."
+          echo "🚀 Lanzando escaneo de Trade Republic..."
 
           RESPONSE=$(curl -sS -L -w "\nHTTP_STATUS:%{http_code}" \
-            -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan?x-vercel-protection-bypass=${{ secrets.VERCEL_BYPASS_SECRET }}" \
+            -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_BYPASS_SECRET }}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
 
           echo "📡 Respuesta de Vercel:"
