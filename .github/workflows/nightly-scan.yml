@@ -16,6 +16,7 @@ jobs:
 
           RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
             -X GET "https://op-rebote.vercel.app/api/cron/nightly-scan" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_BYPASS_SECRET }}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
 
           echo "📡 Respuesta de Vercel:"
