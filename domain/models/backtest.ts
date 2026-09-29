@@ -27,8 +27,6 @@ export interface BacktestGroup {
 export interface PendingSignal {
   fecha: string;
   precio: number;
-  /** true = precio >= SMA200 al dar la señal, false = por debajo, null = sin dato de SMA200. */
-  sobreSma: boolean | null;
 }
 
 export interface BacktestSummary {

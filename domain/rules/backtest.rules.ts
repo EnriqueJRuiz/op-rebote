@@ -46,7 +46,10 @@ export function runBacktest(candles: HistoricalCandle[]): BacktestSummary {
   const serie = buildRsiSeries(candles);
 
   let casosTotales = 0, ganados = 0, perdidos = 0, estancados = 0, diasSuma = 0;
-  const pendientes: { fecha: string; precio: number }[] = [];
+  const pendientes: { fecha: string; precio: number; }[] = [];
+  // Inicialización de los dos grupos exigidos por BacktestSummary
+  const sobreSma = { casos: 0, ganados: 0, perdidos: 0, estancados: 0, diasSuma: 0 };
+  const bajoSma = { casos: 0, ganados: 0, perdidos: 0, estancados: 0, diasSuma: 0 };
 
   for (let i = 0; i < serie.length; i++) {
     const punto = serie[i];
@@ -67,7 +70,7 @@ export function runBacktest(candles: HistoricalCandle[]): BacktestSummary {
     else estancados++;
   }
 
-  return { casosTotales, ganados, perdidos, estancados, diasSuma, pendientes };
+  return { casosTotales, ganados, perdidos, estancados, diasSuma, pendientes, sobreSma, bajoSma };
 }
 
 function diasEntre(fechaInicio: string, fechaFin: string): number {
@@ -80,7 +83,7 @@ export function continueBacktest(
   previo: BacktestSummary,
   nuevasFilas: RsiSeriesPoint[]
 ): BacktestSummary {
-  let { casosTotales, ganados, perdidos, estancados, diasSuma } = previo;
+  let { casosTotales, ganados, perdidos, estancados, diasSuma, sobreSma, bajoSma } = previo;
   let pendientes = [...previo.pendientes];
 
   for (const fila of nuevasFilas) {
@@ -111,5 +114,5 @@ export function continueBacktest(
     }
   }
 
-  return { casosTotales, ganados, perdidos, estancados, diasSuma, pendientes };
+  return { casosTotales, ganados, perdidos, estancados, diasSuma, pendientes, sobreSma, bajoSma };
 }
