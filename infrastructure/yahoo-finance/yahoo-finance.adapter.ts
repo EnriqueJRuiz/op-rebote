@@ -1,10 +1,10 @@
 import YahooFinance from "yahoo-finance2";
-import { RSI } from "technicalindicators";
+import { RSI, SMA } from "technicalindicators";
 
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
 import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
-import { APP_CONFIG } from "@/domain/constants";
+import { APP_CONFIG, SMA_PERIOD } from "@/domain/constants";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
 import {
@@ -23,6 +23,8 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
   private static readonly DEFAULT_RSI = STRATEGY_CONFIG.YAHOO.DEFAULT_RSI;
   private static readonly RSI_PERIOD = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;
   private static readonly HISTORY_MONTHS_OFFSET = STRATEGY_CONFIG.YAHOO.HISTORY_MONTHS_OFFSET;
+  // 200 sesiones ≈ 10 meses de calendario; 12 deja margen por festivos
+  private static readonly SMA_HISTORY_MONTHS = 12;
   
   
   private readonly yf = new YahooFinance({ suppressNotices: ["yahooSurvey"], });
@@ -46,7 +48,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const [quoteResult, chartResult, summaryResult] = await Promise.all([
       this.fetchQuote(ticker),
       this.yf.chart(ticker, {
-        period1: this.getHistoryStartDate(),
+        period1: this.getSmaHistoryStartDate(),
         interval: "1d",
       }),
       includeMetadata
@@ -56,7 +58,15 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
         : Promise.resolve(null),
     ]);
 
+    // El RSI se sigue calculando con la ventana de siempre (no cambia su valor)...
+    const rsiStart = new Date(this.getHistoryStartDate());
     const closes = chartResult.quotes
+      .filter((q) => q.date >= rsiStart)
+      .map((q) => q.close)
+      .filter((close): close is number => close !== null && close !== undefined);
+
+    // ...y la SMA200 usa todo el histórico descargado
+    const allCloses = chartResult.quotes
       .map((q) => q.close)
       .filter((close): close is number => close !== null && close !== undefined);
 
@@ -87,6 +97,12 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const summary = summaryResult as unknown as YahooCompanySummary | null;
     const marketCap = this.getYahooNumber(summary?.price?.marketCap) || this.getYahooNumber(quote.marketCap);
 
+    const precioActual = this.getYahooNumber(quote.regularMarketPrice);
+    const sma200 = this.calculateSma(allCloses);
+    const distSma200Pct = sma200 !== undefined && sma200 > 0 && precioActual > 0
+      ? Number((((precioActual - sma200) / sma200) * 100).toFixed(2))
+      : undefined;
+
     const baseStock: StockCandidate = {
       ticker,
       nombre: quote.longName ?? quote.shortName ?? ticker,
@@ -97,6 +113,8 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       esValido: false,
       volumenRelativo,
       minimoReciente,
+      sma200,
+      distSma200Pct,
     };
 
     if (!includeMetadata || !summary) {
@@ -170,6 +188,19 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const date = new Date();
     date.setMonth(date.getMonth() - YahooFinanceAdapter.HISTORY_MONTHS_OFFSET);
     return date.toISOString().split("T")[0];
+  }
+
+  private getSmaHistoryStartDate(): string {
+    const date = new Date();
+    date.setMonth(date.getMonth() - YahooFinanceAdapter.SMA_HISTORY_MONTHS);
+    return date.toISOString().split("T")[0];
+  }
+
+  private calculateSma(closes: number[]): number | undefined {
+    if (closes.length < SMA_PERIOD) return undefined;
+    const values = SMA.calculate({ values: closes, period: SMA_PERIOD });
+    const last = values[values.length - 1];
+    return last === undefined ? undefined : Number(last.toFixed(4));
   }
 
   private calculateRsi(closes: number[]): number {

@@ -20,13 +20,16 @@ export const APP_CONFIG = {
   },
 
   CATEGORIES: {
-    TOP: "TOP" as const,
-    MID: "MID" as const,
-    TIER_0: "TIER_0" as const,
-    TIER_1: "TIER_1" as const,
-  },
+  TOP: "TOP" as const,
+  MID: "MID" as const,
+  TIER_0: "TIER_0" as const,
+  TIER_1: "TIER_1" as const,
+},
   
 } as const;
+
+// Periodo de la media móvil simple usada como referencia de tendencia (SMA200)
+export const SMA_PERIOD = 200;
 
 export const APP_ROUTES = {
   HOME: "/",

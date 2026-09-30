@@ -1,3 +1,4 @@
+// domain/models/backtest.ts
 export interface HistoricalCandle {
   fecha: string;
   precio: number;
@@ -27,6 +28,7 @@ export interface BacktestGroup {
 export interface PendingSignal {
   fecha: string;
   precio: number;
+  sobreSma: boolean | null;
 }
 
 export interface BacktestSummary {

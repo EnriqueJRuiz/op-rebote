@@ -46,6 +46,11 @@ export interface CompanyScanQuote {
   previousDayPrice?: number;
 }
 
+export interface BacktestGroupStats {
+  casos: number;
+  exitoPct: number;
+}
+
 export interface StockCandidate extends Company {
   rsi: number;
   capitalizacion?: number;
@@ -65,15 +70,10 @@ export interface StockCandidate extends Company {
   backtestPerdidoPct?: number;
   backtestEstancadoPct?: number;
   backtestDiasMedios?: number;
-  distSma200Pct?: number;
-  backtestSobreSma?: {
-    casos: number;
-    exitoPct: number;
-  }
-  backtestBajoSma?: {
-    casos: number;
-    exitoPct: number;
-  }
+  sma200?: number;
+  distSma200Pct?: number; // (precio - SMA200) / SMA200 * 100
+  backtestSobreSma?: BacktestGroupStats; // señales con el precio >= SMA200
+  backtestBajoSma?: BacktestGroupStats;  // señales con el precio < SMA200
 }
 
 export interface CompanyMetadata {
