@@ -1,5 +1,5 @@
 import { SyncButton } from "@/components/buttons/sync-button";
-import { CompanyTable } from "@/components/tables/companyTable";
+import { CompanyTable } from "@/components/tables/companies/company-table";
 import { APP_CONFIG } from "@/domain/constants";
 import { CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";

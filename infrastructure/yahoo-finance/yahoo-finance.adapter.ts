@@ -1,35 +1,28 @@
 import YahooFinance from "yahoo-finance2";
-import { RSI, SMA } from "technicalindicators";
-
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
 import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
-import { APP_CONFIG, SMA_PERIOD } from "@/domain/constants";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
-
 import {
   YahooCompanyQuote,
   YahooCompanySummary,
-  YahooNumericValue,
   YahooScreenerQuery,
   YahooScreenerRequest,
 } from "./yahoo-finance.types";
 import { YahooScreenerClient } from "./yahoo-screener.client";
 import { YahooScreenerMapper } from "./yahoo-screener.mapper";
 import { YahooUniverseFilter } from "./yahoo-universe.filter";
+import { YahooSnapshotMapper } from "./yahoo-snapshot.mapper";
 import { HistoricalCandle } from "@/domain/models/backtest";
 
 export class YahooFinanceAdapter implements MarketRepositoryPort {
-  private static readonly DEFAULT_RSI = STRATEGY_CONFIG.YAHOO.DEFAULT_RSI;
-  private static readonly RSI_PERIOD = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;
   private static readonly HISTORY_MONTHS_OFFSET = STRATEGY_CONFIG.YAHOO.HISTORY_MONTHS_OFFSET;
-  // 200 sesiones ≈ 10 meses de calendario; 12 deja margen por festivos
   private static readonly SMA_HISTORY_MONTHS = 12;
-  
-  
-  private readonly yf = new YahooFinance({ suppressNotices: ["yahooSurvey"], });
+
+  private readonly yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
   private readonly screenerClient = new YahooScreenerClient(this.yf);
-  private readonly mapper = new YahooScreenerMapper();
+  private readonly screenerMapper = new YahooScreenerMapper();
+  private readonly snapshotMapper = new YahooSnapshotMapper();
   private readonly universeFilter = new YahooUniverseFilter();
 
   async getStockData(ticker: string): Promise<StockCandidate> {
@@ -41,7 +34,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     }
   }
 
- async getCompanySnapshot(ticker: string, includeMetadata = true): Promise<{
+  async getCompanySnapshot(ticker: string, includeMetadata = true): Promise<{
     stock: StockCandidate;
     metadata?: CompanyMetadata;
   }> {
@@ -58,114 +51,48 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
         : Promise.resolve(null),
     ]);
 
-    // El RSI se sigue calculando con la ventana de siempre (no cambia su valor)...
     const rsiStart = new Date(this.getHistoryStartDate());
-    const closes = chartResult.quotes
+    const rsiCloses = chartResult.quotes
       .filter((q) => q.date >= rsiStart)
       .map((q) => q.close)
       .filter((close): close is number => close !== null && close !== undefined);
 
-    // ...y la SMA200 usa todo el histórico descargado
     const allCloses = chartResult.quotes
       .map((q) => q.close)
       .filter((close): close is number => close !== null && close !== undefined);
 
-    const recentLows = chartResult.quotes
-      .slice(-6, -1)
-      .map((quote) => quote.low)
-      .filter((low): low is number => low !== null && low !== undefined && low > 0);
-    const minimoReciente = recentLows.length > 0 ? Math.min(...recentLows) : undefined;
-
-    // CÁLCULO DEL VOLUMEN RELATIVO (Últimos 30 días)
+    const recentLows = chartResult.quotes.map((quote) => quote.low);
     const historicalVolumes = chartResult.quotes
       .map((q) => q.volume)
       .filter((v): v is number => v !== null && v !== undefined);
-    
 
-    const avgVolume = historicalVolumes.length > 30 
-      ? historicalVolumes.slice(-30).reduce((a, b) => a + b, 0) / 30 
-      : (historicalVolumes.length > 0 ? historicalVolumes.reduce((a, b) => a + b, 0) / historicalVolumes.length : 1);
     const quote = quoteResult as unknown as YahooCompanyQuote & {
       longName?: string;
       shortName?: string;
       regularMarketPrice?: number;
       regularMarketVolume?: number;
+      marketCap?: number;
     };
-
-    const volumenActual = this.getYahooNumber(quote.regularMarketVolume);
-    const volumenRelativo = Number((volumenActual / (avgVolume || 1)).toFixed(2));
     const summary = summaryResult as unknown as YahooCompanySummary | null;
-    const marketCap = this.getYahooNumber(summary?.price?.marketCap) || this.getYahooNumber(quote.marketCap);
 
-    const precioActual = this.getYahooNumber(quote.regularMarketPrice);
-    // Cierre de la sesión anterior según el calendario propio de cada bolsa (penúltima vela diaria)
-    const precioAnterior = allCloses.length >= 2
-      ? Number(allCloses[allCloses.length - 2].toFixed(4))
-      : undefined;
-    const sma200 = this.calculateSma(allCloses);
-    const distSma200Pct = sma200 !== undefined && sma200 > 0 && precioActual > 0
-      ? Number((((precioActual - sma200) / sma200) * 100).toFixed(2))
-      : undefined;
-
-    const baseStock: StockCandidate = {
+    const baseStock = this.snapshotMapper.toStockCandidate({
       ticker,
-      nombre: quote.longName ?? quote.shortName ?? ticker,
-      precio: this.getYahooNumber(quote.regularMarketPrice),
-      rsi: this.calculateRsi(closes),
-      volumen: volumenActual,
-      capitalizacion: marketCap,
-      esValido: false,
-      volumenRelativo,
-      minimoReciente,
-      precioAnterior,
-      sma200,
-      distSma200Pct,
-    };
+      quote,
+      summary,
+      rsiCloses,
+      allCloses,
+      recentLows,
+      historicalVolumes,
+    });
 
     if (!includeMetadata || !summary) {
       return { stock: baseStock };
     }
 
-    const dividendValues = [
-      summary.summaryDetail?.dividendRate,
-      summary.summaryDetail?.dividendYield,
-      summary.summaryDetail?.trailingAnnualDividendRate,
-      summary.summaryDetail?.trailingAnnualDividendYield,
-      quote.dividendRate,
-      quote.dividendYield,
-      quote.trailingAnnualDividendRate,
-      quote.trailingAnnualDividendYield,
-    ];
-    const paysDividend = dividendValues.some((value) => this.getYahooNumber(value) > 0);
-    const financialData = summary.financialData;
-
     return {
       stock: baseStock,
-      metadata: {
-        tipoActivo: quote.quoteType ?? APP_CONFIG.DB.DEFAULTS.ASSET_TYPE,
-        esDividendo: paysDividend,
-        sector: summary.assetProfile?.sector ?? APP_CONFIG.DB.DEFAULTS.SECTOR,
-        dividendRate: this.getYahooNumber(summary.summaryDetail?.dividendRate),
-        dividendYield: this.getYahooNumber(summary.summaryDetail?.dividendYield),
-        industria: summary.assetProfile?.industry,
-        pais: summary.assetProfile?.country,
-        bolsa: summary.price?.exchangeName ?? quote.fullExchangeName ?? quote.exchange,
-        moneda: summary.price?.currency ?? quote.currency,
-        web: summary.assetProfile?.website,
-        capitalizacion: marketCap,
-        currentRatio: this.getYahooNumber(financialData?.currentRatio),
-        debtToEquity: this.getYahooNumber(financialData?.debtToEquity),
-        returnOnEquity: this.getYahooNumber(financialData?.returnOnEquity),
-        profitMargin: this.getYahooNumber(financialData?.profitMargins),
-        freeCashFlow: this.getYahooNumber(financialData?.freeCashflow),
-        totalCash: this.getYahooNumber(financialData?.totalCash),
-        totalDebt: this.getYahooNumber(financialData?.totalDebt),
-      },
+      metadata: this.snapshotMapper.toCompanyMetadata(quote, summary, baseStock.capitalizacion),
     };
-  }
-
-  private getYahooNumber(value: YahooNumericValue | undefined): number {
-    return typeof value === "number" ? value : value?.raw ?? 0;
   }
 
   async getCompanyMetadata(ticker: string): Promise<CompanyMetadata> {
@@ -174,7 +101,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
   async getInitialUniverse(): Promise<UniverseStock[]> {
     try {
-      // Las ejecutamos secuencialmente para que los logs salgan ordenados en la terminal
       const topCaps = await this.getTopCaps();
       const midCaps = await this.getMidCaps();
 
@@ -201,35 +127,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     return date.toISOString().split("T")[0];
   }
 
-  private calculateSma(closes: number[]): number | undefined {
-    if (closes.length < SMA_PERIOD) return undefined;
-    const values = SMA.calculate({ values: closes, period: SMA_PERIOD });
-    const last = values[values.length - 1];
-    return last === undefined ? undefined : Number(last.toFixed(4));
-  }
-
-  private calculateRsi(closes: number[]): number {
-    if (closes.length < YahooFinanceAdapter.RSI_PERIOD) {
-      return YahooFinanceAdapter.DEFAULT_RSI;
-    }
-
-    const rsiValues = RSI.calculate({
-      values: closes,
-      period: YahooFinanceAdapter.RSI_PERIOD,
-    });
-
-    if (rsiValues.length === 0) {
-      return YahooFinanceAdapter.DEFAULT_RSI;
-    }
-
-    const lastRsi = rsiValues[rsiValues.length - 1];
-    return Number(lastRsi.toFixed(2));
-  }
-
   private async getTopCaps(): Promise<UniverseStock[]> {
-    console.log("\n=============================================");
-    console.log("BUSQUEDA: TOP-CAPS");
-    console.log("=============================================");
     const stocks = await this.getCandidatesByRegion(
       UNIVERSE_RULES.TOP_CANDIDATES_PER_REGION,
       (region) => ({
@@ -242,9 +140,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
   }
 
   private async getMidCaps(): Promise<UniverseStock[]> {
-    console.log("\n=============================================");
-    console.log("BUSQUEDA: MID-CAPS");
-    console.log("=============================================");
     const stocks = await this.getCandidatesByRegion(
       UNIVERSE_RULES.MID_CANDIDATES_PER_REGION,
       (region) => ({
@@ -266,18 +161,14 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
   ): Promise<UniverseStock[]> {
     const regionPromises = UNIVERSE_RULES.REGIONS.map(async (region) => {
       const quotes = await this.searchCaps(count, buildQuery(region));
-      const regionStocks = this.mapper.toUniverseStocks(quotes);
-      
-      console.log(`${region.toUpperCase()}: ${regionStocks.length} candidatos`);
-      
-      return regionStocks;
+      return this.screenerMapper.toUniverseStocks(quotes);
     });
 
     const results = await Promise.all(regionPromises);
     return this.removeDuplicateTickers(results.flat());
   }
 
-  private async searchCaps(count: number, query: YahooScreenerQuery ) {
+  private async searchCaps(count: number, query: YahooScreenerQuery) {
     const request: YahooScreenerRequest = {
       offset: 0,
       size: count,
@@ -293,7 +184,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     return this.screenerClient.search(request);
   }
 
-  private removeDuplicateTickers( stocks: UniverseStock[]): UniverseStock[] {
+  private removeDuplicateTickers(stocks: UniverseStock[]): UniverseStock[] {
     return Array.from(
       new Map(stocks.map((stock) => [stock.ticker, stock])).values()
     );
@@ -321,5 +212,4 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     date.setFullYear(date.getFullYear() - STRATEGY_CONFIG.YAHOO.BACKTEST_YEARS_OFFSET);
     return date.toISOString().split("T")[0];
   }
-  
 }

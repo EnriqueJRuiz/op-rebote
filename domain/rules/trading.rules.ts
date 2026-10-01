@@ -1,4 +1,4 @@
-import { TierLevel, ExitRule } from '../models/trading';
+import { TierLevel, ExitRule, StockCandidate } from '../models/trading';
 import { APP_CONFIG, DIVIDEND_TIERS, DividendTier } from "@/domain/constants";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
@@ -14,6 +14,31 @@ export interface EvaluationContext {
 export interface EvaluationResult {
   tier: TierLevel;
   reglaSalida: ExitRule;
+}
+
+/**
+ * Evalúa las reglas de negocio para determinar si un candidato supera los filtros de rebote y fundamentales.
+ */
+export function evaluateStockCandidateValidity(stockData: StockCandidate): StockCandidate {
+  const { MIN_DAILY_VOLUME, OVERSOLD_THRESHOLD, MIN_CURRENT_RATIO, MAX_DEBT_TO_EQUITY, MIN_ROE } = TRADING_RULES;
+  const cumpleVolumen = stockData.volumen >= MIN_DAILY_VOLUME;
+  const cumpleRsi = stockData.rsi <= OVERSOLD_THRESHOLD;
+  const cumpleLiquidez = stockData.currentRatio !== undefined && stockData.currentRatio >= MIN_CURRENT_RATIO;
+  const cumpleDeuda = stockData.debtToEquity !== undefined && stockData.debtToEquity <= MAX_DEBT_TO_EQUITY;
+  const cumpleRentabilidad = stockData.returnOnEquity !== undefined && stockData.returnOnEquity > MIN_ROE;
+
+  const reasons: string[] = [];
+  if (!cumpleVolumen) reasons.push(`Volumen insuficiente (< ${MIN_DAILY_VOLUME.toLocaleString()}).`);
+  if (!cumpleRsi) reasons.push(`RSI fuera de rango (> ${OVERSOLD_THRESHOLD}).`);
+  if (!cumpleLiquidez) reasons.push(`Liquidez baja (Current Ratio < ${MIN_CURRENT_RATIO}).`);
+  if (!cumpleDeuda) reasons.push(`Endeudamiento excesivo (Debt/Equity > ${MAX_DEBT_TO_EQUITY}).`);
+  if (!cumpleRentabilidad) reasons.push(`Rentabilidad insuficiente (ROE <= ${MIN_ROE}).`);
+
+  return {
+    ...stockData,
+    esValido: cumpleVolumen && cumpleRsi && cumpleLiquidez && cumpleDeuda && cumpleRentabilidad,
+    motivoDescarte: reasons.length > 0 ? reasons.join(" ") : undefined,
+  };
 }
 
 /**

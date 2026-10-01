@@ -111,6 +111,14 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
   }
 
   async getLatestOpportunities(): Promise<StockCandidate[]> {
+    return this.fetchScanBatchCandidates({ filterOnlyValid: true });
+  }
+
+  async getAllLatestScanCandidates(): Promise<StockCandidate[]> {
+    return this.fetchScanBatchCandidates({ filterOnlyValid: false });
+  }
+
+  private async fetchScanBatchCandidates({ filterOnlyValid }: { filterOnlyValid: boolean }): Promise<StockCandidate[]> {
     const { data: latestRows, error: latestError } = await this.supabase
       .from("historico_escaneos")
       .select("lote_id, escaneado_en")
@@ -119,7 +127,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     if (latestError) {
       if (isScanHistorySchemaUnavailable(latestError.code) || isTransientSupabaseError(latestError)) {
-        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.", {
+        console.warn("No se pudo consultar temporalmente el último lote:", {
           code: latestError.code,
           message: latestError.message,
         });
@@ -131,24 +139,29 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
     const latest = (latestRows as Array<{ lote_id: string }> | null)?.[0];
     if (!latest) return [];
 
-    const { data: rows, error } = await this.supabase
+    let query = this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, empresas(id, ticker, nombre, categoria)")
-      .eq("lote_id", latest.lote_id)
-      .eq("es_valido", true);
+      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, precio_anterior, empresas(id, ticker, nombre, categoria, sector, moneda, bolsa)")
+      .eq("lote_id", latest.lote_id);
+
+    if (filterOnlyValid) {
+      query = query.eq("es_valido", true);
+    }
+
+    const { data: rows, error } = await query;
 
     if (error) {
       if (isScanHistorySchemaUnavailable(error.code) || isTransientSupabaseError(error)) {
-        console.warn("No se pudo consultar temporalmente el último lote; se muestran oportunidades vacías.", {
+        console.warn("No se pudieron consultar temporalmente los candidatos del último lote:", {
           code: error.code,
           message: error.message,
         });
         return [];
       }
-      throw new Error(`No se pudieron recuperar las oportunidades: ${error.message}`);
+      throw new Error(`No se pudieron recuperar los candidatos del último escaneo: ${error.message}`);
     }
 
-    type StoredOpportunity = {
+    type StoredCandidate = {
       precio: number;
       volumen: number;
       volumen_relativo?: number | null;
@@ -157,12 +170,14 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       minimo_reciente?: number | null;
       sma200?: number | null;
       dist_sma200_pct?: number | null;
+      precio_anterior?: number | null;
+      es_valido?: boolean;
       tier?: any;
       regla_salida?: any;
-      empresas: { id: number; ticker: string; nombre: string; categoria?: any } | Array<{ id: number; ticker: string; nombre: string; categoria?: any }> | null;
+      empresas: { id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string } | Array<{ id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string }> | null;
     };
 
-    const opportunities = ((rows as StoredOpportunity[] | null) ?? [])
+    const candidates = ((rows as StoredCandidate[] | null) ?? [])
       .map((row) => ({ row, company: Array.isArray(row.empresas) ? row.empresas[0] : row.empresas }))
       .filter((item) => item.company !== null && item.company !== undefined)
       .map(({ row, company }) => ({
@@ -175,22 +190,19 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         rsi: row.rsi,
         capitalizacion: row.capitalizacion,
         minimoReciente: row.minimo_reciente ?? undefined,
+        precioAnterior: row.precio_anterior === null || row.precio_anterior === undefined ? undefined : Number(row.precio_anterior),
         sma200: row.sma200 === null || row.sma200 === undefined ? undefined : Number(row.sma200),
         distSma200Pct: row.dist_sma200_pct === null || row.dist_sma200_pct === undefined ? undefined : Number(row.dist_sma200_pct),
         categoria: company!.categoria,
-        esValido: true,
+        sector: company!.sector,
+        moneda: company!.moneda,
+        bolsa: company!.bolsa,
+        esValido: row.es_valido ?? false,
         tier: row.tier,
         reglaSalida: row.regla_salida,
       }));
 
-    const idsParaBacktest = opportunities
-      .filter((o) => 
-        o.tier === APP_CONFIG.CATEGORIES.TIER_0 ||
-        o.tier === APP_CONFIG.CATEGORIES.TIER_1 ||
-        o.tier === APP_CONFIG.CATEGORIES.TOP ||
-        o.tier === APP_CONFIG.CATEGORIES.MID
-      )
-      .map((o) => o.idEmpresa);
+    const idsParaBacktest = candidates.map((o) => o.idEmpresa);
 
     let backtestPorEmpresa = new Map<number, { casos_totales: number; ganados: number; perdidos: number; estancados: number; dias_suma: number; sobre_sma200?: BacktestGroup | null; bajo_sma200?: BacktestGroup | null }>();
 
@@ -208,12 +220,13 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
     const statsGrupo = (g?: BacktestGroup | null) =>
       g && g.casos > 0 ? { casos: g.casos, exitoPct: Math.round((g.ganados / g.casos) * 100) } : undefined;
 
-    return opportunities.map(({ idEmpresa, ...opportunity }) => {
+    return candidates.map(({ idEmpresa, ...candidate }) => {
       const bt = backtestPorEmpresa.get(idEmpresa);
-      if (!bt || bt.casos_totales === 0) return opportunity;
+      if (!bt || bt.casos_totales === 0) return { idEmpresa, ...candidate };
 
       return {
-        ...opportunity,
+        idEmpresa,
+        ...candidate,
         backtestCasos: bt.casos_totales,
         backtestExitoPct: Math.round((bt.ganados / bt.casos_totales) * 100),
         backtestPerdidoPct: Math.round((bt.perdidos / bt.casos_totales) * 100),

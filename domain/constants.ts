@@ -34,6 +34,7 @@ export const SMA_PERIOD = 200;
 export const APP_ROUTES = {
   HOME: "/",
   OPORTUNIDADES: "/oportunidades",
+  SEGUIMIENTO: "/seguimiento",
   EMPRESAS_RADAR: "/empresas-radar",
 } as const;
 

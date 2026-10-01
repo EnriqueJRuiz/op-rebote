@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { StockCandidate } from "@/domain/models/trading";
-import { ReboundOpportunities } from "@/components/tables/opportunitiesTable";
+import { ReboundOpportunities } from "@/components/tables/opportunities/rebound-opportunities";
 import { LoadingOverlay } from "@/components/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";

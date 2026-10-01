@@ -8,6 +8,7 @@ export const UI_TEXT = {
   navigation: {
     home: "Inicio",
     opportunities: "Oportunidades",
+    watchlist: "Seguimiento",
     companies: "Empresas radar",
     open: "Abrir navegación",
     close: "Cerrar navegación",
@@ -19,6 +20,15 @@ export const UI_TEXT = {
     opportunities: {
       title: "Oportunidades de rebote",
       description: "Empresas candidatas a oportunidades de rebote.",
+    },
+    watchlist: {
+      title: "Empresas en seguimiento",
+      description: "Acciones marcadas para monitorizar su evolución, confirmación de rebote y niveles clave.",
+      statTotal: "Total en Seguimiento",
+      statOversold: "En Sobreventa (RSI ≤ 30)",
+      statAboveFloor: "Sobre Soporte / Suelo",
+      goToOpportunities: "Ir a Oportunidades",
+      goToRadar: "Explorar Empresas Radar",
     },
     companies: {
       title: "Empresas radar",
@@ -55,6 +65,7 @@ export const UI_TEXT = {
       TIER_0: "Sobreventa y filtros de calidad superados",
     },
     columns: {
+      follow: "Seguir",
       ticker: "Ticker",
       name: "Nombre",
       price: "Precio",
@@ -70,6 +81,8 @@ export const UI_TEXT = {
       dividendYield: "Rentabilidad por dividendo",
       searchByNameOrTicker: "Buscar por nombre o ticker",
       backtest: "Backtest histórico",
+      actions: "Acciones",
+      status: "Estado rebote",
     },
     backtestBySmaTitle: "% de aciertos históricos según el precio estuviera por encima o por debajo de la SMA200 al dar la señal.",
     filters: {
@@ -94,6 +107,9 @@ export const UI_TEXT = {
       unknownSector: "Desconocido",
       notAvailable: "-",
       noData: "Sin datos",
+      followActive: "Siguiendo (clic para quitar)",
+      followInactive: "Seguir esta empresa",
+      unfollow: "Dejar de seguir",
     },
     formatting: {
       percentageUnit: "%",
@@ -101,6 +117,7 @@ export const UI_TEXT = {
     pagination: {
       companyRecords: "empresas",
       opportunityRecords: "oportunidades",
+      watchlistRecords: "en seguimiento",
       defaultRecords: "registros",
       pageSize: "Ver",
       previousPage: "Página anterior",
@@ -114,6 +131,8 @@ export const UI_TEXT = {
       companies: "No hay empresas en esta categoría.",
       noCompaniesMatchSearch: "No hay empresas que coincidan con la búsqueda.",
       opportunities: "No hay oportunidades que cumplan el segundo filtro.",
+      watchlist: "No tienes ninguna empresa en seguimiento. Puedes marcar empresas usando el icono de favoritos en la pantalla de Oportunidades o en Empresas Radar.",
+      watchlistFilter: "No hay empresas en seguimiento que coincidan con la búsqueda.",
     },
     sorting: {
       byColumn: (label: string) => `Ordenar por ${label.toLowerCase()}`,

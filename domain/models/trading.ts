@@ -52,6 +52,10 @@ export interface BacktestGroupStats {
 }
 
 export interface StockCandidate extends Company {
+  idEmpresa?: number;
+  sector?: string;
+  moneda?: string;
+  bolsa?: string;
   rsi: number;
   capitalizacion?: number;
   esValido: boolean;

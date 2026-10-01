@@ -12,6 +12,27 @@ export const UI_STYLES = {
     icon: "cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40",
   },
 
+  follow: {
+    active: "border border-indigo-200 bg-indigo-50/80 text-indigo-600 hover:bg-indigo-100/80",
+    inactive: "text-slate-300 hover:bg-slate-100 hover:text-indigo-600",
+    iconActive: "fill-indigo-500 text-indigo-600",
+    iconInactive: "group-hover:text-indigo-600",
+  },
+
+  card: {
+    base: "rounded-xl border border-slate-200 bg-white p-4 shadow-sm",
+    statIndigo: "flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm",
+    statEmerald: "flex items-center gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-sm",
+    statTeal: "flex items-center gap-4 rounded-xl border border-teal-100 bg-teal-50/40 p-4 shadow-sm",
+    empty: "rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm",
+    iconIndigo: "flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600",
+    iconEmerald: "flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700",
+    iconTeal: "flex h-11 w-11 items-center justify-center rounded-lg bg-teal-100 text-teal-700",
+    emptyIcon: "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600",
+    linkPrimary: "inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-teal-700",
+    linkSecondary: "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50",
+  },
+
   table: {
     container: "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm",
     header: "border-b border-slate-200 bg-slate-100/80 px-5 py-4",
@@ -54,6 +75,11 @@ export const UI_STYLES = {
     warning: "text-amber-600",
     danger: "text-rose-700",
     muted: "text-slate-400",
+    dividendKing: "text-amber-500",
+    dividendAristocrat: "text-slate-500",
+    rsiExtreme: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+    rsiOversold: "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold",
+    rsiNeutral: "bg-slate-100 text-slate-700 border-slate-200",
   },
 
   text: {
