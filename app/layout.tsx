@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: UI_TEXT.metadata.title,
   description: UI_TEXT.metadata.description,
+  applicationName: UI_TEXT.brand,
+  appleWebApp: {
+    capable: true,
+    title: UI_TEXT.brand,
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
