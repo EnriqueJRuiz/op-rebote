@@ -1,4 +1,4 @@
-name: Trade Republic Market Sync
+name: Market Sync
 
 on:
   schedule:

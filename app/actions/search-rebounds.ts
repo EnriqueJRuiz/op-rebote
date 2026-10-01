@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { APP_CONFIG, APP_ROUTES, getDividendTier } from "@/domain/constants";
+import { APP_ROUTES, getDividendTier } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyRecord, StockCandidate } from "@/domain/models/trading";
 import { createApplicationDependencies } from "@/infrastructure/composition";
@@ -19,6 +19,8 @@ export async function handleSearchReboundsAction() {
     const loteId = crypto.randomUUID();
 
     const results: PromiseSettledResult<StockCandidate>[] = [];
+    const failures: string[] = [];
+    let savedCount = 0;
 
     for (
       let index = 0;
@@ -85,11 +87,19 @@ export async function handleSearchReboundsAction() {
         })
       );
 
+      batchResults.forEach((result, position) => {
+        if (result.status === "rejected") {
+          const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+          failures.push(`${batch[position].ticker}: ${reason}`);
+        }
+      });
+
       const fulfilled = batchResults.filter(
         (r): r is PromiseFulfilledResult<ScanOutcome> => r.status === "fulfilled"
       );
 
       if (fulfilled.length > 0) {
+        savedCount += fulfilled.length;
         await scanHistoryRepository.saveScanResults(
           fulfilled.map(({ value }) => ({
             companyId: value.company.id,
@@ -102,12 +112,9 @@ export async function handleSearchReboundsAction() {
       for (const { value } of fulfilled) {
         const { company, classifiedCandidate } = value;
 
-        if (
-          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TIER_0 ||
-          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TIER_1 ||
-          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.TOP ||
-          classifiedCandidate.tier === APP_CONFIG.CATEGORIES.MID
-        ) {
+        // Solo las candidatas que pasan los filtros (las que salen en la lista de oportunidades).
+        // OJO: classifyCandidate asigna siempre un tier, así que comprobar el tier no filtraba nada.
+        if (classifiedCandidate.esValido) {
           try {
             await runBacktest.execute(company.id, company.ticker);
           } catch (backtestError) {
@@ -128,6 +135,11 @@ export async function handleSearchReboundsAction() {
       );
     }
 
+    console.log(`Escaneo: ${savedCount} guardadas, ${failures.length} fallidas de ${companies.length} empresas.`);
+    if (failures.length > 0) {
+      console.warn("Primeros fallos del escaneo:", failures.slice(0, 10));
+    }
+
     const opportunities = await scanHistoryRepository.getLatestOpportunities();
 
     revalidatePath(APP_ROUTES.OPORTUNIDADES);
@@ -136,6 +148,8 @@ export async function handleSearchReboundsAction() {
     return {
       success: true,
       opportunities,
+      scanned: savedCount,
+      failed: failures.length,
       message: UI_TEXT.feedback.searchCompleted(companies.length, opportunities.length),
     };
   } catch (error) {

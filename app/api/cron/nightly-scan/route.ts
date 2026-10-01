@@ -20,6 +20,14 @@ export async function GET(request: Request) {
     // 2. Ejecuta el análisis de rebotes y guardado (equivalente al segundo botón)
     const scanResult = await handleSearchReboundsAction();
 
+    if (!scanResult.success) {
+      console.error("El escaneo terminó con error:", scanResult.message);
+      return NextResponse.json(
+        { success: false, error: "El escaneo ha fallado", timestamp: new Date().toISOString() },
+        { status: 500 }
+      );
+    }
+
     console.log("Tarea nocturna completada con éxito.");
 
     return NextResponse.json({ 

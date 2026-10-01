@@ -2,7 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port";
 import { CompanyScanQuote, StockCandidate } from "@/domain/models/trading";
-import { RsiSeriesPoint } from "@/domain/models/backtest";
+import { RsiSeriesPoint, BacktestGroup } from "@/domain/models/backtest";
 import { isScanHistorySchemaUnavailable, isTransientSupabaseError } from "@/infrastructure/repositories/supabase-error-utils";
 import { APP_CONFIG } from "@/domain/constants";
 
@@ -27,6 +27,8 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         es_valido: stock.esValido,
         tier: stock.tier ?? "NULL",
         regla_salida: stock.reglaSalida ?? null,
+        sma200: stock.sma200 ?? null,
+        dist_sma200_pct: stock.distSma200Pct ?? null,
       });
 
     if (error) {
@@ -52,6 +54,8 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           es_valido: stock.esValido,
           tier: stock.tier ?? "NULL",
           regla_salida: stock.reglaSalida ?? null,
+          sma200: stock.sma200 ?? null,
+          dist_sma200_pct: stock.distSma200Pct ?? null,
         }))
       );
 
@@ -154,7 +158,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     const { data: rows, error } = await this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, empresas(id, ticker, nombre, categoria)")
+      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, empresas(id, ticker, nombre, categoria)")
       .eq("lote_id", latest.lote_id)
       .eq("es_valido", true);
 
@@ -176,6 +180,8 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       rsi: number;
       capitalizacion?: number;
       minimo_reciente?: number | null;
+      sma200?: number | null;
+      dist_sma200_pct?: number | null;
       tier?: any;
       regla_salida?: any;
       empresas: { id: number; ticker: string; nombre: string; categoria?: any } | Array<{ id: number; ticker: string; nombre: string; categoria?: any }> | null;
@@ -194,6 +200,8 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         rsi: row.rsi,
         capitalizacion: row.capitalizacion,
         minimoReciente: row.minimo_reciente ?? undefined,
+        sma200: row.sma200 === null || row.sma200 === undefined ? undefined : Number(row.sma200),
+        distSma200Pct: row.dist_sma200_pct === null || row.dist_sma200_pct === undefined ? undefined : Number(row.dist_sma200_pct),
         categoria: company!.categoria,
         esValido: true,
         tier: row.tier,
@@ -209,18 +217,21 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       )
       .map((o) => o.idEmpresa);
 
-    let backtestPorEmpresa = new Map<number, { casos_totales: number; ganados: number; perdidos: number; estancados: number; dias_suma: number }>();
+    let backtestPorEmpresa = new Map<number, { casos_totales: number; ganados: number; perdidos: number; estancados: number; dias_suma: number; sobre_sma200?: BacktestGroup | null; bajo_sma200?: BacktestGroup | null }>();
 
     if (idsParaBacktest.length > 0) {
       const { data: backtestRows } = await this.supabase
         .from("backtest")
-        .select("id_empresa, casos_totales, ganados, perdidos, estancados, dias_suma")
+        .select("id_empresa, casos_totales, ganados, perdidos, estancados, dias_suma, sobre_sma200, bajo_sma200")
         .in("id_empresa", idsParaBacktest);
 
       backtestPorEmpresa = new Map(
         (backtestRows ?? []).map((b) => [b.id_empresa, b])
       );
     }
+
+    const statsGrupo = (g?: BacktestGroup | null) =>
+      g && g.casos > 0 ? { casos: g.casos, exitoPct: Math.round((g.ganados / g.casos) * 100) } : undefined;
 
     return opportunities.map(({ idEmpresa, ...opportunity }) => {
       const bt = backtestPorEmpresa.get(idEmpresa);
@@ -233,6 +244,8 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         backtestPerdidoPct: Math.round((bt.perdidos / bt.casos_totales) * 100),
         backtestEstancadoPct: Math.round((bt.estancados / bt.casos_totales) * 100),
         backtestDiasMedios: Math.round(bt.dias_suma / bt.casos_totales),
+        backtestSobreSma: statsGrupo(bt.sobre_sma200),
+        backtestBajoSma: statsGrupo(bt.bajo_sma200),
       };
     });
   }
@@ -240,16 +253,29 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
   async getScanHistorySince(companyId: number, sinceFecha: string): Promise<RsiSeriesPoint[]> {
     const { data, error } = await this.supabase
       .from("historico_escaneos")
-      .select("fecha, precio, rsi, volumen")
+      .select("fecha, precio, rsi, volumen, sma200")
       .eq("empresa_id", companyId)
       .gt("fecha", sinceFecha)
-      .order("fecha", { ascending: true });
+      .order("fecha", { ascending: true })
+      .order("escaneado_en", { ascending: true });
 
     if (error) {
       throw new Error(`No se pudo leer el histórico de escaneos de la empresa ${companyId}: ${error.message}`);
     }
 
-    return ((data as { fecha: string; precio: number; rsi: number; volumen: number }[] | null) ?? [])
-      .map((row) => ({ fecha: row.fecha, precio: row.precio, rsi: row.rsi, volumen: row.volumen }));
+    // Hay un escaneo cada 30 min: nos quedamos con UNA fila por día (la última de cada fecha).
+    const porFecha = new Map<string, { fecha: string; precio: number; rsi: number; volumen: number; sma200: number | null }>();
+    for (const row of (data as { fecha: string; precio: number; rsi: number; volumen: number; sma200: number | null }[] | null) ?? []) {
+      porFecha.set(row.fecha, row);
+    }
+
+    return Array.from(porFecha.values())
+      .map((row) => ({
+        fecha: row.fecha,
+        precio: row.precio,
+        rsi: row.rsi,
+        volumen: row.volumen,
+        sma200: row.sma200 === null || row.sma200 === undefined ? null : Number(row.sma200),
+      }));
   }
 }

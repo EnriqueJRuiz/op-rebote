@@ -8,6 +8,15 @@ import { runBacktest, continueBacktest } from "@/domain/rules/backtest.rules";
 // como máximo esta cantidad por ejecución, para no pasarse del tiempo máximo de la función.
 const MAX_MIGRATION_REBUILDS_PER_RUN = 60;
 
+// El backtest solo se actualiza para empresas que pasan los filtros. Si una lleva más de estos días
+// sin actualizarse, el histórico de escaneos tiene demasiadas filas intradía: se reconstruye desde
+// las velas diarias de Yahoo (exacto y barato, porque son pocas empresas).
+const MAX_DAYS_INCREMENTAL = 5;
+
+function daysBetween(from: string, to: string): number {
+  return Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86_400_000);
+}
+
 export class RunBacktestUseCase {
   private migrationRebuilds = 0;
 
@@ -35,6 +44,11 @@ export class RunBacktestUseCase {
     }
 
     if (existente.fechaActualizacion === hoy) return;
+
+    if (daysBetween(existente.fechaActualizacion, hoy) > MAX_DAYS_INCREMENTAL) {
+      await this.rebuild(idEmpresa, ticker);
+      return;
+    }
 
     const nuevasFilas = await this.scanHistoryRepository.getScanHistorySince(idEmpresa, existente.fechaActualizacion);
     if (nuevasFilas.length === 0) return;
