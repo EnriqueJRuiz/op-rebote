@@ -27,6 +27,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         es_valido: stock.esValido,
         tier: stock.tier ?? "NULL",
         regla_salida: stock.reglaSalida ?? null,
+        precio_anterior: stock.precioAnterior ?? null,
         sma200: stock.sma200 ?? null,
         dist_sma200_pct: stock.distSma200Pct ?? null,
       });
@@ -54,6 +55,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           es_valido: stock.esValido,
           tier: stock.tier ?? "NULL",
           regla_salida: stock.reglaSalida ?? null,
+          precio_anterior: stock.precioAnterior ?? null,
           sma200: stock.sma200 ?? null,
           dist_sma200_pct: stock.distSma200Pct ?? null,
         }))
@@ -65,12 +67,12 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
   }
 
   async getLatestScanQuotes(): Promise<CompanyScanQuote[]> {
-    type ScanBatchReference = { lote_id: string; fecha: string };
-    type ScanPriceRow = { empresa_id: number; precio: number };
+    type ScanBatchReference = { lote_id: string };
+    type ScanPriceRow = { empresa_id: number; precio: number; precio_anterior: number | null };
 
     const { data: latestRows, error: latestError } = await this.supabase
       .from("historico_escaneos")
-      .select("lote_id, fecha")
+      .select("lote_id")
       .order("escaneado_en", { ascending: false })
       .limit(1);
 
@@ -84,26 +86,9 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
     const latestBatch = (latestRows as ScanBatchReference[] | null)?.[0];
     if (!latestBatch) return [];
 
-    const previousDate = new Date(`${latestBatch.fecha}T00:00:00.000Z`);
-    if (Number.isNaN(previousDate.getTime())) return [];
-    previousDate.setUTCDate(previousDate.getUTCDate() - 1);
-    const previousDateString = previousDate.toISOString().slice(0, 10);
-
-    const { data: previousBatchRows, error: previousBatchError } = await this.supabase
-      .from("historico_escaneos")
-      .select("lote_id, fecha")
-      .eq("fecha", previousDateString)
-      .order("escaneado_en", { ascending: false })
-      .limit(1);
-
-    if (previousBatchError && !isScanHistorySchemaUnavailable(previousBatchError.code) && !isTransientSupabaseError(previousBatchError)) {
-      throw new Error(`No se pudo localizar el escaneo del día anterior: ${previousBatchError.message}`);
-    }
-
-    const previousBatch = (previousBatchRows as ScanBatchReference[] | null)?.[0];
     const { data: currentRows, error: currentError } = await this.supabase
       .from("historico_escaneos")
-      .select("empresa_id, precio")
+      .select("empresa_id, precio, precio_anterior")
       .eq("lote_id", latestBatch.lote_id);
 
     if (currentError) {
@@ -113,25 +98,15 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       throw new Error(`No se pudieron recuperar los precios del último escaneo: ${currentError.message}`);
     }
 
-    let previousRows: ScanPriceRow[] = [];
-    if (previousBatch) {
-      const { data, error } = await this.supabase
-        .from("historico_escaneos")
-        .select("empresa_id, precio")
-        .eq("lote_id", previousBatch.lote_id);
-
-      if (error && !isScanHistorySchemaUnavailable(error.code) && !isTransientSupabaseError(error)) {
-        throw new Error(`No se pudieron recuperar los precios del día anterior: ${error.message}`);
-      }
-      previousRows = (data as ScanPriceRow[] | null) ?? [];
-    }
-
-    const previousPrices = new Map(previousRows.map((row) => [row.empresa_id, Number(row.precio)]));
-
+    // La variación diaria usa el cierre de la sesión anterior que guarda cada escaneo.
+    // Si falta (escaneos antiguos), no se muestra variación en vez de mostrar un 0.00% engañoso.
     return ((currentRows as ScanPriceRow[] | null) ?? []).map((row) => ({
       companyId: row.empresa_id,
       price: Number(row.precio),
-      previousDayPrice: previousPrices.get(row.empresa_id),
+      previousDayPrice:
+        row.precio_anterior === null || row.precio_anterior === undefined
+          ? undefined
+          : Number(row.precio_anterior),
     }));
   }
 

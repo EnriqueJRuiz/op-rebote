@@ -98,6 +98,10 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const marketCap = this.getYahooNumber(summary?.price?.marketCap) || this.getYahooNumber(quote.marketCap);
 
     const precioActual = this.getYahooNumber(quote.regularMarketPrice);
+    // Cierre de la sesión anterior según el calendario propio de cada bolsa (penúltima vela diaria)
+    const precioAnterior = allCloses.length >= 2
+      ? Number(allCloses[allCloses.length - 2].toFixed(4))
+      : undefined;
     const sma200 = this.calculateSma(allCloses);
     const distSma200Pct = sma200 !== undefined && sma200 > 0 && precioActual > 0
       ? Number((((precioActual - sma200) / sma200) * 100).toFixed(2))
@@ -113,6 +117,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       esValido: false,
       volumenRelativo,
       minimoReciente,
+      precioAnterior,
       sma200,
       distSma200Pct,
     };

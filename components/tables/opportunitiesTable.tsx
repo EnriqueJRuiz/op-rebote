@@ -43,20 +43,35 @@ function FloorDistance({ opportunity }: { opportunity: StockCandidate }) {
 
 function Sma200Distance({ opportunity }: { opportunity: StockCandidate }) {
   const distance = opportunity.distSma200Pct;
-
-  if (distance === undefined || !Number.isFinite(distance)) {
-    return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
-  }
-
-  const label = `${distance >= 0 ? "+" : ""}${distance.toFixed(2)}%`;
+  const hasDistance = distance !== undefined && Number.isFinite(distance);
+  const label = hasDistance
+    ? `${distance >= 0 ? "+" : ""}${distance.toFixed(2)}%`
+    : UI_TEXT.table.values.noData;
 
   return (
-    <span
-      className={distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : `font-medium ${UI_STYLES.badge.success}`}
-      title="Distancia del precio a la media móvil de 200 sesiones"
-    >
-      {label}
-    </span>
+    <div className="leading-tight">
+      <span
+        className={hasDistance
+          ? distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : `font-medium ${UI_STYLES.badge.success}`
+          : UI_STYLES.badge.muted}
+        title="Distancia del precio a la media móvil de 200 sesiones"
+      >
+        {label}
+      </span>
+      {(opportunity.backtestSobreSma || opportunity.backtestBajoSma) && (
+        <span
+          className={`mt-1 block text-[10px] ${UI_STYLES.text.muted}`}
+          title={UI_TEXT.table.backtestBySmaTitle}
+        >
+          {opportunity.backtestSobreSma && (
+            <span className="block">Sobre {opportunity.backtestSobreSma.exitoPct}% ({opportunity.backtestSobreSma.casos})</span>
+          )}
+          {opportunity.backtestBajoSma && (
+            <span className="block">Bajo {opportunity.backtestBajoSma.exitoPct}% ({opportunity.backtestBajoSma.casos})</span>
+          )}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -81,9 +96,7 @@ function RelativeVolume({ opportunity }: { opportunity: StockCandidate }) {
 }
 
 function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
-  const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios, backtestSobreSma, backtestBajoSma } = opportunity;
-  const formatGroup = (group?: { casos: number; exitoPct: number }) =>
-    group ? `${group.exitoPct}% (${group.casos})` : "s/d";
+  const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios } = opportunity;
 
   if (backtestCasos === undefined) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
@@ -102,14 +115,6 @@ function BacktestInfo({ opportunity }: { opportunity: StockCandidate }) {
         {backtestCasos} casos · {backtestDiasMedios}d media
         {pocaMuestra && <span className={`ml-1 ${UI_STYLES.badge.warning}`}>(poca muestra)</span>}
       </span>
-      {(backtestSobreSma || backtestBajoSma) && (
-        <span
-          className={`block text-xs ${UI_STYLES.text.muted}`}
-          title="% de señales ganadoras (y nº de casos) según el precio estuviera por encima o por debajo de la SMA200 al dar la señal"
-        >
-          SMA200: sobre {formatGroup(backtestSobreSma)} · bajo {formatGroup(backtestBajoSma)}
-        </span>
-      )}
     </div>
   );
 }

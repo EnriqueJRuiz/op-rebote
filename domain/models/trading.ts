@@ -70,6 +70,7 @@ export interface StockCandidate extends Company {
   backtestPerdidoPct?: number;
   backtestEstancadoPct?: number;
   backtestDiasMedios?: number;
+  precioAnterior?: number; // cierre de la sesión anterior (para la variación diaria)
   sma200?: number;
   distSma200Pct?: number; // (precio - SMA200) / SMA200 * 100
   backtestSobreSma?: BacktestGroupStats; // señales con el precio >= SMA200

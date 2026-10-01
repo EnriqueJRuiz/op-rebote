@@ -71,6 +71,7 @@ export const UI_TEXT = {
       searchByNameOrTicker: "Buscar por nombre o ticker",
       backtest: "Backtest histórico",
     },
+    backtestBySmaTitle: "% de aciertos históricos según el precio estuviera por encima o por debajo de la SMA200 al dar la señal.",
     filters: {
       priceAriaLabel: "Filtrar por variación del precio",
       priceAll: "Último precio: Todos",

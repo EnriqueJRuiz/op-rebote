@@ -18,7 +18,7 @@ export default async function OpportunitiesPage() {
 
   return (
     <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SearchReboundsButton
           initialOpportunities={latestOpportunities}
           title={UI_TEXT.pages.opportunities.title}
