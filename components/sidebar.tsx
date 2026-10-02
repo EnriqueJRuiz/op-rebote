@@ -8,7 +8,7 @@ import { APP_ROUTES } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
 
 const NAVIGATION_LINKS = [
-  { href: APP_ROUTES.HOME, label: UI_TEXT.navigation.home, icon: Home },
+  // { href: APP_ROUTES.HOME, label: UI_TEXT.navigation.home, icon: Home },
   { href: APP_ROUTES.OPORTUNIDADES, label: UI_TEXT.navigation.opportunities, icon: Target },
   { href: APP_ROUTES.SEGUIMIENTO, label: UI_TEXT.navigation.watchlist, icon: Bookmark },
   { href: APP_ROUTES.EMPRESAS_RADAR, label: UI_TEXT.navigation.companies, icon: Building2 },
