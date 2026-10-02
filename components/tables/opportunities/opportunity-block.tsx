@@ -13,16 +13,23 @@ import {
   Sma200Distance,
   RelativeVolume,
   BacktestInfo,
+  formatCurrencyPrice,
 } from "@/components/tables/common/trading-cells";
+import {
+  assessOpportunity,
+  OpportunityFundamentalsInline,
+  OpportunityFilterThresholds,
+} from "./opportunity-assessment";
 
 interface OpportunityBlockProps {
   title: string;
   opportunities: StockCandidate[];
+  filterThresholds: OpportunityFilterThresholds;
   subtitle?: string;
 }
 
-export function OpportunityBlock({ title, opportunities, subtitle }: OpportunityBlockProps) {
-  const columns = useMemo(() => getOpportunityColumns(), []);
+export function OpportunityBlock({ title, opportunities, filterThresholds, subtitle }: OpportunityBlockProps) {
+  const columns = useMemo(() => getOpportunityColumns(filterThresholds), [filterThresholds]);
 
   return (
     <DataTable
@@ -35,36 +42,43 @@ export function OpportunityBlock({ title, opportunities, subtitle }: Opportunity
       recordsLabel={UI_TEXT.table.pagination.opportunityRecords}
       emptyMessage={UI_TEXT.table.emptyStates.opportunities}
       containerClassName=""
+      rowClassName={(opportunity) => {
+        const score = assessOpportunity(opportunity).score;
+        if (score === 4) return "bg-emerald-50/70 hover:bg-emerald-100/70";
+        if (score === 3) return "bg-amber-50/70 hover:bg-amber-100/70";
+        return "hover:bg-slate-50";
+      }}
       mobileRow={(opportunity, expanded, toggle) => (
         <div className={UI_STYLES.table.mobileRow}>
           <div className="flex items-center justify-between gap-2">
+            <div className="py-2 pl-1">
+              <FollowButton ticker={opportunity.ticker} />
+            </div>
             <button
               type="button"
               onClick={toggle}
               className={`${UI_STYLES.table.mobileRowButton} flex-1`}
               aria-expanded={expanded}
             >
-              <span className={UI_STYLES.table.mobileRowTitle}>{opportunity.nombre}</span>
+              <span className={`${UI_STYLES.table.mobileRowTitle} min-w-0 flex-1`}>
+                {opportunity.nombre}
+              </span>
               <ChevronDown
                 className={`${UI_STYLES.table.mobileRowIcon} ${expanded ? "rotate-180" : ""}`}
                 size={18}
               />
             </button>
-            <div className="py-2 pr-1">
-              <FollowButton ticker={opportunity.ticker} />
-            </div>
           </div>
           {expanded && (
             <div className={UI_STYLES.table.mobileDetails}>
-              <div>
-                <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.ticker}</p>
-                <p className="mt-1">
-                  <span className={UI_STYLES.badge.tickerLarge}>{opportunity.ticker}</span>
-                </p>
+              <div className="col-span-2 border-b border-slate-200 pb-3">
+                <OpportunityFundamentalsInline candidate={opportunity} thresholds={filterThresholds} />
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.price}</p>
-                <p className={UI_STYLES.table.mobileValue}>{opportunity.precio.toFixed(2)}</p>
+                <p className={`${UI_STYLES.table.mobileValue} text-left font-medium tabular-nums`}>
+                  {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
+                </p>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.rsi}</p>
@@ -95,7 +109,7 @@ export function OpportunityBlock({ title, opportunities, subtitle }: Opportunity
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.backtest}</p>
                 <p className={UI_STYLES.table.mobileValue}>
-                  <BacktestInfo row={opportunity} />
+                  <BacktestInfo row={opportunity} compact />
                 </p>
               </div>
             </div>

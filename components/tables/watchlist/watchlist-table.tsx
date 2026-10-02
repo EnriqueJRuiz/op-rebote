@@ -150,6 +150,9 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
         mobileRow={(r, expanded, toggle) => (
           <div className={UI_STYLES.table.mobileRow}>
             <div className="flex items-center justify-between gap-2">
+              <div className="py-2 pl-1">
+                <FollowButton ticker={r.ticker} />
+              </div>
               <button
                 type="button"
                 onClick={toggle}
@@ -162,9 +165,6 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
                   size={18}
                 />
               </button>
-              <div className="py-2 pr-1">
-                <FollowButton ticker={r.ticker} />
-              </div>
             </div>
             {expanded && (
               <div className={UI_STYLES.table.mobileDetails}>

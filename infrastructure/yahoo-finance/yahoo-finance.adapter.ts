@@ -1,6 +1,6 @@
 import YahooFinance from "yahoo-finance2";
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
-import { CompanyMetadata, StockCandidate, UniverseStock } from "@/domain/models/trading";
+import { CompanyMetadata, CompanySearchMatch, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 import {
@@ -109,6 +109,33 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       console.error("Error al obtener el universo inicial:", error);
       throw new Error("No se pudo obtener el universo inicial de acciones");
     }
+  }
+
+  async searchCompanies(query: string): Promise<CompanySearchMatch[]> {
+    const result = await this.yf.search(query, {
+      quotesCount: 10,
+      newsCount: 0,
+      enableFuzzyQuery: true,
+      enableCb: false,
+      enableNavLinks: false,
+    });
+
+    return result.quotes.flatMap((quote) => {
+      const fields = quote as Record<string, unknown>;
+      if (fields.quoteType !== "EQUITY" || typeof fields.symbol !== "string") return [];
+
+      return [{
+        ticker: fields.symbol,
+        nombre:
+          (typeof fields.longname === "string" && fields.longname) ||
+          (typeof fields.shortname === "string" && fields.shortname) ||
+          fields.symbol,
+        bolsa:
+          (typeof fields.exchDisp === "string" && fields.exchDisp) ||
+          (typeof fields.exchange === "string" && fields.exchange) ||
+          "",
+      }];
+    });
   }
 
   private async fetchQuote(ticker: string) {

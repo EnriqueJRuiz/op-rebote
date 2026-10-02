@@ -9,6 +9,12 @@ export interface Company {
   volumen: number;
 }
 
+export interface CompanySearchMatch {
+  ticker: string;
+  nombre: string;
+  bolsa: string;
+}
+
 export type TierLevel =
   | typeof APP_CONFIG.CATEGORIES.TIER_0
   | typeof APP_CONFIG.CATEGORIES.TIER_1

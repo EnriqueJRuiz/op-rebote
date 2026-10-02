@@ -28,7 +28,7 @@ export default async function EmpresasRadarPage() {
   return (
     <main className="min-h-screen bg-slate-50 p-8 text-slate-800">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-bold">{UI_TEXT.pages.companies.title}</h1>
             <p className="text-slate-500">{UI_TEXT.pages.companies.description}</p>

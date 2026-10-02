@@ -129,6 +129,9 @@ export function CompanyTable({
         mobileRow={(empresa, expanded, toggle) => (
           <div className={UI_STYLES.table.mobileRow}>
             <div className="flex items-center justify-between gap-2">
+              <div className="py-2 pl-1">
+                <FollowButton ticker={empresa.ticker} />
+              </div>
               <button
                 type="button"
                 onClick={toggle}
@@ -141,9 +144,6 @@ export function CompanyTable({
                   size={18}
                 />
               </button>
-              <div className="py-2 pr-1">
-                <FollowButton ticker={empresa.ticker} />
-              </div>
             </div>
             {expanded && (
               <div className={UI_STYLES.table.mobileDetails}>

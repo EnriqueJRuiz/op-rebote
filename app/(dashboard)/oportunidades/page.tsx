@@ -2,6 +2,7 @@ import { SearchReboundsButton } from "@/components/buttons/search-button";
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
+import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,6 +24,12 @@ export default async function OpportunitiesPage() {
           initialOpportunities={latestOpportunities}
           title={UI_TEXT.pages.opportunities.title}
           description={UI_TEXT.pages.opportunities.description}
+          filterThresholds={{
+            oversoldRsi: STRATEGY_CONFIG.TRADING.OVERSOLD_THRESHOLD,
+            minCurrentRatio: STRATEGY_CONFIG.TRADING.MIN_CURRENT_RATIO,
+            maxDebtToEquity: STRATEGY_CONFIG.TRADING.MAX_DEBT_TO_EQUITY,
+            minRoe: STRATEGY_CONFIG.TRADING.MIN_ROE,
+          }}
         />
       </div>
     </main>

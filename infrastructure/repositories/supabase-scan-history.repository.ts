@@ -141,7 +141,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     let query = this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, precio_anterior, empresas(id, ticker, nombre, categoria, sector, moneda, bolsa)")
+      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, precio_anterior, empresas(id, ticker, nombre, categoria, sector, moneda, bolsa, current_ratio, debt_to_equity, return_on_equity)")
       .eq("lote_id", latest.lote_id);
 
     if (filterOnlyValid) {
@@ -174,7 +174,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       es_valido?: boolean;
       tier?: any;
       regla_salida?: any;
-      empresas: { id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string } | Array<{ id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string }> | null;
+      empresas: { id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string; current_ratio?: number; debt_to_equity?: number; return_on_equity?: number } | Array<{ id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string; current_ratio?: number; debt_to_equity?: number; return_on_equity?: number }> | null;
     };
 
     const candidates = ((rows as StoredCandidate[] | null) ?? [])
@@ -197,6 +197,9 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         sector: company!.sector,
         moneda: company!.moneda,
         bolsa: company!.bolsa,
+        currentRatio: company!.current_ratio,
+        debtToEquity: company!.debt_to_equity,
+        returnOnEquity: company!.return_on_equity,
         esValido: row.es_valido ?? false,
         tier: row.tier,
         reglaSalida: row.regla_salida,

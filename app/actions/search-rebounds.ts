@@ -54,7 +54,10 @@ export async function handleSearchReboundsAction() {
             (
               company.tipo_activo !== snapshot.metadata.tipoActivo ||
               company.es_dividendo !== snapshot.metadata.esDividendo ||
-              company.sector !== snapshot.metadata.sector
+              company.sector !== snapshot.metadata.sector ||
+              company.current_ratio !== snapshot.metadata.currentRatio ||
+              company.debt_to_equity !== snapshot.metadata.debtToEquity ||
+              company.return_on_equity !== snapshot.metadata.returnOnEquity
             );
 
           if (

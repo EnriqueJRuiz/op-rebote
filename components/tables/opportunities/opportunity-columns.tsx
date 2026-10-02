@@ -10,10 +10,15 @@ import {
   Sma200Distance,
   RelativeVolume,
   BacktestInfo,
+  formatCurrencyPrice,
   getFloorDistancePercent,
 } from "@/components/tables/common/trading-cells";
+import {
+  OpportunityFilterThresholds,
+  OpportunityFundamentalsInline,
+} from "./opportunity-assessment";
 
-export function getOpportunityColumns(): Column<StockCandidate>[] {
+export function getOpportunityColumns(filterThresholds: OpportunityFilterThresholds): Column<StockCandidate>[] {
   return [
     {
       header: "",
@@ -31,16 +36,11 @@ export function getOpportunityColumns(): Column<StockCandidate>[] {
       cellClassName: `${UI_STYLES.text.primary} font-bold`,
     },
     {
-      header: UI_TEXT.table.columns.ticker,
-      sortValue: (opportunity) => opportunity.ticker,
-      render: (opportunity) => (
-        <span className={UI_STYLES.badge.ticker}>{opportunity.ticker}</span>
-      ),
-    },
-    {
       header: UI_TEXT.table.columns.price,
       sortValue: (opportunity) => opportunity.precio,
-      render: (opportunity) => opportunity.precio.toFixed(2),
+      render: (opportunity) => formatCurrencyPrice(opportunity.precio, opportunity.moneda),
+      cellClassName: "whitespace-nowrap text-right font-medium tabular-nums",
+      headerClassName: "text-right",
     },
     {
       header: UI_TEXT.table.columns.rsi,
@@ -48,15 +48,15 @@ export function getOpportunityColumns(): Column<StockCandidate>[] {
       render: (opportunity) => opportunity.rsi.toFixed(2),
     },
     {
-      header: UI_TEXT.table.columns.volume,
+      header: UI_TEXT.table.columns.volumeAndRelative,
       sortValue: (opportunity) => opportunity.volumen,
-      render: (opportunity) => opportunity.volumen.toLocaleString(),
-    },
-    {
-      header: UI_TEXT.table.columns.relativeVolume,
-      sortValue: (opportunity) => opportunity.volumenRelativo ?? -Infinity,
       render: (opportunity) => (
-        <RelativeVolume value={opportunity.volumenRelativo} />
+        <div className="whitespace-nowrap">
+          <span>{opportunity.volumen.toLocaleString("es-ES")}</span>
+          <span className="mt-0.5 block text-xs text-slate-500">
+            RVOL <RelativeVolume value={opportunity.volumenRelativo} />
+          </span>
+        </div>
       ),
     },
     {
@@ -70,9 +70,16 @@ export function getOpportunityColumns(): Column<StockCandidate>[] {
       render: (opportunity) => <Sma200Distance row={opportunity} />,
     },
     {
+      header: UI_TEXT.table.columns.fundamentals,
+      render: (opportunity) => (
+        <OpportunityFundamentalsInline candidate={opportunity} thresholds={filterThresholds} />
+      ),
+      cellClassName: "min-w-[220px]",
+    },
+    {
       header: UI_TEXT.table.columns.backtest,
       sortValue: (opportunity) => opportunity.backtestExitoPct,
-      render: (opportunity) => <BacktestInfo row={opportunity} />,
+      render: (opportunity) => <BacktestInfo row={opportunity} compact />,
     },
   ];
 }

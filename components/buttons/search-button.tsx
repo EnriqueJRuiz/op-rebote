@@ -11,14 +11,16 @@ import { LoadingOverlay } from "@/components/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { APP_CONFIG } from "@/domain/constants";
+import { OpportunityFilterThresholds } from "@/components/tables/opportunities/opportunity-assessment";
 
 interface SearchReboundsButtonProps {
   initialOpportunities: StockCandidate[];
   title: string;
   description: string;
+  filterThresholds: OpportunityFilterThresholds;
 }
 
-export function SearchReboundsButton({ initialOpportunities, title, description }: SearchReboundsButtonProps) {
+export function SearchReboundsButton({ initialOpportunities, title, description, filterThresholds }: SearchReboundsButtonProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<StockCandidate[]>(initialOpportunities);
@@ -81,6 +83,7 @@ export function SearchReboundsButton({ initialOpportunities, title, description 
         tier1={tier1}
         top={top}
         mid={mid}
+        filterThresholds={filterThresholds}
       />
     </div>
   );

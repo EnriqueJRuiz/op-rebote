@@ -2,7 +2,7 @@
 
 import { ChessBishop, Crown } from "lucide-react";
 import { DIVIDEND_TIERS } from "@/domain/constants";
-import { CompanyRecord, StockCandidate } from "@/domain/models/trading";
+import { CompanyRecord } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 
@@ -31,18 +31,41 @@ export function getFloorDistancePercent(row: { precio: number; minimoReciente?: 
   return ((precio - minimoReciente) / precio) * 100;
 }
 
+export function formatCurrencyPrice(price: number, currency?: string): string {
+  const formattedNumber = new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+
+  if (!currency) return formattedNumber;
+
+  try {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency,
+    }).format(price);
+  } catch {
+    return `${formattedNumber} ${currency}`;
+  }
+}
+
 export function FloorDistance({ row }: { row: { precio: number; minimoReciente?: number } }) {
   const distance = getFloorDistancePercent(row);
   if (distance === null) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
   }
-  const label = distance < 0
-    ? `${Math.abs(distance).toFixed(2)}% ${UI_TEXT.floor.underMinimum}`
-    : `${distance.toFixed(2)}% ${UI_TEXT.floor.overMinimum}`;
+  const label = `${Math.abs(distance).toFixed(2)}%`
+  
 
   return (
-    <span className={distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : "font-medium"} title={UI_TEXT.floor.description}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : "font-medium"}`} title={UI_TEXT.floor.description}>
       {label}
+      <span 
+        className={`font-bold ${distance < 0 ? "text-rose-600" : ""}`} 
+        aria-hidden="true"
+      >
+      {distance < 0 ? "▼" : "▲"}
+</span>
     </span>
   );
 }
@@ -92,7 +115,7 @@ export function RelativeVolume({ value }: { value?: number }) {
   );
 }
 
-export function BacktestInfo({ row }: { row: { backtestCasos?: number; backtestExitoPct?: number; backtestPerdidoPct?: number; backtestEstancadoPct?: number; backtestDiasMedios?: number } }) {
+export function BacktestInfo({ row, compact = false }: { row: { backtestCasos?: number; backtestExitoPct?: number; backtestPerdidoPct?: number; backtestEstancadoPct?: number; backtestDiasMedios?: number }; compact?: boolean }) {
   const { backtestCasos, backtestExitoPct, backtestPerdidoPct, backtestEstancadoPct, backtestDiasMedios } = row;
   if (backtestCasos === undefined) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
@@ -102,9 +125,9 @@ export function BacktestInfo({ row }: { row: { backtestCasos?: number; backtestE
   return (
     <div className="leading-tight">
       <div className="flex gap-2 font-semibold">
-        <span className={UI_STYLES.badge.success}>{backtestExitoPct}% ganó</span>
-        <span className={UI_STYLES.badge.warning}>{backtestEstancadoPct}% estancó</span>
-        <span className={UI_STYLES.badge.danger}>{backtestPerdidoPct}% perdió</span>
+        <span className={UI_STYLES.badge.success} title="Señales históricas que alcanzaron el objetivo" aria-label={`${backtestExitoPct}% ganó`}>{backtestExitoPct}%{compact ? "" : " ganó"}</span>
+        <span className={UI_STYLES.badge.warning} title="Señales históricas que terminaron estancadas" aria-label={`${backtestEstancadoPct}% estancó`}>{backtestEstancadoPct}%{compact ? "" : " estancó"}</span>
+        <span className={UI_STYLES.badge.danger} title="Señales históricas que alcanzaron el stop" aria-label={`${backtestPerdidoPct}% perdió`}>{backtestPerdidoPct}%{compact ? "" : " perdió"}</span>
       </div>
       <span className={`block text-xs ${UI_STYLES.text.muted}`}>
         {backtestCasos} casos · {backtestDiasMedios}d media

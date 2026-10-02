@@ -10,6 +10,7 @@ export interface Column<T> {
   render: (item: T) => ReactNode;
   sortValue?: (item: T) => string | number | null | undefined;
   cellClassName?: string;
+  headerClassName?: string;
 }
 
 export interface DataTableProps<T> {
@@ -25,6 +26,7 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   containerClassName?: string;
   mobileRow?: (item: T, expanded: boolean, toggle: () => void) => ReactNode;
+  rowClassName?: (item: T) => string;
 }
 
 type SortDirection = "asc" | "desc";
@@ -40,7 +42,7 @@ function compareValues(first: string | number | null | undefined, second: string
 export function DataTable<T>({
   title, subtitle, data, columns, rowKey,
   pageSizeOptions = [10, 25, 50, 100], initialPageSize = 10, initialSortIndex = null,
-  recordsLabel = UI_TEXT.table.pagination.defaultRecords, emptyMessage = UI_TEXT.table.emptyStates.default, containerClassName = "", mobileRow,
+  recordsLabel = UI_TEXT.table.pagination.defaultRecords, emptyMessage = UI_TEXT.table.emptyStates.default, containerClassName = "", mobileRow, rowClassName,
 }: DataTableProps<T>) {
   const availablePageSizes = pageSizeOptions.length > 0 ? pageSizeOptions : [10, 25, 50, 100];
   const defaultPageSize = availablePageSizes.includes(initialPageSize) ? initialPageSize : availablePageSizes[0];
@@ -58,7 +60,6 @@ export function DataTable<T>({
   const firstRecord = sortedData.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const lastRecord = Math.min(safePage * pageSize, sortedData.length);
   const visibleData = sortedData.slice((safePage - 1) * pageSize, safePage * pageSize);
-
   const changeSort = (index: number) => {
     if (!columns[index].sortValue) return;
     setSortDirection((direction) => sortIndex === index ? (direction === "asc" ? "desc" : "asc") : "asc");
@@ -72,7 +73,7 @@ export function DataTable<T>({
   };
 
   return (
-    <section className={UI_STYLES.table.container}>
+    <section className={`${UI_STYLES.table.container} ${containerClassName}`}>
       {(title || subtitle) && <header className="border-b border-slate-200 bg-slate-100/80 px-5 py-4">
         {title && <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>}
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
@@ -82,7 +83,7 @@ export function DataTable<T>({
           <thead className={UI_STYLES.table.thead}>
             <tr className="border-b border-slate-200 text-sm text-slate-600">
               {columns.map((column, index) => (
-                <th key={column.header} className="p-4">
+                <th key={column.header} className={`p-4 ${column.headerClassName ?? ""}`}>
                   {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-slate-900" title={UI_TEXT.table.sorting.byColumn(column.header)}>
                     {column.header}{sortIndex === index && (sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </button> : column.header}
@@ -92,7 +93,7 @@ export function DataTable<T>({
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
             {visibleData.map((item) => (
-              <tr key={rowKey(item)} className="transition-colors hover:bg-slate-50">
+              <tr key={rowKey(item)} className={`transition-colors ${rowClassName?.(item) ?? "hover:bg-slate-50"}`}>
                 {columns.map((column) => <td key={column.header} className={`p-4 ${column.cellClassName ?? ""}`}>{column.render(item)}</td>)}
               </tr>
             ))}
@@ -102,7 +103,7 @@ export function DataTable<T>({
       {mobileRow && <div className="divide-y divide-slate-100 px-4 md:hidden">{visibleData.map((item) => {
         const key = rowKey(item);
         const expanded = expandedKey === key;
-        return <div key={key}>{mobileRow(item, expanded, () => setExpandedKey(expanded ? null : key))}</div>;
+        return <div key={key} className={rowClassName?.(item)}>{mobileRow(item, expanded, () => setExpandedKey(expanded ? null : key))}</div>;
       })}</div>}
       {data.length === 0 && <p className="border-t border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">{emptyMessage}</p>}
       <div className={UI_STYLES.table.footer}>

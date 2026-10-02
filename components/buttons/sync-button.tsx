@@ -7,6 +7,7 @@ import { handleSyncMarketAction } from "@/app/actions/sync-market";
 import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { useRouter } from "next/navigation";
 import { LoadingOverlay } from "@/components/loading-overlay";
+import { AddCompanyButton } from "@/components/buttons/add-company-button";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 
@@ -43,9 +44,18 @@ export function SyncButton() {
     : UI_TEXT.loading.updateQuotes;
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+    <div className="flex w-full flex-col gap-2 xl:w-136 xl:items-stretch">
       {activeAction && <LoadingOverlay message={loadingMessage} />}
-      <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+      <div className="grid w-full grid-cols-2 gap-2 lg:grid-cols-[1.25fr_1fr_1fr]">
+        <button
+          type="button"
+          onClick={() => handleClick("scan")}
+          disabled={activeAction !== null}
+          className={`${UI_STYLES.button.primaryFull} col-span-2 lg:col-span-1`}
+        >
+          <RefreshCw size={16} className={activeAction === "scan" ? "animate-spin" : ""} aria-hidden="true" />
+          <span className="whitespace-nowrap">{activeAction === "scan" ? UI_TEXT.buttons.updatingQuotes : UI_TEXT.buttons.updateQuotes}</span>
+        </button>
         <button
           type="button"
           onClick={() => handleClick("discover")}
@@ -55,15 +65,7 @@ export function SyncButton() {
           <Search size={16} aria-hidden="true" />
           <span className="truncate">{activeAction === "discover" ? UI_TEXT.buttons.syncing : UI_TEXT.buttons.sync}</span>
         </button>
-        <button
-          type="button"
-          onClick={() => handleClick("scan")}
-          disabled={activeAction !== null}
-          className={UI_STYLES.button.primaryFull}
-        >
-          <RefreshCw size={16} className={activeAction === "scan" ? "animate-spin" : ""} aria-hidden="true" />
-          <span className="truncate">{activeAction === "scan" ? UI_TEXT.buttons.updatingQuotes : UI_TEXT.buttons.updateQuotes}</span>
-        </button>
+        <AddCompanyButton />
       </div>
       {message && <p className="text-right text-sm text-slate-500">{message}</p>}
     </div>
