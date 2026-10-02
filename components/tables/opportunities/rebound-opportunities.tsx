@@ -115,9 +115,15 @@ export function ReboundOpportunities({ tier0, tier1, top, mid, filterThresholds 
           <p><strong className="text-slate-800">{UI_TEXT.table.guide.volumeTitle}</strong> 
             <br/>{UI_TEXT.table.guide.volumeDescription}
           </p>
-          <p><strong className="text-slate-800">{UI_TEXT.table.guide.currentRatioTitle}</strong> {UI_TEXT.table.guide.currentRatioDescription}</p>
-          <p><strong className="text-slate-800">{UI_TEXT.table.guide.debtToEquityTitle}</strong> {UI_TEXT.table.guide.debtToEquityDescription}</p>
-          <p><strong className="text-slate-800">{UI_TEXT.table.guide.roeTitle}</strong> {UI_TEXT.table.guide.roeDescription}</p>
+          <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.currentRatioTitle}</strong> {UI_TEXT.table.guide.currentRatioDescription}</p>
+          <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.debtToEquityTitle}</strong> 
+            {UI_TEXT.table.guide.debtToEquityDescription}</p>
+          <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.roeTitle}</strong>
+            <br/>{UI_TEXT.table.guide.roeDescription}
+          </p>
           <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.backtestTitle}</strong>{" "}
             {UI_TEXT.table.guide.backtestDescription}
