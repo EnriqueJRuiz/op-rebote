@@ -18,6 +18,7 @@ import { HistoricalCandle } from "@/domain/models/backtest";
 export class YahooFinanceAdapter implements MarketRepositoryPort {
   private static readonly HISTORY_MONTHS_OFFSET = STRATEGY_CONFIG.YAHOO.HISTORY_MONTHS_OFFSET;
   private static readonly SMA_HISTORY_MONTHS = 12;
+  private static readonly SCREENER_CONCURRENCY = 3;
 
   private readonly yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
   private readonly screenerClient = new YahooScreenerClient(this.yf);
@@ -186,13 +187,21 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     count: number,
     buildQuery: (region: string) => YahooScreenerQuery
   ): Promise<UniverseStock[]> {
-    const regionPromises = UNIVERSE_RULES.REGIONS.map(async (region) => {
-      const quotes = await this.searchCaps(count, buildQuery(region));
-      return this.screenerMapper.toUniverseStocks(quotes);
-    });
+    const results: UniverseStock[] = [];
+    const regions = UNIVERSE_RULES.REGIONS;
 
-    const results = await Promise.all(regionPromises);
-    return this.removeDuplicateTickers(results.flat());
+    for (let index = 0; index < regions.length; index += YahooFinanceAdapter.SCREENER_CONCURRENCY) {
+      const regionBatch = regions.slice(index, index + YahooFinanceAdapter.SCREENER_CONCURRENCY);
+      const batchResults = await Promise.all(
+        regionBatch.map(async (region) => {
+          const quotes = await this.searchCaps(count, buildQuery(region));
+          return this.screenerMapper.toUniverseStocks(quotes);
+        })
+      );
+      results.push(...batchResults.flat());
+    }
+
+    return this.removeDuplicateTickers(results);
   }
 
   private async searchCaps(count: number, query: YahooScreenerQuery) {

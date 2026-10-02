@@ -28,6 +28,23 @@ export async function GET(request: Request) {
       );
     }
 
+    if (!syncResult.success) {
+      console.warn(
+        "El escaneo se completó, pero falló la sincronización del universo:",
+        syncResult.message
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          partial: true,
+          sync: syncResult,
+          scan: scanResult,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 503 }
+      );
+    }
+
     console.log("Tarea nocturna completada con éxito.");
 
     return NextResponse.json({ 
@@ -37,8 +54,14 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString() 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error en la ejecución del cron nocturno:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Error inesperado",
+      },
+      { status: 500 }
+    );
   }
 }

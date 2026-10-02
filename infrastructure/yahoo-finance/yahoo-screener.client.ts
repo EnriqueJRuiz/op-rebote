@@ -9,15 +9,20 @@ import {
   YahooScreenerResponse,
 } from "./yahoo-finance.types";
 
+const MAX_ATTEMPTS = 3;
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
 export class YahooScreenerClient {
 
   constructor(private readonly yf: InstanceType<typeof YahooFinance>) {}
 
   async search(request: YahooScreenerRequest): Promise<YahooScreenerQuote[]> {
-    const internals = this.yf as any;
-
-    const cookieJar = internals._opts?.cookieJar;
-    const logger = internals._opts?.logger;
+    const cookieJar = this.yf._opts.cookieJar;
+    const logger = this.yf._opts.logger;
 
     if (!cookieJar) {
       throw new Error("Yahoo Finance no tiene cookieJar disponible");
@@ -27,15 +32,12 @@ export class YahooScreenerClient {
       throw new Error("Yahoo Finance no tiene logger disponible");
     }
 
-    const fetchFunc =
-      internals._env?.fetch ||
-      internals._opts?.fetch ||
-      globalThis.fetch;
+    const fetchFunc = this.yf._env.fetch || globalThis.fetch;
 
     const fetchOptionsBase = {
-      ...(internals._opts.fetchOptions || {}),
+      ...(this.yf._opts.fetchOptions || {}),
       headers: {
-        ...(internals._opts.fetchOptions?.headers || {}),
+        ...(this.yf._opts.fetchOptions?.headers || {}),
       },
     };
 
@@ -44,7 +46,7 @@ export class YahooScreenerClient {
       fetchFunc,
       fetchOptionsBase,
       logger,
-      internals._notices
+      this.yf._notices
     );
 
     if (!crumb) {
@@ -66,7 +68,7 @@ export class YahooScreenerClient {
       allPaths: true,
     });
 
-    const response = await fetchFunc(url, {
+    const fetchOptions = {
       ...fetchOptionsBase,
       method: "POST",
       headers: {
@@ -78,18 +80,53 @@ export class YahooScreenerClient {
         referer: "https://finance.yahoo.com/screener/equity/new",
       },
       body: JSON.stringify(request),
-    });
+    };
 
-    const responseText = await response.text();
+    let response: Response | undefined;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      let attemptResponse: Response;
+      try {
+        attemptResponse = await fetchFunc(url, fetchOptions);
+      } catch (error) {
+        if (attempt === MAX_ATTEMPTS) {
+          throw new Error(
+            `No se pudo conectar con Yahoo Screener tras ${MAX_ATTEMPTS} intentos`,
+            { cause: error }
+          );
+        }
 
-    if (!response.ok) {
-      console.error(
-        "Yahoo Screener HTTP error:",
-        response.status,
-        responseText
+        console.warn(
+          `Error de conexión con Yahoo Screener; reintento ${attempt + 1}/${MAX_ATTEMPTS}`
+        );
+        await delay(500 * 2 ** (attempt - 1));
+        continue;
+      }
+
+      response = attemptResponse;
+      if (attemptResponse.ok || !RETRYABLE_STATUS_CODES.has(attemptResponse.status)) break;
+
+      if (attempt === MAX_ATTEMPTS) {
+        throw new Error(
+          `Yahoo Screener respondió ${attemptResponse.status} tras ${MAX_ATTEMPTS} intentos`
+        );
+      }
+
+      console.warn(
+        `Yahoo Screener respondió ${attemptResponse.status}; reintento ${attempt + 1}/${MAX_ATTEMPTS}`
       );
+      await delay(500 * 2 ** (attempt - 1));
+    }
 
-      throw new Error(`Yahoo Screener respondió ${response.status}`);
+    const finalResponse = response;
+    if (!finalResponse) {
+      throw new Error("Yahoo Screener no devolvió respuesta");
+    }
+
+    const responseText = await finalResponse.text();
+
+    if (!finalResponse.ok) {
+      console.error("Yahoo Screener HTTP error:", finalResponse.status);
+      throw new Error(`Yahoo Screener respondió ${finalResponse.status}`);
     }
 
     let data: YahooScreenerResponse;
@@ -97,7 +134,7 @@ export class YahooScreenerClient {
     try {
       data = JSON.parse(responseText) as YahooScreenerResponse;
     } catch {
-      console.error("Yahoo devolvió una respuesta no JSON:", responseText);
+      console.error("Yahoo devolvió una respuesta no JSON");
       throw new Error("Yahoo Screener devolvió una respuesta inválida");
     }
 
