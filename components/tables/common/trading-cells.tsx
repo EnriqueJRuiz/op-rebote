@@ -61,7 +61,7 @@ export function FloorDistance({ row }: { row: { precio: number; minimoReciente?:
     <span className={`inline-flex items-center gap-1 whitespace-nowrap ${distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : "font-medium"}`} title={UI_TEXT.floor.description}>
       {label}
       <span 
-        className={`font-bold ${distance < 0 ? "text-rose-600" : ""}`} 
+        className={`font-bold ${distance < 0 ? "text-rose-600" : "text-emerald-600"}`}
         aria-hidden="true"
       >
       {distance < 0 ? "▼" : "▲"}
@@ -102,15 +102,84 @@ export function Sma200Distance({ row }: { row: { distSma200Pct?: number; backtes
 }
 
 export function RelativeVolume({ value }: { value?: number }) {
-  if (!Number.isFinite(value)) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
     return <span className="text-slate-400">{UI_TEXT.table.values.noData}</span>;
   }
 
+  const trendLabel = value > 1
+    ? UI_TEXT.table.values.relativeVolumeAboveAverage
+    : value < 1
+      ? UI_TEXT.table.values.relativeVolumeBelowAverage
+      : UI_TEXT.table.values.relativeVolumeAtAverage;
+  const trendArrow = value > 1 ? "▲" : value < 1 ? "▼" : "→";
+  const trendStyle = value > 1
+    ? UI_STYLES.badge.success
+    : value < 1
+      ? UI_STYLES.badge.danger
+      : UI_STYLES.badge.muted;
+
   return (
-    <span className="font-medium text-slate-700">
-      {typeof value === "number" && Number.isFinite(value)
-        ? `${value.toFixed(2)}x`
-        : UI_TEXT.table.values.noData}
+    <span
+      className={`inline-flex items-center gap-1 font-medium ${trendStyle}`}
+      title={`RVOL ${value.toFixed(2)}x: ${trendLabel}`}
+      aria-label={`RVOL ${value.toFixed(2)}x, ${trendLabel}`}
+    >
+      <span>{value.toFixed(2)}x</span>
+      <span aria-hidden="true">{trendArrow}</span>
+    </span>
+  );
+}
+
+export function RsiTrend({
+  value,
+  previousValue,
+  oversoldThreshold,
+}: {
+  value: number;
+  previousValue?: number;
+  oversoldThreshold: number;
+}) {
+  const change = previousValue === undefined ? 0 : value - previousValue;
+  const rising = change > 0;
+  const falling = change < 0;
+  const recoveringFromOversold =
+    previousValue !== undefined &&
+    previousValue <= oversoldThreshold &&
+    value > oversoldThreshold;
+  const possibleTurn =
+    previousValue !== undefined &&
+    value <= oversoldThreshold &&
+    rising;
+  const status = recoveringFromOversold
+    ? UI_TEXT.table.values.rsiRecovering
+    : possibleTurn
+      ? UI_TEXT.table.values.rsiPossibleTurn
+      : rising
+        ? UI_TEXT.table.values.rsiRising
+        : falling
+          ? UI_TEXT.table.values.rsiFalling
+          : UI_TEXT.table.values.rsiUnchanged;
+  const trendStyle = rising
+    ? UI_STYLES.badge.success
+    : falling
+      ? UI_STYLES.badge.danger
+      : UI_STYLES.badge.muted;
+
+  return (
+    <span
+      className={trendStyle}
+      title={previousValue === undefined ? UI_TEXT.table.values.rsiNoPreviousValue : `${status} (${previousValue.toFixed(2)} → ${value.toFixed(2)})`}
+      aria-label={previousValue === undefined ? `${value.toFixed(2)}, ${UI_TEXT.table.values.rsiNoComparison}` : `${value.toFixed(2)}, ${status}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        <span>{value.toFixed(2)}</span>
+        {previousValue !== undefined && (
+          <span aria-hidden="true">{rising ? "▲" : falling ? "▼" : "→"}</span>
+        )}
+      </span>
+      {possibleTurn && (
+        <span className="block text-[10px] font-normal">{UI_TEXT.table.values.possibleTurn}</span>
+      )}
     </span>
   );
 }

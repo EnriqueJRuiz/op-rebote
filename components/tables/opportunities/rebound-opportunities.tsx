@@ -101,32 +101,43 @@ export function ReboundOpportunities({ tier0, tier1, top, mid, filterThresholds 
         </summary>
         <div className="grid gap-3 border-t border-slate-200 px-4 py-4 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
           <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.rsiTitle}</strong>{" "}
+            <br/>{UI_TEXT.table.guide.rsiDescription} {UI_TEXT.table.filterDetails.threshold} ≤ {filterThresholds.oversoldRsi}.
+            <br/><span className="font-bold text-emerald-600">▲</span> {UI_TEXT.table.guide.rsiTrendUp};{" "}
+            <br/><span className="font-bold text-rose-600">▼</span> {UI_TEXT.table.guide.rsiTrendDown};{" "}
+            <br/><span className="font-bold text-slate-500">→</span> {UI_TEXT.table.guide.rsiTrendStable}.
+          </p>
+          <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.volumeTitle}</strong>
+            <br/>{UI_TEXT.table.guide.volumeDescription}
+            <br/><span className="font-bold text-emerald-600">▲</span> {UI_TEXT.table.values.relativeVolumeAboveAverage} (&gt; 1x);{" "}
+            <br/><span className="font-bold text-rose-600">▼</span> {UI_TEXT.table.values.relativeVolumeBelowAverage} (&lt; 1x);{" "}
+            <br/><span className="font-bold text-slate-500">→</span> {UI_TEXT.table.values.relativeVolumeAtAverage} (= 1x).
+          </p>
+          <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.floorTitle}</strong>{" "}
-            <br/><span className="font-bold ">▲</span> {UI_TEXT.table.guide.floorAbove};{" "}
+            <br/><span className="font-bold text-emerald-600">▲</span> {UI_TEXT.table.guide.floorAbove};{" "}
             <br/><span className="font-bold text-rose-600">▼</span> {UI_TEXT.table.guide.floorBelow}.
           </p>
           <p>
-            <strong className="text-slate-800">{UI_TEXT.table.guide.rsiTitle}</strong>{" "}
-            {UI_TEXT.table.guide.rsiDescription} {UI_TEXT.table.filterDetails.threshold} ≤ {filterThresholds.oversoldRsi}.
-          </p>
-          <p><strong className="text-slate-800">{UI_TEXT.table.guide.smaTitle}</strong> 
+            <strong className="text-slate-800">{UI_TEXT.table.guide.smaTitle}</strong>
             <br/>{UI_TEXT.table.guide.smaDescription}
           </p>
-          <p><strong className="text-slate-800">{UI_TEXT.table.guide.volumeTitle}</strong> 
-            <br/>{UI_TEXT.table.guide.volumeDescription}
+          <p>
+            <strong className="text-slate-800">{UI_TEXT.table.guide.currentRatioTitle}</strong>
+            <br/>{UI_TEXT.table.guide.currentRatioDescription}
           </p>
           <p>
-            <strong className="text-slate-800">{UI_TEXT.table.guide.currentRatioTitle}</strong> {UI_TEXT.table.guide.currentRatioDescription}</p>
-          <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.debtToEquityTitle}</strong> 
-            {UI_TEXT.table.guide.debtToEquityDescription}</p>
+            <br/>{UI_TEXT.table.guide.debtToEquityDescription}
+          </p>
           <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.roeTitle}</strong>
             <br/>{UI_TEXT.table.guide.roeDescription}
           </p>
           <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.backtestTitle}</strong>{" "}
-            {UI_TEXT.table.guide.backtestDescription}
+            <br/>{UI_TEXT.table.guide.backtestDescription}
             <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               <span className="inline-flex items-center gap-1.5">
                 <span className="size-2.5 rounded-sm bg-emerald-600" aria-hidden="true" />
@@ -142,8 +153,9 @@ export function ReboundOpportunities({ tier0, tier1, top, mid, filterThresholds 
               </span>
             </span>
           </p>
-          <p className="sm:col-span-2 xl:col-span-4">
-            <strong className="text-slate-800">{UI_TEXT.table.guide.scoreTitle}</strong> {UI_TEXT.table.guide.scoreDescription}
+          <p className="whitespace-pre-line sm:col-span-2 xl:col-span-4">
+            <strong className="text-slate-800">{UI_TEXT.table.guide.scoreTitle}</strong>
+            <br/> {UI_TEXT.table.guide.scoreDescription}
           </p>
         </div>
       </details>

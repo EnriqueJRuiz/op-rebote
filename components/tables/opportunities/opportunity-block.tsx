@@ -12,6 +12,7 @@ import {
   FloorDistance,
   Sma200Distance,
   RelativeVolume,
+  RsiTrend,
   BacktestInfo,
   formatCurrencyPrice,
 } from "@/components/tables/common/trading-cells";
@@ -82,7 +83,13 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.rsi}</p>
-                <p className={UI_STYLES.table.mobileValue}>{opportunity.rsi.toFixed(2)}</p>
+                <p className={UI_STYLES.table.mobileValue}>
+                  <RsiTrend
+                    value={opportunity.rsi}
+                    previousValue={opportunity.rsiAnterior}
+                    oversoldThreshold={filterThresholds.oversoldRsi}
+                  />
+                </p>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volume}</p>

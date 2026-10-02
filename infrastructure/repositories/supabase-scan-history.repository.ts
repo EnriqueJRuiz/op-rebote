@@ -1,10 +1,9 @@
 // infrastructure/repositories/supabase-scan-history.repository.ts
 import { createClient } from "@supabase/supabase-js";
 import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port";
-import { CompanyScanQuote, StockCandidate } from "@/domain/models/trading";
-import { RsiSeriesPoint, BacktestGroup } from "@/domain/models/backtest";
+import { CompanyRecord, CompanyScanQuote, StockCandidate } from "@/domain/models/trading";
+import { BacktestGroup } from "@/domain/models/backtest";
 import { isScanHistorySchemaUnavailable, isTransientSupabaseError } from "@/infrastructure/repositories/supabase-error-utils";
-import { APP_CONFIG } from "@/domain/constants";
 
 export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort {
   private supabase = createClient(
@@ -22,6 +21,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         volumen: Math.round(stock.volumen),
         volumen_relativo: stock.volumenRelativo ?? null,
         rsi: stock.rsi,
+        rsi_anterior: stock.rsiAnterior ?? null,
         capitalizacion: stock.capitalizacion ?? null,
         minimo_reciente: stock.minimoReciente ?? null,
         es_valido: stock.esValido,
@@ -50,6 +50,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           volumen: Math.round(stock.volumen),
           volumen_relativo: stock.volumenRelativo ?? null,
           rsi: stock.rsi,
+          rsi_anterior: stock.rsiAnterior ?? null,
           capitalizacion: stock.capitalizacion ?? null,
           minimo_reciente: stock.minimoReciente ?? null,
           es_valido: stock.esValido,
@@ -141,7 +142,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     let query = this.supabase
       .from("historico_escaneos")
-      .select("precio, volumen, volumen_relativo, rsi, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, precio_anterior, empresas(id, ticker, nombre, categoria, sector, moneda, bolsa, current_ratio, debt_to_equity, return_on_equity)")
+      .select("precio, volumen, volumen_relativo, rsi, rsi_anterior, capitalizacion, minimo_reciente, es_valido, tier, regla_salida, sma200, dist_sma200_pct, precio_anterior, empresas(id, ticker, nombre, categoria, sector, moneda, bolsa, current_ratio, debt_to_equity, return_on_equity)")
       .eq("lote_id", latest.lote_id);
 
     if (filterOnlyValid) {
@@ -166,15 +167,20 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       volumen: number;
       volumen_relativo?: number | null;
       rsi: number;
+      rsi_anterior?: number | null;
       capitalizacion?: number;
       minimo_reciente?: number | null;
       sma200?: number | null;
       dist_sma200_pct?: number | null;
       precio_anterior?: number | null;
       es_valido?: boolean;
-      tier?: any;
-      regla_salida?: any;
-      empresas: { id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string; current_ratio?: number; debt_to_equity?: number; return_on_equity?: number } | Array<{ id: number; ticker: string; nombre: string; categoria?: any; sector?: string; moneda?: string; bolsa?: string; current_ratio?: number; debt_to_equity?: number; return_on_equity?: number }> | null;
+      tier?: StockCandidate["tier"] | "NULL";
+      regla_salida?: StockCandidate["reglaSalida"] | null;
+      empresas: Pick<CompanyRecord, "id" | "ticker" | "nombre"> &
+        Partial<Pick<CompanyRecord, "categoria" | "sector" | "moneda" | "bolsa" | "current_ratio" | "debt_to_equity" | "return_on_equity">> |
+        Array<Pick<CompanyRecord, "id" | "ticker" | "nombre"> &
+          Partial<Pick<CompanyRecord, "categoria" | "sector" | "moneda" | "bolsa" | "current_ratio" | "debt_to_equity" | "return_on_equity">>> |
+        null;
     };
 
     const candidates = ((rows as StoredCandidate[] | null) ?? [])
@@ -188,6 +194,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         volumen: row.volumen,
         volumenRelativo: row.volumen_relativo ?? undefined,
         rsi: row.rsi,
+        rsiAnterior: row.rsi_anterior ?? undefined,
         capitalizacion: row.capitalizacion,
         minimoReciente: row.minimo_reciente ?? undefined,
         precioAnterior: row.precio_anterior === null || row.precio_anterior === undefined ? undefined : Number(row.precio_anterior),
@@ -201,13 +208,21 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         debtToEquity: company!.debt_to_equity,
         returnOnEquity: company!.return_on_equity,
         esValido: row.es_valido ?? false,
-        tier: row.tier,
-        reglaSalida: row.regla_salida,
+        tier: row.tier === "NULL" ? undefined : row.tier,
+        reglaSalida: row.regla_salida ?? undefined,
       }));
 
     const idsParaBacktest = candidates.map((o) => o.idEmpresa);
 
-    let backtestPorEmpresa = new Map<number, { casos_totales: number; ganados: number; perdidos: number; estancados: number; dias_suma: number; sobre_sma200?: BacktestGroup | null; bajo_sma200?: BacktestGroup | null }>();
+    let backtestPorEmpresa = new Map<number, {
+      casos_totales: number;
+      ganados: number;
+      perdidos: number;
+      estancados: number;
+      dias_suma: number;
+      sobre_sma200?: BacktestGroup | null;
+      bajo_sma200?: BacktestGroup | null;
+    }>();
 
     if (idsParaBacktest.length > 0) {
       const { data: backtestRows } = await this.supabase
@@ -241,32 +256,4 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
     });
   }
 
-  async getScanHistorySince(companyId: number, sinceFecha: string): Promise<RsiSeriesPoint[]> {
-    const { data, error } = await this.supabase
-      .from("historico_escaneos")
-      .select("fecha, precio, rsi, volumen, sma200")
-      .eq("empresa_id", companyId)
-      .gt("fecha", sinceFecha)
-      .order("fecha", { ascending: true })
-      .order("escaneado_en", { ascending: true });
-
-    if (error) {
-      throw new Error(`No se pudo leer el histórico de escaneos de la empresa ${companyId}: ${error.message}`);
-    }
-
-    // Hay un escaneo cada 30 min: nos quedamos con UNA fila por día (la última de cada fecha).
-    const porFecha = new Map<string, { fecha: string; precio: number; rsi: number; volumen: number; sma200: number | null }>();
-    for (const row of (data as { fecha: string; precio: number; rsi: number; volumen: number; sma200: number | null }[] | null) ?? []) {
-      porFecha.set(row.fecha, row);
-    }
-
-    return Array.from(porFecha.values())
-      .map((row) => ({
-        fecha: row.fecha,
-        precio: row.precio,
-        rsi: row.rsi,
-        volumen: row.volumen,
-        sma200: row.sma200 === null || row.sma200 === undefined ? null : Number(row.sma200),
-      }));
-  }
 }

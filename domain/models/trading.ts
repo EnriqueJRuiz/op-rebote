@@ -63,6 +63,7 @@ export interface StockCandidate extends Company {
   moneda?: string;
   bolsa?: string;
   rsi: number;
+  rsiAnterior?: number;
   capitalizacion?: number;
   esValido: boolean;
   motivoDescarte?: string;

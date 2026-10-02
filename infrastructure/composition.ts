@@ -18,8 +18,7 @@ export function createApplicationDependencies() {
     scanHistoryRepository,
     scanMarket: new ScanMarketUseCase(marketRepository),
     syncMarketUniverse: new SyncMarketUniverseUseCase(marketRepository, companiesRepository),
-    runBacktest: new RunBacktestUseCase(marketRepository, backtestRepository, scanHistoryRepository),
+    runBacktest: new RunBacktestUseCase(marketRepository, backtestRepository),
   };
 }
-
 

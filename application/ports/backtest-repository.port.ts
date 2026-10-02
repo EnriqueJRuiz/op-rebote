@@ -8,10 +8,10 @@ export interface BacktestRecord extends Omit<BacktestSummary, "sobreSma" | "bajo
   fechaActualizacion: string;
   sobreSma?: BacktestSummary["sobreSma"];
   bajoSma?: BacktestSummary["bajoSma"];
+  metodologiaVersion: number;
 }
 
 export interface BacktestRepositoryPort {
   getBacktest(idEmpresa: number): Promise<BacktestRecord | null>;
   saveInitialBacktest(idEmpresa: number, summary: BacktestSummary): Promise<void>;
-  updateBacktest(idEmpresa: number, summary: BacktestSummary): Promise<void>;
 }

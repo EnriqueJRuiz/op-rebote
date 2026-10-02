@@ -9,6 +9,7 @@ import {
   FloorDistance,
   Sma200Distance,
   RelativeVolume,
+  RsiTrend,
   BacktestInfo,
   formatCurrencyPrice,
   getFloorDistancePercent,
@@ -45,7 +46,13 @@ export function getOpportunityColumns(filterThresholds: OpportunityFilterThresho
     {
       header: UI_TEXT.table.columns.rsi,
       sortValue: (opportunity) => opportunity.rsi,
-      render: (opportunity) => opportunity.rsi.toFixed(2),
+      render: (opportunity) => (
+        <RsiTrend
+          value={opportunity.rsi}
+          previousValue={opportunity.rsiAnterior}
+          oversoldThreshold={filterThresholds.oversoldRsi}
+        />
+      ),
     },
     {
       header: UI_TEXT.table.columns.volumeAndRelative,

@@ -34,6 +34,17 @@ export class YahooSnapshotMapper {
     return Number(lastRsi.toFixed(2));
   }
 
+  calculatePreviousRsi(closes: number[]): number | undefined {
+    if (closes.length <= YahooSnapshotMapper.RSI_PERIOD) return undefined;
+
+    const rsiValues = RSI.calculate({
+      values: closes,
+      period: YahooSnapshotMapper.RSI_PERIOD,
+    });
+    const previousRsi = rsiValues[rsiValues.length - 2];
+    return previousRsi === undefined ? undefined : Number(previousRsi.toFixed(2));
+  }
+
   calculateSma(closes: number[]): number | undefined {
     if (closes.length < SMA_PERIOD) return undefined;
     const values = SMA.calculate({ values: closes, period: SMA_PERIOD });
@@ -86,6 +97,7 @@ export class YahooSnapshotMapper {
       nombre: quote.longName ?? quote.shortName ?? ticker,
       precio: precioActual,
       rsi: this.calculateRsi(rsiCloses),
+      rsiAnterior: this.calculatePreviousRsi(rsiCloses),
       volumen: volumenActual,
       capitalizacion: marketCap,
       esValido: false,

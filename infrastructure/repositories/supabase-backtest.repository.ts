@@ -14,6 +14,8 @@ export class SupabaseBacktestRepository implements BacktestRepositoryPort {
       .upsert({
         id_empresa: idEmpresa,
         fecha_actualizacion: new Date().toISOString().split("T")[0],
+        metodologia_version: summary.metodologiaVersion,
+        comparativas_filtros: summary.comparativasFiltros,
         casos_totales: summary.casosTotales,
         ganados: summary.ganados,
         perdidos: summary.perdidos,
@@ -32,7 +34,7 @@ export class SupabaseBacktestRepository implements BacktestRepositoryPort {
   async getBacktest(idEmpresa: number): Promise<BacktestRecord | null> {
     const { data, error } = await this.supabase
         .from("backtest")
-        .select("fecha_actualizacion, casos_totales, ganados, perdidos, estancados, dias_suma, pendientes, sobre_sma200, bajo_sma200")
+        .select("fecha_actualizacion, metodologia_version, comparativas_filtros, casos_totales, ganados, perdidos, estancados, dias_suma, pendientes, sobre_sma200, bajo_sma200")
         .eq("id_empresa", idEmpresa)
         .order("fecha_actualizacion", { ascending: false })
         .limit(1)
@@ -45,6 +47,8 @@ export class SupabaseBacktestRepository implements BacktestRepositoryPort {
 
     return {
         fechaActualizacion: data.fecha_actualizacion,
+        metodologiaVersion: data.metodologia_version ?? 1,
+        comparativasFiltros: data.comparativas_filtros ?? undefined,
         casosTotales: data.casos_totales,
         ganados: data.ganados,
         perdidos: data.perdidos,
@@ -56,7 +60,4 @@ export class SupabaseBacktestRepository implements BacktestRepositoryPort {
     };
   }
 
-  async updateBacktest(idEmpresa: number, summary: BacktestSummary): Promise<void> {
-    await this.saveInitialBacktest(idEmpresa, summary); // mismo upsert, misma tabla
-  }
 }
