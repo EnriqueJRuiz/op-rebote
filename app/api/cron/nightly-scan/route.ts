@@ -13,35 +13,27 @@ export async function GET(request: Request) {
     }
 
     console.log("Iniciando tarea automática nocturna del mercado...");
+    const startedAt = performance.now();
 
     // 1. Ejecuta la sincronización (equivalente al primer botón)
     const syncResult = await handleSyncMarketAction();
+    const syncMs = performance.now() - startedAt;
     
     // 2. Ejecuta el análisis de rebotes y guardado (equivalente al segundo botón)
+    const scanStartedAt = performance.now();
     const scanResult = await handleSearchReboundsAction();
+    const scanMs = performance.now() - scanStartedAt;
+
+    console.log(
+      `Cron (s): sincronización ${(syncMs / 1000).toFixed(1)} | escaneo ${(scanMs / 1000).toFixed(1)}` +
+      ` | total ${((performance.now() - startedAt) / 1000).toFixed(1)}`
+    );
 
     if (!scanResult.success) {
       console.error("El escaneo terminó con error:", scanResult.message);
       return NextResponse.json(
         { success: false, error: "El escaneo ha fallado", timestamp: new Date().toISOString() },
         { status: 500 }
-      );
-    }
-
-    if (!syncResult.success) {
-      console.warn(
-        "El escaneo se completó, pero falló la sincronización del universo:",
-        syncResult.message
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          partial: true,
-          sync: syncResult,
-          scan: scanResult,
-          timestamp: new Date().toISOString(),
-        },
-        { status: 503 }
       );
     }
 
@@ -54,14 +46,8 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString() 
     });
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Error en la ejecución del cron nocturno:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Error inesperado",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
