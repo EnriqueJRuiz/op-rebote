@@ -191,14 +191,16 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volume}</p>
-                  <p className={UI_STYLES.table.mobileValue}>
-                    {r.volumen?.toLocaleString() ?? "-"}
-                  </p>
+                  <div className={`${UI_STYLES.table.mobileValue} mt-1 flex flex-col items-start`}>
+                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
+                      {r.volumen?.toLocaleString() ?? "-"}
+                    </CompanyHistoryTrigger>
                   {r.volumenRelativo !== undefined && (
                     <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
-                      <span className="text-xs text-slate-500">RVOL {r.volumenRelativo.toFixed(2)}x</span>
+                      <span className="mt-0.5 text-xs text-slate-500">RVOL {r.volumenRelativo.toFixed(2)}x</span>
                     </CompanyHistoryTrigger>
                   )}
+                  </div>
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>

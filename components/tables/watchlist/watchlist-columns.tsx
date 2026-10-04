@@ -56,13 +56,15 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
       header: UI_TEXT.table.columns.volume,
       sortValue: (r) => r.volumen ?? -Infinity,
       render: (r) => (
-        <div>
-          <span className="text-slate-700">
-            {r.volumen ? r.volumen.toLocaleString() : UI_TEXT.table.values.notAvailable}
-          </span>
+        <div className="flex flex-col items-start">
+          <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
+            <span className="text-slate-700">
+              {r.volumen ? r.volumen.toLocaleString() : UI_TEXT.table.values.notAvailable}
+            </span>
+          </CompanyHistoryTrigger>
           {r.volumenRelativo !== undefined && (
             <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
-              <span className="block text-[11px] font-medium text-slate-500" title="Volumen Relativo">
+              <span className="mt-0.5 block text-[11px] font-medium text-slate-500" title="Volumen Relativo">
                 RVOL: {r.volumenRelativo.toFixed(2)}x
               </span>
             </CompanyHistoryTrigger>

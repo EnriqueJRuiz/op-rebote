@@ -66,7 +66,7 @@ export function getOpportunityColumns(filterThresholds: OpportunityFilterThresho
       sortValue: (opportunity) => opportunity.volumen,
       render: (opportunity) => (
         <div className="flex flex-col items-start whitespace-nowrap leading-tight">
-          <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen">
+          <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen_relativo">
             <span>{opportunity.volumen.toLocaleString("es-ES")}</span>
           </CompanyHistoryTrigger>
           <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen_relativo">

@@ -99,7 +99,7 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volumeAndRelative}</p>
                 <div className={`${UI_STYLES.table.mobileValue} mt-1 flex flex-col items-start leading-tight`}>
-                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen">
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen_relativo">
                     {opportunity.volumen.toLocaleString("es-ES")}
                   </CompanyHistoryTrigger>
                   <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen_relativo">
