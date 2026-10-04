@@ -32,7 +32,7 @@ export const UI_TEXT = {
       description: "Acciones marcadas para monitorizar su evolución, confirmación de rebote y niveles clave.",
       statTotal: "Total en Seguimiento",
       statOversold: "En Sobreventa (RSI ≤ 30)",
-      statAboveFloor: "Sobre Soporte / Suelo",
+      statAboveFloor: "Sobre el mínimo reciente",
       goToOpportunities: "Ir a Oportunidades",
       goToRadar: "Explorar Empresas Radar",
     },
@@ -169,8 +169,7 @@ export const UI_TEXT = {
     guide: {
       title: "Guía rápida de indicadores",
       floorTitle: "Suelo reciente.",
-      floorAbove: "precio sobre el mínimo",
-      floorBelow: "por debajo, posible ruptura del mínimo",
+      floorDescription: "La distancia se expresa en %: cuanto más cerca de 0 %, más cerca está el precio del mínimo reciente. Un valor negativo indica que cotiza por debajo de ese mínimo.",
       rsiTrendUp: "RSI sube; en sobreventa, posible giro",
       rsiTrendDown: "RSI baja",
       rsiTrendStable: "RSI sin cambio",
@@ -229,9 +228,10 @@ export const UI_TEXT = {
     },
   },
   floor: {
-    underMinimum: "bajo el mínimo",
-    overMinimum: "sobre el mínimo",
-    description: "Distancia entre el precio actual y el mínimo de las cinco velas previas. No es una estimación de caída máxima.",
+    description: "Porcentaje de distancia al mínimo reciente. La flecha compara con el escaneo anterior: ↑ más lejos del mínimo, ↓ más cerca y → sin cambio.",
+    trendUp: "La distancia al mínimo reciente aumentó respecto al escaneo anterior",
+    trendDown: "La distancia al mínimo reciente disminuyó respecto al escaneo anterior",
+    trendUnchanged: "La distancia al mínimo reciente no cambió respecto al escaneo anterior",
   },
   feedback: {
     marketClosedWeekend: "La bolsa está cerrada durante el fin de semana.",

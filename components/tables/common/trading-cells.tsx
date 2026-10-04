@@ -31,10 +31,20 @@ export function getFloorDistancePercent(row: { precio: number; minimoReciente?: 
   return ((precio - minimoReciente) / precio) * 100;
 }
 
+export function getFloorDistanceTrend(
+  currentDistance: number,
+  previousDistance?: number
+): "up" | "down" | "unchanged" | undefined {
+  if (previousDistance === undefined || !Number.isFinite(previousDistance)) return undefined;
+  if (currentDistance > previousDistance) return "up";
+  if (currentDistance < previousDistance) return "down";
+  return "unchanged";
+}
+
 export function formatCurrencyPrice(price: number, currency?: string): string {
   const formattedNumber = new Intl.NumberFormat("es-ES", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   }).format(price);
 
   if (!currency) return formattedNumber;
@@ -43,29 +53,37 @@ export function formatCurrencyPrice(price: number, currency?: string): string {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency,
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
     }).format(price);
   } catch {
     return `${formattedNumber} ${currency}`;
   }
 }
 
-export function FloorDistance({ row }: { row: { precio: number; minimoReciente?: number } }) {
+export function FloorDistance({
+  row,
+}: {
+  row: { precio: number; minimoReciente?: number; distSueloAnteriorPct?: number };
+}) {
   const distance = getFloorDistancePercent(row);
   if (distance === null) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
   }
-  const label = `${Math.abs(distance).toFixed(2)}%`
-  
+  const trend = getFloorDistanceTrend(distance, row.distSueloAnteriorPct);
+  const trendLabel = trend === "up"
+    ? UI_TEXT.floor.trendUp
+    : trend === "down"
+      ? UI_TEXT.floor.trendDown
+      : trend === "unchanged"
+        ? UI_TEXT.floor.trendUnchanged
+        : UI_TEXT.floor.description;
+  const arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "unchanged" ? "→" : undefined;
 
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : "font-medium"}`} title={UI_TEXT.floor.description}>
-      {label}
-      <span 
-        className={`font-bold ${distance < 0 ? "text-rose-600" : "text-emerald-600"}`}
-        aria-hidden="true"
-      >
-      {distance < 0 ? "▼" : "▲"}
-</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-slate-700" title={trendLabel}>
+      {`${distance.toFixed(2)}%`}
+      {arrow && <span className="text-slate-500" aria-label={trendLabel}>{arrow}</span>}
     </span>
   );
 }

@@ -10,8 +10,8 @@ import { CompanyHistoryTrigger } from "@/components/tables/common/company-histor
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   });
 
   return currency ? `${formatted} ${currency}` : formatted;

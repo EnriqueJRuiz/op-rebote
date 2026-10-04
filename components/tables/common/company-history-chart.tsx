@@ -6,6 +6,7 @@ import {
   ColorType,
   createChart,
   CrosshairMode,
+  LineStyle,
   type AreaData,
   type Time,
   type UTCTimestamp,
@@ -61,11 +62,11 @@ export function CompanyHistoryChart({ points, metric, currency, unit }: CompanyH
       localization: {
         locale: "es-ES",
         priceFormatter: (value: number) => {
-          const formatted = value.toLocaleString("es-ES", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
           const isCurrencyMetric = ["precio", "capitalizacion", "minimo_reciente", "sma200", "precio_anterior"].includes(metric);
+          const formatted = value.toLocaleString("es-ES", {
+            minimumFractionDigits: isCurrencyMetric ? 3 : 2,
+            maximumFractionDigits: isCurrencyMetric ? 3 : 2,
+          });
           return currency && isCurrencyMetric
             ? `${formatted} ${currency}`
             : `${formatted}${unit}`;
@@ -81,6 +82,25 @@ export function CompanyHistoryChart({ points, metric, currency, unit }: CompanyH
       priceLineVisible: false,
     });
     series.setData(uniqueValues as AreaData<Time>[]);
+    if (metric === "rsi") {
+      series.createPriceLine({
+        price: 30,
+        color: "#d97706",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: "Sobreventa",
+      });
+    } else if (metric === "volumen_relativo") {
+      series.createPriceLine({
+        price: 1,
+        color: "#64748b",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: "Media",
+      });
+    }
     chart.timeScale().fitContent();
 
     const resizeObserver = new ResizeObserver(() => {

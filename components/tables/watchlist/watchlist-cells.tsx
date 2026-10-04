@@ -2,6 +2,7 @@
 
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { getFloorDistanceTrend } from "@/components/tables/common/trading-cells";
 import { WatchlistRowData } from "./watchlist-types";
 import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 
@@ -18,13 +19,20 @@ export function FloorDistance({ row }: { row: WatchlistRowData }) {
   if (distance === null) {
     return <span className={UI_STYLES.badge.muted}>{UI_TEXT.table.values.noData}</span>;
   }
-  const label = distance < 0
-    ? `${Math.abs(distance).toFixed(2)}% ${UI_TEXT.floor.underMinimum}`
-    : `${distance.toFixed(2)}% ${UI_TEXT.floor.overMinimum}`;
+  const trend = getFloorDistanceTrend(distance, row.distSueloAnteriorPct);
+  const trendLabel = trend === "up"
+    ? UI_TEXT.floor.trendUp
+    : trend === "down"
+      ? UI_TEXT.floor.trendDown
+      : trend === "unchanged"
+        ? UI_TEXT.floor.trendUnchanged
+        : UI_TEXT.floor.description;
+  const arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "unchanged" ? "→" : undefined;
 
   return (
-    <span className={distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : "font-medium"} title={UI_TEXT.floor.description}>
-      {label}
+    <span className="inline-flex items-center gap-1 font-medium text-slate-700" title={trendLabel}>
+      {`${distance.toFixed(2)}%`}
+      {arrow && <span className="text-slate-500" aria-label={trendLabel}>{arrow}</span>}
     </span>
   );
 }
@@ -136,7 +144,7 @@ export function PriceCell({ row }: { row: WatchlistRowData }) {
         metric="precio"
       >
         <span className="font-semibold text-slate-900">
-          {price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {price.toLocaleString("es-ES", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
           {row.moneda ? ` ${row.moneda}` : ""}
         </span>
       </CompanyHistoryTrigger>

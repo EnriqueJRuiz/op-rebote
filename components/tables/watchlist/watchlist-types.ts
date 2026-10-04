@@ -16,6 +16,7 @@ export interface WatchlistRowData {
   volumen?: number;
   volumenRelativo?: number;
   minimoReciente?: number;
+  distSueloAnteriorPct?: number;
   sma200?: number;
   distSma200Pct?: number;
   sector?: string;

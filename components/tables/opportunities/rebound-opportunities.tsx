@@ -116,8 +116,7 @@ export function ReboundOpportunities({ tier0, tier1, top, mid, filterThresholds 
           </p>
           <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.floorTitle}</strong>{" "}
-            <br/><span className="font-bold text-emerald-600">▲</span> {UI_TEXT.table.guide.floorAbove};{" "}
-            <br/><span className="font-bold text-rose-600">▼</span> {UI_TEXT.table.guide.floorBelow}.
+            <br/>{UI_TEXT.table.guide.floorDescription}
           </p>
           <p>
             <strong className="text-slate-800">{UI_TEXT.table.guide.smaTitle}</strong>

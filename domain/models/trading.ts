@@ -76,6 +76,7 @@ export interface StockCandidate extends Company {
   returnOnEquity?: number;
   volumenRelativo?: number;
   minimoReciente?: number;
+  distSueloAnteriorPct?: number;
   backtestCasos?: number;
   backtestExitoPct?: number;
   backtestPerdidoPct?: number;

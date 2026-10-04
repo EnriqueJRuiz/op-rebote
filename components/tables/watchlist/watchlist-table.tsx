@@ -70,6 +70,7 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
           volumen: cand.volumen,
           volumenRelativo: cand.volumenRelativo,
           minimoReciente: cand.minimoReciente,
+          distSueloAnteriorPct: cand.distSueloAnteriorPct,
           sma200: cand.sma200,
           distSma200Pct: cand.distSma200Pct,
           sector: cand.sector || comp?.sector,

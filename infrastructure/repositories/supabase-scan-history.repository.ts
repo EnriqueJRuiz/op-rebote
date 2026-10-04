@@ -180,7 +180,7 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       throw new Error(`No se pudo localizar el último escaneo: ${latestError.message}`);
     }
 
-    const latest = (latestRows as Array<{ lote_id: string }> | null)?.[0];
+    const latest = (latestRows as Array<{ lote_id: string; escaneado_en: string }> | null)?.[0];
     if (!latest) return [];
 
     let query = this.supabase
@@ -255,6 +255,53 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         reglaSalida: row.regla_salida ?? undefined,
       }));
 
+    const previousFloorDistanceByCompanyId = new Map<number, number>();
+    const { data: previousBatchRows, error: previousBatchError } = await this.supabase
+      .from("historico_escaneos")
+      .select("lote_id")
+      .neq("lote_id", latest.lote_id)
+      .lt("escaneado_en", latest.escaneado_en)
+      .order("escaneado_en", { ascending: false })
+      .limit(1);
+
+    if (previousBatchError) {
+      console.warn("No se pudo consultar el lote anterior para comparar la distancia al mínimo:", {
+        code: previousBatchError.code,
+        message: previousBatchError.message,
+      });
+    } else {
+      const previousBatch = (previousBatchRows as Array<{ lote_id: string }> | null)?.[0];
+      if (previousBatch) {
+        const { data: previousRows, error: previousRowsError } = await this.supabase
+          .from("historico_escaneos")
+          .select("empresa_id, precio, minimo_reciente")
+          .eq("lote_id", previousBatch.lote_id);
+
+        if (previousRowsError) {
+          console.warn("No se pudieron recuperar los datos del lote anterior para comparar el mínimo:", {
+            code: previousRowsError.code,
+            message: previousRowsError.message,
+          });
+        } else {
+          for (const row of (previousRows as Array<{
+            empresa_id: number;
+            precio: number | null;
+            minimo_reciente: number | null;
+          }> | null) ?? []) {
+            if (
+              row.precio !== null && row.precio > 0 &&
+              row.minimo_reciente !== null && row.minimo_reciente > 0
+            ) {
+              previousFloorDistanceByCompanyId.set(
+                row.empresa_id,
+                ((Number(row.precio) - Number(row.minimo_reciente)) / Number(row.precio)) * 100
+              );
+            }
+          }
+        }
+      }
+    }
+
     const idsParaBacktest = candidates.map((o) => o.idEmpresa);
 
     let backtestPorEmpresa = new Map<number, {
@@ -283,11 +330,13 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
     return candidates.map(({ idEmpresa, ...candidate }) => {
       const bt = backtestPorEmpresa.get(idEmpresa);
-      if (!bt || bt.casos_totales === 0) return { idEmpresa, ...candidate };
+      const distSueloAnteriorPct = previousFloorDistanceByCompanyId.get(idEmpresa);
+      if (!bt || bt.casos_totales === 0) return { idEmpresa, ...candidate, distSueloAnteriorPct };
 
       return {
         idEmpresa,
         ...candidate,
+        distSueloAnteriorPct,
         backtestCasos: bt.casos_totales,
         backtestExitoPct: Math.round((bt.ganados / bt.casos_totales) * 100),
         backtestPerdidoPct: Math.round((bt.perdidos / bt.casos_totales) * 100),
