@@ -38,6 +38,8 @@ export interface StrategyConfig {
     RSI_PERIOD: number;
     HISTORY_MONTHS_OFFSET: number;
     BACKTEST_YEARS_OFFSET: number;
+    RECENT_LOW_DAYS: number;
+    AVG_VOLUME_DAYS: number;
   };
 }
 
@@ -55,6 +57,14 @@ function num(parent: Obj, key: string, path: string): number {
   const value = parent[key];
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error(`STRATEGY_CONFIG: "${path}${key}" debe ser un número.`);
+  }
+  return value;
+}
+
+function days(parent: Obj, key: string, path: string): number {
+  const value = num(parent, key, path);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`STRATEGY_CONFIG: "${path}${key}" debe ser un número entero de días (1 o más).`);
   }
   return value;
 }
@@ -120,6 +130,8 @@ function parseStrategyConfig(): StrategyConfig {
       RSI_PERIOD: num(y, "RSI_PERIOD", "YAHOO."),
       HISTORY_MONTHS_OFFSET: num(y, "HISTORY_MONTHS_OFFSET", "YAHOO."),
       BACKTEST_YEARS_OFFSET: num(y, "BACKTEST_YEARS_OFFSET", "YAHOO."),
+      RECENT_LOW_DAYS: days(y, "RECENT_LOW_DAYS", "YAHOO."),
+      AVG_VOLUME_DAYS: days(y, "AVG_VOLUME_DAYS", "YAHOO."),
     },
   };
 }

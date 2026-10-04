@@ -11,6 +11,8 @@ import {
 export class YahooSnapshotMapper {
   private static readonly DEFAULT_RSI = STRATEGY_CONFIG.YAHOO.DEFAULT_RSI;
   private static readonly RSI_PERIOD = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;
+  private static readonly RECENT_LOW_DAYS = STRATEGY_CONFIG.YAHOO.RECENT_LOW_DAYS;
+  private static readonly AVG_VOLUME_DAYS = STRATEGY_CONFIG.YAHOO.AVG_VOLUME_DAYS;
 
   getYahooNumber(value: YahooNumericValue | undefined): number {
     return typeof value === "number" ? value : value?.raw ?? 0;
@@ -53,13 +55,14 @@ export class YahooSnapshotMapper {
   }
 
   calculateRecentLow(lows: Array<number | null | undefined>): number | undefined {
-    const validLows = lows.slice(-6, -1).filter((l): l is number => l !== null && l !== undefined && l > 0);
+    const validLows = lows.slice(-(YahooSnapshotMapper.RECENT_LOW_DAYS + 1), -1).filter((l): l is number => l !== null && l !== undefined && l > 0);
     return validLows.length > 0 ? Math.min(...validLows) : undefined;
   }
 
   calculateRelativeVolume(currentVolume: number, historicalVolumes: number[]): number {
-    const avgVolume = historicalVolumes.length > 30
-      ? historicalVolumes.slice(-30).reduce((a, b) => a + b, 0) / 30
+    const window = YahooSnapshotMapper.AVG_VOLUME_DAYS;
+    const avgVolume = historicalVolumes.length > window
+      ? historicalVolumes.slice(-window).reduce((a, b) => a + b, 0) / window
       : historicalVolumes.length > 0
         ? historicalVolumes.reduce((a, b) => a + b, 0) / historicalVolumes.length
         : 1;
