@@ -27,6 +27,13 @@ export function SearchReboundsButton({ initialOpportunities, title, description,
   const router = useRouter();
 
   const handleClick = async () => {
+    // Para bloquear la búsqueda manual el sábado y domingo después de las pruebas, descomentar:
+    // const weekday = new Date().getDay();
+    // if (weekday === 0 || weekday === 6) {
+    //   setMessage(UI_TEXT.feedback.marketClosedWeekend);
+    //   return;
+    // }
+
     setLoading(true);
     setMessage(null);
 

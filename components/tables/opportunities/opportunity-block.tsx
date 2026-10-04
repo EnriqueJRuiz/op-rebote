@@ -7,6 +7,7 @@ import { FollowButton } from "@/components/buttons/follow-button";
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 import { getOpportunityColumns } from "./opportunity-columns";
 import {
   FloorDistance,
@@ -77,41 +78,52 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.price}</p>
-                <p className={`${UI_STYLES.table.mobileValue} text-left font-medium tabular-nums`}>
-                  {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
-                </p>
+                <div className={`${UI_STYLES.table.mobileValue} text-left font-medium tabular-nums`}>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="precio">
+                    {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
+                  </CompanyHistoryTrigger>
+                </div>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.rsi}</p>
-                <p className={UI_STYLES.table.mobileValue}>
-                  <RsiTrend
-                    value={opportunity.rsi}
-                    previousValue={opportunity.rsiAnterior}
-                    oversoldThreshold={filterThresholds.oversoldRsi}
-                  />
-                </p>
+                <div className={UI_STYLES.table.mobileValue}>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="rsi">
+                    <RsiTrend
+                      value={opportunity.rsi}
+                      previousValue={opportunity.rsiAnterior}
+                      oversoldThreshold={filterThresholds.oversoldRsi}
+                    />
+                  </CompanyHistoryTrigger>
+                </div>
               </div>
               <div>
-                <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volume}</p>
-                <p className={UI_STYLES.table.mobileValue}>{opportunity.volumen.toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-slate-500">{UI_TEXT.table.columns.relativeVolume}</p>
-                <p className="text-slate-700">
-                  <RelativeVolume value={opportunity.volumenRelativo} />
-                </p>
+                <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volumeAndRelative}</p>
+                <div className={`${UI_STYLES.table.mobileValue} mt-1 flex flex-col items-start leading-tight`}>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen">
+                    {opportunity.volumen.toLocaleString("es-ES")}
+                  </CompanyHistoryTrigger>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="volumen_relativo">
+                    <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500">
+                      RVOL <RelativeVolume value={opportunity.volumenRelativo} />
+                    </span>
+                  </CompanyHistoryTrigger>
+                </div>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>
-                <p className={UI_STYLES.table.mobileValue}>
-                  <FloorDistance row={opportunity} />
-                </p>
+                <div className={UI_STYLES.table.mobileValue}>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="distancia_suelo_pct">
+                    <FloorDistance row={opportunity} />
+                  </CompanyHistoryTrigger>
+                </div>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sma200}</p>
-                <p className={UI_STYLES.table.mobileValue}>
-                  <Sma200Distance row={opportunity} />
-                </p>
+                <div className={UI_STYLES.table.mobileValue}>
+                  <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="dist_sma200_pct">
+                    <Sma200Distance row={opportunity} />
+                  </CompanyHistoryTrigger>
+                </div>
               </div>
               <div>
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.backtest}</p>

@@ -6,6 +6,7 @@ import { DividendBadge } from "@/components/tables/common/trading-cells";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {
@@ -19,7 +20,11 @@ export function formatScannedPrice(value: number, currency?: string) {
 export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCompanyId: Map<number, CompanyScanQuote>) {
   const quote = scanQuoteByCompanyId.get(empresa.id);
   if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) {
-    return <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>;
+    return (
+      <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio">
+        <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>
+      </CompanyHistoryTrigger>
+    );
   }
 
   const changePercent =
@@ -37,22 +42,24 @@ export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCom
           : "text-slate-500";
 
   return (
-    <span className="inline-flex items-center whitespace-nowrap">
-      <span className="inline-block w-22.5 text-right font-medium text-slate-800">
-        {formatScannedPrice(quote.price, empresa.moneda)}
-      </span>
-
-      {changePercent !== undefined && (
-        <span
-          className={`ml-2 inline-flex w-14.5 items-center gap-0.5 text-xs font-medium ${changeStyle}`}
-          title={UI_TEXT.table.columns.previousDayChange}
-          aria-label={`${UI_TEXT.table.columns.previousDayChange}: ${changePercent.toFixed(2)}%`}
-        >
-          <span aria-hidden="true">{changePercent >= 0 ? "▲" : "▼"}</span>
-          {Math.abs(changePercent).toFixed(2)}%
+    <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio">
+      <span className="inline-flex items-center whitespace-nowrap">
+        <span className="inline-block w-22.5 text-right font-medium text-slate-800">
+          {formatScannedPrice(quote.price, empresa.moneda)}
         </span>
-      )}
-    </span>
+
+        {changePercent !== undefined && (
+          <span
+            className={`ml-2 inline-flex w-14.5 items-center gap-0.5 text-xs font-medium ${changeStyle}`}
+            title={UI_TEXT.table.columns.previousDayChange}
+            aria-label={`${UI_TEXT.table.columns.previousDayChange}: ${changePercent.toFixed(2)}%`}
+          >
+            <span aria-hidden="true">{changePercent >= 0 ? "▲" : "▼"}</span>
+            {Math.abs(changePercent).toFixed(2)}%
+          </span>
+        )}
+      </span>
+    </CompanyHistoryTrigger>
   );
 }
 

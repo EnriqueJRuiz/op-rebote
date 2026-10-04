@@ -2,6 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port";
 import { CompanyRecord, CompanyScanQuote, StockCandidate } from "@/domain/models/trading";
+import { CompanyHistoryPoint } from "@/domain/models/company-history";
 import { BacktestGroup } from "@/domain/models/backtest";
 import { isScanHistorySchemaUnavailable, isTransientSupabaseError } from "@/infrastructure/repositories/supabase-error-utils";
 
@@ -109,6 +110,48 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           ? undefined
           : Number(row.precio_anterior),
     }));
+  }
+
+  async getRecentCompanyHistory(companyId: number): Promise<CompanyHistoryPoint[]> {
+    type HistoryRow = Omit<CompanyHistoryPoint, "timestamp"> & { escaneado_en: string };
+    const { data, error } = await this.supabase
+      .from("historico_escaneos")
+      .select("escaneado_en, precio, rsi, volumen, volumen_relativo, rsi_anterior, capitalizacion, minimo_reciente, sma200, dist_sma200_pct, precio_anterior")
+      .eq("empresa_id", companyId)
+      .order("escaneado_en", { ascending: false })
+      .limit(1000);
+
+    if (error) {
+      throw new Error(`No se pudo recuperar el historial de la empresa: ${error.message}`);
+    }
+
+    const recentSessions = new Set<string>();
+    const recentRows: HistoryRow[] = [];
+    for (const row of (data as HistoryRow[] | null) ?? []) {
+      const sessionDate = row.escaneado_en.slice(0, 10);
+      const weekday = new Date(`${sessionDate}T00:00:00Z`).getUTCDay();
+      if (weekday === 0 || weekday === 6) continue;
+
+      recentSessions.add(sessionDate);
+      if (recentSessions.size > 5) break;
+      recentRows.push(row);
+    }
+
+    return recentRows
+      .map((row) => ({
+        timestamp: row.escaneado_en,
+        precio: row.precio === null ? null : Number(row.precio),
+        rsi: row.rsi === null ? null : Number(row.rsi),
+        volumen: row.volumen === null ? null : Number(row.volumen),
+        volumen_relativo: row.volumen_relativo === null ? null : Number(row.volumen_relativo),
+        rsi_anterior: row.rsi_anterior === null ? null : Number(row.rsi_anterior),
+        capitalizacion: row.capitalizacion === null ? null : Number(row.capitalizacion),
+        minimo_reciente: row.minimo_reciente === null ? null : Number(row.minimo_reciente),
+        sma200: row.sma200 === null ? null : Number(row.sma200),
+        dist_sma200_pct: row.dist_sma200_pct === null ? null : Number(row.dist_sma200_pct),
+        precio_anterior: row.precio_anterior === null ? null : Number(row.precio_anterior),
+      }))
+      .reverse();
   }
 
   async getLatestOpportunities(): Promise<StockCandidate[]> {

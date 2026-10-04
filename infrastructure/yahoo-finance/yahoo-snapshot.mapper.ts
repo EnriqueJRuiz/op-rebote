@@ -8,6 +8,31 @@ import {
   YahooNumericValue,
 } from "./yahoo-finance.types";
 
+export function getRsiClosesFromLatestSession(
+  candles: Array<{ date: Date; close: number | null | undefined }>,
+  monthsOffset: number
+): number[] {
+  const weekdayCandles = candles.filter((candle) => {
+    const weekday = candle.date.getUTCDay();
+    return weekday !== 0 && weekday !== 6 && candle.close !== null && candle.close !== undefined;
+  });
+  const latestCandle = weekdayCandles.reduce<typeof weekdayCandles[number] | null>(
+    (latest, candle) => !latest || candle.date > latest.date ? candle : latest,
+    null
+  );
+
+  if (!latestCandle) return [];
+
+  const cutoff = new Date(latestCandle.date);
+  cutoff.setUTCHours(0, 0, 0, 0);
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - monthsOffset);
+
+  return weekdayCandles
+    .filter((candle) => candle.date >= cutoff)
+    .sort((first, second) => first.date.getTime() - second.date.getTime())
+    .map((candle) => candle.close as number);
+}
+
 export class YahooSnapshotMapper {
   private static readonly DEFAULT_RSI = STRATEGY_CONFIG.YAHOO.DEFAULT_RSI;
   private static readonly RSI_PERIOD = STRATEGY_CONFIG.YAHOO.RSI_PERIOD;

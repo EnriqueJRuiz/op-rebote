@@ -12,6 +12,7 @@ import { WatchlistSummary } from "./watchlist-summary";
 import { WatchlistFilters } from "./watchlist-filters";
 import { WatchlistEmptyState } from "./watchlist-empty-state";
 import { getWatchlistColumns } from "./watchlist-columns";
+import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 import {
   PriceCell,
   RsiBadge,
@@ -183,7 +184,9 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.rsi}</p>
                   <div className="mt-1">
-                    <RsiBadge rsi={r.rsi} />
+                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="rsi">
+                      <RsiBadge rsi={r.rsi} />
+                    </CompanyHistoryTrigger>
                   </div>
                 </div>
                 <div>
@@ -191,18 +194,27 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
                   <p className={UI_STYLES.table.mobileValue}>
                     {r.volumen?.toLocaleString() ?? "-"}
                   </p>
+                  {r.volumenRelativo !== undefined && (
+                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
+                      <span className="text-xs text-slate-500">RVOL {r.volumenRelativo.toFixed(2)}x</span>
+                    </CompanyHistoryTrigger>
+                  )}
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>
-                  <p className={UI_STYLES.table.mobileValue}>
-                    <FloorDistance row={r} />
-                  </p>
+                  <div className={`${UI_STYLES.table.mobileValue} mt-1`}>
+                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="distancia_suelo_pct">
+                      <FloorDistance row={r} />
+                    </CompanyHistoryTrigger>
+                  </div>
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sma200}</p>
-                  <p className={UI_STYLES.table.mobileValue}>
-                    <Sma200Distance row={r} />
-                  </p>
+                  <div className={`${UI_STYLES.table.mobileValue} mt-1`}>
+                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="dist_sma200_pct">
+                      <Sma200Distance row={r} />
+                    </CompanyHistoryTrigger>
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.backtest}</p>

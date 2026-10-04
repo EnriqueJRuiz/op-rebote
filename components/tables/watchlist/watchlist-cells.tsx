@@ -3,6 +3,7 @@
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
+import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 
 export function getFloorDistancePercent(row: WatchlistRowData): number | null {
   const { precio, minimoReciente } = row;
@@ -127,10 +128,18 @@ export function PriceCell({ row }: { row: WatchlistRowData }) {
 
   return (
     <div className="leading-tight">
-      <span className="font-semibold text-slate-900">
-        {price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        {row.moneda ? ` ${row.moneda}` : ""}
-      </span>
+      <CompanyHistoryTrigger
+        companyId={row.idEmpresa}
+        ticker={row.ticker}
+        companyName={row.nombre}
+        currency={row.moneda}
+        metric="precio"
+      >
+        <span className="font-semibold text-slate-900">
+          {price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {row.moneda ? ` ${row.moneda}` : ""}
+        </span>
+      </CompanyHistoryTrigger>
       {changePercent !== undefined && (
         <span
           className={`mt-0.5 flex items-center gap-0.5 text-xs font-medium ${changeStyle}`}

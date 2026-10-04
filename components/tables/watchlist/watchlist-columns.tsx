@@ -5,6 +5,7 @@ import { FollowButton } from "@/components/buttons/follow-button";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
+import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 import {
   PriceCell,
   RsiBadge,
@@ -45,7 +46,11 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
     {
       header: UI_TEXT.table.columns.rsi,
       sortValue: (r) => r.rsi ?? -Infinity,
-      render: (r) => <RsiBadge rsi={r.rsi} />,
+      render: (r) => (
+        <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="rsi">
+          <RsiBadge rsi={r.rsi} />
+        </CompanyHistoryTrigger>
+      ),
     },
     {
       header: UI_TEXT.table.columns.volume,
@@ -56,9 +61,11 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
             {r.volumen ? r.volumen.toLocaleString() : UI_TEXT.table.values.notAvailable}
           </span>
           {r.volumenRelativo !== undefined && (
-            <span className="block text-[11px] font-medium text-slate-500" title="Volumen Relativo">
-              RVOL: {r.volumenRelativo.toFixed(2)}x
-            </span>
+            <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
+              <span className="block text-[11px] font-medium text-slate-500" title="Volumen Relativo">
+                RVOL: {r.volumenRelativo.toFixed(2)}x
+              </span>
+            </CompanyHistoryTrigger>
           )}
         </div>
       ),
@@ -66,12 +73,20 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
     {
       header: UI_TEXT.table.columns.recentFloor,
       sortValue: getFloorDistancePercent,
-      render: (r) => <FloorDistance row={r} />,
+      render: (r) => (
+        <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="distancia_suelo_pct">
+          <FloorDistance row={r} />
+        </CompanyHistoryTrigger>
+      ),
     },
     {
       header: UI_TEXT.table.columns.sma200,
       sortValue: (r) => r.distSma200Pct ?? -Infinity,
-      render: (r) => <Sma200Distance row={r} />,
+      render: (r) => (
+        <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="dist_sma200_pct">
+          <Sma200Distance row={r} />
+        </CompanyHistoryTrigger>
+      ),
     },
     {
       header: UI_TEXT.table.columns.backtest,

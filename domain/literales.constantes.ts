@@ -110,6 +110,14 @@ export const UI_TEXT = {
       filters: "Filtros de estrategia",
     },
     backtestBySmaTitle: "% de aciertos históricos según el precio estuviera por encima o por debajo de la SMA200 al dar la señal.",
+    history: {
+      metric: "Indicador",
+      sessionsDescription: "Muestras guardadas durante las últimas 5 sesiones bursátiles",
+      loading: "Cargando el historial de escaneos…",
+      noData: "No hay datos disponibles para este indicador en las últimas sesiones.",
+      close: "Cerrar gráfico",
+      sampleCount: (count: number) => `${count} muestras registradas en las últimas sesiones.`,
+    },
     filters: {
       priceAriaLabel: "Filtrar por variación del precio",
       priceAll: "Último precio: Todos",
@@ -226,6 +234,7 @@ export const UI_TEXT = {
     description: "Distancia entre el precio actual y el mínimo de las cinco velas previas. No es una estimación de caída máxima.",
   },
   feedback: {
+    marketClosedWeekend: "La bolsa está cerrada durante el fin de semana.",
     syncError: "Error al sincronizar con el mercado.",
     searchError: "Error al buscar oportunidades.",
     radarScanComplete: "Escaneo completado; historial actualizado.",

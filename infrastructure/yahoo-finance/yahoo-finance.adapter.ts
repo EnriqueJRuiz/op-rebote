@@ -12,7 +12,7 @@ import {
 import { YahooScreenerClient } from "./yahoo-screener.client";
 import { YahooScreenerMapper } from "./yahoo-screener.mapper";
 import { YahooUniverseFilter } from "./yahoo-universe.filter";
-import { YahooSnapshotMapper } from "./yahoo-snapshot.mapper";
+import { getRsiClosesFromLatestSession, YahooSnapshotMapper } from "./yahoo-snapshot.mapper";
 import { HistoricalCandle } from "@/domain/models/backtest";
 
 export class YahooFinanceAdapter implements MarketRepositoryPort {
@@ -52,11 +52,10 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
         : Promise.resolve(null),
     ]);
 
-    const rsiStart = new Date(this.getHistoryStartDate());
-    const rsiCloses = chartResult.quotes
-      .filter((q) => q.date >= rsiStart)
-      .map((q) => q.close)
-      .filter((close): close is number => close !== null && close !== undefined);
+    const rsiCloses = getRsiClosesFromLatestSession(
+      chartResult.quotes,
+      YahooFinanceAdapter.HISTORY_MONTHS_OFFSET
+    );
 
     const allCloses = chartResult.quotes
       .map((q) => q.close)
@@ -141,12 +140,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
   private async fetchQuote(ticker: string) {
     return this.yf.quote(ticker);
-  }
-
-  private getHistoryStartDate(): string {
-    const date = new Date();
-    date.setMonth(date.getMonth() - YahooFinanceAdapter.HISTORY_MONTHS_OFFSET);
-    return date.toISOString().split("T")[0];
   }
 
   private getSmaHistoryStartDate(): string {

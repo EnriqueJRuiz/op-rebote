@@ -153,7 +153,7 @@ export function CompanyTable({
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.lastPrice}</p>
-                  <p className="mt-1">{renderCompanyScannedPrice(empresa, scanQuoteByCompanyId)}</p>
+                  <div className="mt-1">{renderCompanyScannedPrice(empresa, scanQuoteByCompanyId)}</div>
                 </div>
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sector}</p>
