@@ -1,11 +1,6 @@
 name: Market Sync
 
 on:
-  schedule:
-    # Cada 30 min, 7:30-23:00 hora de España en verano e invierno (UTC)
-    - cron: '30 5 * * 1-5'
-    - cron: '0,30 6-21 * * 1-5'
-    - cron: '0 22 * * 1-5'
   workflow_dispatch:
 
 concurrency:
