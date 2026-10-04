@@ -14,6 +14,22 @@ const SAVE_CHUNK_SIZE = 8;
 // Backtests simultáneos (solo de las candidatas válidas, que son pocas)
 const MAX_CONCURRENT_BACKTESTS = 3;
 
+// Los metadatos de cada empresa (fundamentales, dividendos, sector, industria…) se vuelven a
+// descargar cuando tienen más de estos días.
+const METADATA_REFRESH_DAYS = 30;
+// Máximo de empresas con datos caducados que se refrescan en un mismo escaneo (empezando por las
+// más antiguas), para repartir la carga en varios días en vez de refrescar todas de golpe.
+const MAX_METADATA_REFRESHES_PER_SCAN = 40;
+// Si Yahoo no tenía sector ("Desconocido"), se reintenta como mucho cada tantos días.
+const UNKNOWN_SECTOR_RETRY_DAYS = 7;
+const DAY_MS = 86_400_000;
+
+function daysSince(isoDate?: string | null): number {
+  if (!isoDate) return Infinity;
+  const time = Date.parse(isoDate);
+  return Number.isNaN(time) ? Infinity : (Date.now() - time) / DAY_MS;
+}
+
 type ScanOutcome = { company: CompanyRecord; classifiedCandidate: StockCandidate };
 
 /**
@@ -54,6 +70,15 @@ export async function handleSearchReboundsAction() {
     const companies = await companiesRepository.getCompanies();
     const loteId = crypto.randomUUID();
 
+    const staleCompanyIds = new Set(
+      companies
+        .filter((company) => daysSince(company.fundamentales_actualizados_en) >= METADATA_REFRESH_DAYS)
+        .filter((company) => company.fundamentales_actualizados_en)
+        .sort((a, b) => daysSince(b.fundamentales_actualizados_en) - daysSince(a.fundamentales_actualizados_en))
+        .slice(0, MAX_METADATA_REFRESHES_PER_SCAN)
+        .map((company) => company.id)
+    );
+
     const failures: string[] = [];
     const savedOutcomes: ScanOutcome[] = [];
     const companyTimings: { ticker: string; ms: number }[] = [];
@@ -67,48 +92,63 @@ export async function handleSearchReboundsAction() {
       const dividendTier = getDividendTier(company.ticker);
       const dividendTierChanged = company.dividend_tier !== dividendTier;
 
+      const sectorUnknownDue =
+        company.sector === "Desconocido" &&
+        daysSince(company.fundamentales_actualizados_en) >= UNKNOWN_SECTOR_RETRY_DAYS;
+
       const metadataMissing =
         !company.tipo_activo ||
         !company.sector ||
-        company.sector === "Desconocido" ||
+        sectorUnknownDue ||
         !company.fundamentales_actualizados_en ||
         dividendTierChanged;
 
+      const metadataDue = metadataMissing || staleCompanyIds.has(company.id);
+
       const snapshot = await marketRepository.getCompanySnapshot(
         company.ticker,
-        metadataMissing
+        metadataDue
       );
 
-      const metadataChanged =
-        snapshot.metadata &&
-        (
-          company.tipo_activo !== snapshot.metadata.tipoActivo ||
-          company.es_dividendo !== snapshot.metadata.esDividendo ||
-          company.sector !== snapshot.metadata.sector ||
-          company.current_ratio !== snapshot.metadata.currentRatio ||
-          company.debt_to_equity !== snapshot.metadata.debtToEquity ||
-          company.return_on_equity !== snapshot.metadata.returnOnEquity
-        );
+      // En un refresco, si Yahoo devuelve los fundamentales vacíos (fallo puntual), se conservan los
+      // anteriores en vez de sobrescribirlos con ceros.
+      let metadata = snapshot.metadata;
+      if (metadata && company.fundamentales_actualizados_en) {
+        const fundamentalsEmpty = [
+          metadata.currentRatio, metadata.debtToEquity, metadata.returnOnEquity,
+          metadata.profitMargin, metadata.freeCashFlow, metadata.totalCash, metadata.totalDebt,
+        ].every((value) => !value);
 
-      if (
-        snapshot.metadata &&
-        (metadataChanged ||
-          company.nombre !== snapshot.stock.nombre ||
-          company.dividend_tier !== dividendTier)
-      ) {
+        if (fundamentalsEmpty) {
+          metadata = {
+            ...metadata,
+            currentRatio: company.current_ratio ?? metadata.currentRatio,
+            debtToEquity: company.debt_to_equity ?? metadata.debtToEquity,
+            returnOnEquity: company.return_on_equity ?? metadata.returnOnEquity,
+            profitMargin: company.profit_margin ?? metadata.profitMargin,
+            freeCashFlow: company.free_cash_flow ?? metadata.freeCashFlow,
+            totalCash: company.total_cash ?? metadata.totalCash,
+            totalDebt: company.total_debt ?? metadata.totalDebt,
+          };
+        }
+      }
+
+      // Siempre que se descargan metadatos se guardan (aunque no haya cambiado nada), para que la
+      // fecha de actualización se renueve y la empresa no vuelva a descargarse en cada escaneo.
+      if (metadata) {
         await companiesRepository.updateCompanyMetadataByTicker(
           company.ticker,
           snapshot.stock.nombre,
-          snapshot.metadata
+          metadata
         );
       }
 
       const rawStock: StockCandidate = {
         ...snapshot.stock,
         categoria: company.categoria,
-        currentRatio: snapshot.metadata?.currentRatio ?? company.current_ratio,
-        debtToEquity: snapshot.metadata?.debtToEquity ?? company.debt_to_equity,
-        returnOnEquity: snapshot.metadata?.returnOnEquity ?? company.return_on_equity,
+        currentRatio: metadata?.currentRatio ?? company.current_ratio,
+        debtToEquity: metadata?.debtToEquity ?? company.debt_to_equity,
+        returnOnEquity: metadata?.returnOnEquity ?? company.return_on_equity,
         dividendTier,
         esValido: false,
       };
