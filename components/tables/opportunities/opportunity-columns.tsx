@@ -14,6 +14,7 @@ import {
   BacktestInfo,
   formatCurrencyPrice,
   getFloorDistancePercent,
+  PriceChange,
 } from "@/components/tables/common/trading-cells";
 import {
   OpportunityFilterThresholds,
@@ -42,7 +43,16 @@ export function getOpportunityColumns(filterThresholds: OpportunityFilterThresho
       sortValue: (opportunity) => opportunity.precio,
       render: (opportunity) => (
         <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="precio">
-          {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
+          <span className="inline-flex flex-col items-end whitespace-nowrap">
+            <span className="inline-block w-22.5 text-right font-medium text-slate-800">
+              {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
+            </span>
+            <PriceChange
+              price={opportunity.precio}
+              previousPrice={opportunity.precioAnterior}
+              className="mt-0.5 justify-end"
+            />
+          </span>
         </CompanyHistoryTrigger>
       ),
       cellClassName: "whitespace-nowrap text-right font-medium tabular-nums",

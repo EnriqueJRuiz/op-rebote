@@ -114,27 +114,37 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
 
   async getRecentCompanyHistory(companyId: number): Promise<CompanyHistoryPoint[]> {
     type HistoryRow = Omit<CompanyHistoryPoint, "timestamp"> & { escaneado_en: string };
-    const { data, error } = await this.supabase
-      .from("historico_escaneos")
-      .select("escaneado_en, precio, rsi, volumen, volumen_relativo, rsi_anterior, capitalizacion, minimo_reciente, sma200, dist_sma200_pct, precio_anterior")
-      .eq("empresa_id", companyId)
-      .order("escaneado_en", { ascending: false })
-      .limit(1000);
-
-    if (error) {
-      throw new Error(`No se pudo recuperar el historial de la empresa: ${error.message}`);
-    }
-
     const recentSessions = new Set<string>();
     const recentRows: HistoryRow[] = [];
-    for (const row of (data as HistoryRow[] | null) ?? []) {
-      const sessionDate = row.escaneado_en.slice(0, 10);
-      const weekday = new Date(`${sessionDate}T00:00:00Z`).getUTCDay();
-      if (weekday === 0 || weekday === 6) continue;
+    const pageSize = 1000;
+    let offset = 0;
+    let hasMore = true;
 
-      recentSessions.add(sessionDate);
-      if (recentSessions.size > 5) break;
-      recentRows.push(row);
+    while (hasMore && recentSessions.size < 60) {
+      const { data, error } = await this.supabase
+        .from("historico_escaneos")
+        .select("escaneado_en, precio, rsi, volumen, volumen_relativo, rsi_anterior, capitalizacion, minimo_reciente, sma200, dist_sma200_pct, precio_anterior")
+        .eq("empresa_id", companyId)
+        .order("escaneado_en", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        throw new Error(`No se pudo recuperar el historial de la empresa: ${error.message}`);
+      }
+
+      const page = (data as HistoryRow[] | null) ?? [];
+      for (const row of page) {
+        const sessionDate = row.escaneado_en.slice(0, 10);
+        const weekday = new Date(`${sessionDate}T00:00:00Z`).getUTCDay();
+        if (weekday === 0 || weekday === 6) continue;
+
+        if (!recentSessions.has(sessionDate) && recentSessions.size === 60) break;
+        recentSessions.add(sessionDate);
+        recentRows.push(row);
+      }
+
+      hasMore = page.length === pageSize && recentSessions.size < 60;
+      offset += pageSize;
     }
 
     return recentRows

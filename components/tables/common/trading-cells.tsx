@@ -61,6 +61,37 @@ export function formatCurrencyPrice(price: number, currency?: string): string {
   }
 }
 
+export function PriceChange({
+  price,
+  previousPrice,
+  className = "",
+}: {
+  price: number;
+  previousPrice?: number;
+  className?: string;
+}) {
+  if (!previousPrice || previousPrice <= 0) return null;
+
+  const changePercent = ((price - previousPrice) / previousPrice) * 100;
+  const changeStyle =
+    changePercent > 0
+      ? UI_STYLES.badge.success
+      : changePercent < 0
+        ? UI_STYLES.badge.danger
+        : "text-slate-500";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-xs font-medium ${changeStyle} ${className}`}
+      title={UI_TEXT.table.columns.previousDayChange}
+      aria-label={`${UI_TEXT.table.columns.previousDayChange}: ${changePercent.toFixed(2)}%`}
+    >
+      <span aria-hidden="true">{changePercent >= 0 ? "▲" : "▼"}</span>
+      {Math.abs(changePercent).toFixed(2)}%
+    </span>
+  );
+}
+
 export function FloorDistance({
   row,
 }: {
@@ -177,9 +208,9 @@ export function RsiTrend({
         : falling
           ? UI_TEXT.table.values.rsiFalling
           : UI_TEXT.table.values.rsiUnchanged;
-  const trendStyle = rising
+  const trendStyle = falling
     ? UI_STYLES.badge.success
-    : falling
+    : rising
       ? UI_STYLES.badge.danger
       : UI_STYLES.badge.muted;
 

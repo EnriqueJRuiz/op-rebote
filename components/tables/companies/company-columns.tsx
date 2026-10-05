@@ -2,7 +2,7 @@
 
 import { Column } from "@/components/tables/core/DataTable";
 import { FollowButton } from "@/components/buttons/follow-button";
-import { DividendBadge } from "@/components/tables/common/trading-cells";
+import { DividendBadge, PriceChange } from "@/components/tables/common/trading-cells";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
@@ -27,37 +27,17 @@ export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCom
     );
   }
 
-  const changePercent =
-    quote.previousDayPrice && quote.previousDayPrice > 0
-      ? ((quote.price - quote.previousDayPrice) / quote.previousDayPrice) * 100
-      : undefined;
-
-  const changeStyle =
-    changePercent === undefined
-      ? ""
-      : changePercent > 0
-        ? UI_STYLES.badge.success
-        : changePercent < 0
-          ? UI_STYLES.badge.danger
-          : "text-slate-500";
-
   return (
     <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio">
-      <span className="inline-flex items-center whitespace-nowrap">
+      <span className="inline-flex flex-col items-end whitespace-nowrap">
         <span className="inline-block w-22.5 text-right font-medium text-slate-800">
           {formatScannedPrice(quote.price, empresa.moneda)}
         </span>
-
-        {changePercent !== undefined && (
-          <span
-            className={`ml-2 inline-flex w-14.5 items-center gap-0.5 text-xs font-medium ${changeStyle}`}
-            title={UI_TEXT.table.columns.previousDayChange}
-            aria-label={`${UI_TEXT.table.columns.previousDayChange}: ${changePercent.toFixed(2)}%`}
-          >
-            <span aria-hidden="true">{changePercent >= 0 ? "▲" : "▼"}</span>
-            {Math.abs(changePercent).toFixed(2)}%
-          </span>
-        )}
+        <PriceChange
+          price={quote.price}
+          previousPrice={quote.previousDayPrice}
+          className="mt-0.5 justify-end"
+        />
       </span>
     </CompanyHistoryTrigger>
   );

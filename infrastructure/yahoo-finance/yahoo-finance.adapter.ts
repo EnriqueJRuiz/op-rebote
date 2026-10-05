@@ -84,7 +84,6 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       recentLows,
       historicalVolumes,
     });
-
     if (!includeMetadata || !summary) {
       return { stock: baseStock };
     }

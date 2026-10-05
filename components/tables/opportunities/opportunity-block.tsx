@@ -16,6 +16,7 @@ import {
   RsiTrend,
   BacktestInfo,
   formatCurrencyPrice,
+  PriceChange,
 } from "@/components/tables/common/trading-cells";
 import {
   assessOpportunity,
@@ -80,7 +81,14 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.price}</p>
                 <div className={`${UI_STYLES.table.mobileValue} text-left font-medium tabular-nums`}>
                   <CompanyHistoryTrigger companyId={opportunity.idEmpresa} ticker={opportunity.ticker} companyName={opportunity.nombre} currency={opportunity.moneda} metric="precio">
-                    {formatCurrencyPrice(opportunity.precio, opportunity.moneda)}
+                    <span className="inline-flex flex-col items-start">
+                      <span>{formatCurrencyPrice(opportunity.precio, opportunity.moneda)}</span>
+                      <PriceChange
+                        price={opportunity.precio}
+                        previousPrice={opportunity.precioAnterior}
+                        className="mt-0.5"
+                      />
+                    </span>
                   </CompanyHistoryTrigger>
                 </div>
               </div>
