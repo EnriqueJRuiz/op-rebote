@@ -11,12 +11,28 @@ import {
 } from "lightweight-charts";
 import type { CompanyHistoryPoint } from "@/domain/models/company-history";
 import { CompanyHistoryMetric, getCompanyHistoryMetricValue } from "./company-history.types";
+import { UI_TEXT } from "@/domain/literales.constantes";
 
 type Props = {
   points: CompanyHistoryPoint[];
   metric: CompanyHistoryMetric;
   sessions: 1 | 5;
   className?: string;
+  onPriceAnalysis?: (analysis: PriceAnalysis | null) => void;
+};
+
+export type PriceAnalysis = {
+  direction: "alcista" | "bajista" | "indefinida";
+  directionLabel: string;
+  directionDetail: string;
+  currentPrice: number;
+  upper1: number;
+  upper2: number;
+  distanceUpper1Pct: number;
+  distanceUpper2Pct: number;
+  sma50: number | null;
+  sma50SlopePct: number | null;
+  structure: "creciente" | "decreciente" | "mixta";
 };
 
 type Candle = {
@@ -80,7 +96,88 @@ function makeIndicatorData(points: CompanyHistoryPoint[], metric: CompanyHistory
     .sort((a, b) => Number(a.time) - Number(b.time));
 }
 
-export function CompanyHistoryChart({ points, metric, sessions, className }: Props) {
+function analyzePrice(candles: Candle[], dailyCloses: Candle[], visibleSessions: string[]): PriceAnalysis | null {
+  if (dailyCloses.length === 0) return null;
+
+  const recentDaily = dailyCloses.slice(-Math.max(1, visibleSessions.length));
+  const current = recentDaily[recentDaily.length - 1].close;
+  const recentFive = candles.filter((candle) => visibleSessions.includes(candle.session));
+  if (!Number.isFinite(current) || recentFive.length === 0) return null;
+
+  const sessionHighs = recentDaily.map((candle) => candle.high);
+  const sessionLows = recentDaily.map((candle) => candle.low);
+  const firstHigh = sessionHighs[0];
+  const lastHigh = sessionHighs[sessionHighs.length - 1];
+  const firstLow = sessionLows[0];
+  const lastLow = sessionLows[sessionLows.length - 1];
+  const higherHighs = sessionHighs.length < 2 || lastHigh > firstHigh;
+  const lowerHighs = sessionHighs.length >= 2 && lastHigh < firstHigh;
+  const higherLows = sessionLows.length < 2 || lastLow > firstLow;
+  const lowerLows = sessionLows.length >= 2 && lastLow < firstLow;
+
+  const firstHalf = recentDaily.slice(0, Math.max(1, Math.floor(recentDaily.length / 2)));
+  const lastHalf = recentDaily.slice(Math.max(1, Math.floor(recentDaily.length / 2)));
+  const firstAvg = firstHalf.reduce((sum, candle) => sum + candle.close, 0) / firstHalf.length;
+  const lastAvg = lastHalf.reduce((sum, candle) => sum + candle.close, 0) / lastHalf.length;
+  const structure: PriceAnalysis["structure"] = higherHighs && higherLows
+    ? "creciente"
+    : lowerHighs && lowerLows
+      ? "decreciente"
+      : "mixta";
+
+  const sessionHigh = Math.max(...recentDaily.slice(-1).map((candle) => candle.high));
+  const fiveSessionHigh = Math.max(...recentFive.map((candle) => candle.high));
+
+  const dailyWithSma = dailyCloses.map((candle, index) => {
+    if (index < 49) return null;
+    const window = dailyCloses.slice(index - 49, index + 1);
+    return window.reduce((sum, item) => sum + item.close, 0) / 50;
+  });
+  const currentSma = dailyWithSma[dailyWithSma.length - 1] ?? null;
+  const priorSmaIndex = Math.max(0, dailyWithSma.length - 6);
+  const priorSma = dailyWithSma[priorSmaIndex] ?? null;
+  const sma50SlopePct = currentSma !== null && priorSma !== null && priorSma !== 0
+    ? ((currentSma - priorSma) / priorSma) * 100
+    : null;
+
+  const priceTrendUp = lastAvg > firstAvg;
+  const priceTrendDown = lastAvg < firstAvg;
+  const bullishVotes = Number(priceTrendUp) + Number(structure === "creciente") + Number(sma50SlopePct !== null && sma50SlopePct > 0);
+  const bearishVotes = Number(priceTrendDown) + Number(structure === "decreciente") + Number(sma50SlopePct !== null && sma50SlopePct < 0);
+  const direction: PriceAnalysis["direction"] = bullishVotes >= 2 && bullishVotes > bearishVotes
+    ? "alcista"
+    : bearishVotes >= 2 && bearishVotes > bullishVotes
+      ? "bajista"
+      : "indefinida";
+
+  const copy = UI_TEXT.table.history.priceAnalysis;
+  const directionLabel = direction === "alcista"
+    ? copy.directions.bullish
+    : direction === "bajista"
+      ? copy.directions.bearish
+      : copy.directions.neutral;
+  const directionDetail = direction === "alcista"
+    ? copy.directionDetails.bullish
+    : direction === "bajista"
+      ? copy.directionDetails.bearish
+      : copy.directionDetails.neutral;
+
+  return {
+    direction,
+    directionLabel,
+    directionDetail,
+    currentPrice: current,
+    upper1: sessionHigh,
+    upper2: fiveSessionHigh,
+    distanceUpper1Pct: ((sessionHigh - current) / current) * 100,
+    distanceUpper2Pct: ((fiveSessionHigh - current) / current) * 100,
+    sma50: currentSma,
+    sma50SlopePct,
+    structure,
+  };
+}
+
+export function CompanyHistoryChart({ points, metric, sessions, className, onPriceAnalysis }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,6 +213,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
         wickUpColor: "#22c55e",
         wickDownColor: "#ef4444",
         priceLineVisible: false,
+        lastValueVisible: false,
       });
       candleSeries.setData(visibleCandles);
 
@@ -128,14 +226,16 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
         for (const candle of allCandles) lastBySession.set(candle.session, candle);
 
         const dailyCloses = [...lastBySession.values()];
+        const analysis = analyzePrice(allCandles, dailyCloses, visibleSessions);
+        onPriceAnalysis?.(analysis);
         const dailyCloseIndexes = new Map(dailyCloses.map((candle, index) => [candle.session, index]));
         const makeLevelData = (value: number) => visibleCandles.map(({ time }) => ({ time, value }));
 
         const levels = [
-          { title: "SH · Máximo sesión", value: Math.max(...recentSessionCandles.map((candle) => candle.high)), color: "#f59e0b", includeInOneSessionScale: true },
-          { title: "SL · Mínimo sesión", value: Math.min(...recentSessionCandles.map((candle) => candle.low)), color: "#f59e0b", includeInOneSessionScale: true },
-          { title: "RH · Máximo 5 sesiones", value: Math.max(...recentFiveSessionCandles.map((candle) => candle.high)), color: "#a78bfa", includeInOneSessionScale: false },
-          { title: "RL · Mínimo 5 sesiones", value: Math.min(...recentFiveSessionCandles.map((candle) => candle.low)), color: "#a78bfa", includeInOneSessionScale: false },
+          { value: Math.max(...recentSessionCandles.map((candle) => candle.high)), color: "#f59e0b", includeInOneSessionScale: true },
+          { value: Math.min(...recentSessionCandles.map((candle) => candle.low)), color: "#f59e0b", includeInOneSessionScale: true },
+          { value: Math.max(...recentFiveSessionCandles.map((candle) => candle.high)), color: "#a78bfa", includeInOneSessionScale: false },
+          { value: Math.min(...recentFiveSessionCandles.map((candle) => candle.low)), color: "#a78bfa", includeInOneSessionScale: false },
         ];
 
         for (const level of levels) {
@@ -145,7 +245,6 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
             color: level.color,
             lineWidth: 1,
             lineStyle: 2,
-            title: level.title,
             priceLineVisible: false,
             lastValueVisible: false,
             autoscaleInfoProvider,
@@ -165,7 +264,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
           const sma = chart.addSeries(LineSeries, {
             color: "#38bdf8",
             lineWidth: 2,
-            title: "SMA 50 · cierres muestreados",
+            title: UI_TEXT.table.history.priceAnalysis.sma50Title,
             priceLineVisible: false,
             lastValueVisible: false,
           });
@@ -173,6 +272,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
         }
       }
     } else {
+      onPriceAnalysis?.(null);
       const series = chart.addSeries(LineSeries, {
         color: metric === "rsi" ? "#a78bfa" : metric === "volumen_relativo" ? "#38bdf8" : "#22c55e",
         lineWidth: 2,
@@ -196,7 +296,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className }: Pro
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [points, metric, sessions]);
+  }, [points, metric, sessions, onPriceAnalysis]);
 
   return <div ref={containerRef} className={className ?? "h-[360px] w-full"} />;
 }
