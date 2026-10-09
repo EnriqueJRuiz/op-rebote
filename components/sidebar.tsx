@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, Building2, ChartNoAxesCombined, ChevronLeft, ChevronRight, Home, Target } from "lucide-react";
+import { Activity, Bookmark, Building2, ChartNoAxesCombined, ChevronLeft, ChevronRight, Home, Target } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -9,9 +9,10 @@ import { UI_TEXT } from "@/domain/literales.constantes";
 
 const NAVIGATION_LINKS = [
   // { href: APP_ROUTES.HOME, label: UI_TEXT.navigation.home, icon: Home },
-  { href: APP_ROUTES.OPORTUNIDADES, label: UI_TEXT.navigation.opportunities, icon: Target },
-  { href: APP_ROUTES.SEGUIMIENTO, label: UI_TEXT.navigation.watchlist, icon: Bookmark },
   { href: APP_ROUTES.EMPRESAS_RADAR, label: UI_TEXT.navigation.companies, icon: Building2 },
+  { href: APP_ROUTES.OPORTUNIDADES, label: UI_TEXT.navigation.opportunities, icon: Target },
+  { href: APP_ROUTES.IMPULSO_ALCISTA, label: "Impulso Alcista", icon: Activity },
+  { href: APP_ROUTES.SEGUIMIENTO, label: UI_TEXT.navigation.watchlist, icon: Bookmark },
 ] as const;
 
 const STYLES = {
@@ -73,7 +74,7 @@ export function Sidebar() {
       <div className="relative hidden min-h-screen self-stretch md:block">
         <aside className={`${STYLES.desktopPanel} h-full ${collapsed ? "w-20" : "w-45"}`}>
           <div className={STYLES.header}>
-            <span className={`flex min-w-0 items-center gap-2 transition-transform duration-300 ease-out ${collapsed ? "translate-x-[5px]" : "translate-x-0"}`}>
+            <span className={`flex min-w-0 items-center gap-2 transition-transform duration-300 ease-out ${collapsed ? "translate-x-1.25" : "translate-x-0"}`}>
               <ChartNoAxesCombined size={18} className="shrink-0 text-slate-800" aria-hidden="true" />
               <span className={`${STYLES.brand} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${collapsed ? "max-w-0 opacity-0" : "max-w-32 opacity-100"}`}>
                 {UI_TEXT.brand}
@@ -91,7 +92,7 @@ export function Sidebar() {
           onClick={() => setCollapsed((isCollapsed) => !isCollapsed)}
           aria-label={collapsed ? UI_TEXT.navigation.expand : UI_TEXT.navigation.collapse}
           title={collapsed ? UI_TEXT.navigation.expand : UI_TEXT.navigation.collapse}
-          className={`group absolute -right-8.5 top-5 z-20 flex h-11 w-9 cursor-pointer items-center justify-center border-y border-r border-slate-200 border-l-0 bg-white text-slate-600 shadow-none ${collapsed ? "translate-x-[-3px] scale-[0.97]" : "translate-x-0 scale-100"} rounded-l-none rounded-r-md`}
+          className={`group absolute -right-8.5 top-5 z-20 flex h-11 w-9 cursor-pointer items-center justify-center border-y border-r border-slate-200 border-l-0 bg-white text-slate-600 shadow-none ${collapsed ? "translate-x-0.75 scale-[0.97]" : "translate-x-0 scale-100"} rounded-l-none rounded-r-md`}
         >
           <span className="rounded-md p-1 transition-colors duration-200 group-hover:bg-blue-50 group-hover:text-blue-700">
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}

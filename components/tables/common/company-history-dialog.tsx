@@ -15,7 +15,7 @@ import type { PriceAnalysis } from "./company-history-chart";
 
 const CompanyHistoryChart = dynamic(
   () => import("./company-history-chart").then((module) => module.CompanyHistoryChart),
-  { loading: () => <div className="h-[min(65vh,620px)] min-h-80 animate-pulse rounded-lg bg-slate-100" /> }
+  { loading: () => <div className="h-[min(42dvh,300px)] min-h-48 animate-pulse rounded-lg bg-slate-100 sm:h-[min(65vh,620px)] sm:min-h-80" /> }
 );
 
 export interface CompanyHistoryDialogProps {
@@ -113,7 +113,7 @@ export function CompanyHistoryDialog({
         aria-labelledby="company-history-title"
         className="max-h-[calc(100dvh-1rem)] w-full max-w-6xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)]"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <header className="flex items-start justify-between gap-2 border-b border-slate-200 px-3 py-2 sm:gap-4 sm:px-5 sm:py-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
             <h2 id="company-history-title" className="min-w-0 truncate text-xl font-bold text-slate-900 sm:text-2xl">
               {companyName} <span className="text-sm font-medium text-slate-500">({ticker})</span>
@@ -142,7 +142,7 @@ export function CompanyHistoryDialog({
           </button>
         </header>
 
-        <div className="p-4 sm:p-7">
+        <div className="p-2 sm:p-7">
           {error ? (
             <p role="alert" className="py-16 text-center text-sm text-rose-700">{error}</p>
           ) : points === null ? (
@@ -154,7 +154,7 @@ export function CompanyHistoryDialog({
           ) : (
             <>
               {initialMetric === "precio" && priceAnalysis && (
-                <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                <div className="mb-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 sm:mb-3 sm:p-3">
                   <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1">
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                       priceAnalysis.direction === "alcista"
@@ -171,12 +171,12 @@ export function CompanyHistoryDialog({
                     <span className="shrink-0 text-slate-500">
                       {UI_TEXT.table.history.priceAnalysis.structure}: <strong className="text-slate-700">{priceAnalysis.structure}</strong>
                     </span>
-                    <span className="min-w-0 flex-1 basis-full text-left text-slate-500 sm:basis-auto sm:text-right">
+                    <span className="hidden min-w-0 flex-1 basis-full text-left text-slate-500 sm:inline sm:basis-auto sm:text-right">
                       {priceAnalysis.directionDetail}
                     </span>
                   </div>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    <div className="rounded-md bg-white px-3 py-2">
+                  <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:mt-2 sm:grid-cols-3 sm:gap-2">
+                    <div className="col-span-2 rounded-md bg-white px-2 py-1.5 sm:col-span-1 sm:px-3 sm:py-2">
                       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                           {UI_TEXT.table.history.priceAnalysis.priceLastSearch}
@@ -185,7 +185,7 @@ export function CompanyHistoryDialog({
                         <strong className="whitespace-nowrap text-xs text-slate-800">{formattedLatestPrice ?? priceAnalysis.currentPrice.toFixed(2)}</strong>
                       </div>
                     </div>
-                    <div className="rounded-md bg-white px-3 py-2">
+                    <div className="rounded-md bg-white px-2 py-1.5 sm:px-3 sm:py-2">
                       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{UI_TEXT.table.history.priceAnalysis.sessionRange}</span>
                         <strong className="whitespace-nowrap text-xs text-slate-800">
@@ -193,7 +193,7 @@ export function CompanyHistoryDialog({
                         </strong>
                       </div>
                     </div>
-                    <div className="rounded-md bg-white px-3 py-2">
+                    <div className="rounded-md bg-white px-2 py-1.5 sm:px-3 sm:py-2">
                       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{UI_TEXT.table.history.priceAnalysis.fiveSessionRange}</span>
                         <strong className="whitespace-nowrap text-xs text-slate-800">
@@ -207,17 +207,17 @@ export function CompanyHistoryDialog({
               {initialMetric !== "precio" && (
                 <p className="mb-3 text-sm font-semibold text-slate-700">{selectedMetric.label}</p>
               )}
-              <div className="mt-5 rounded-xl border border-slate-100 bg-white p-2">
+              <div className="mt-2 rounded-xl border border-slate-100 bg-white p-1 sm:mt-5 sm:p-2">
                 <CompanyHistoryChart
                   points={metricPoints}
                   metric={initialMetric}
                   sessions={sessionCount}
                   onPriceAnalysis={setPriceAnalysis}
-                  className="h-[min(65vh,620px)] min-h-80 w-full"
+                  className="h-[min(42dvh,300px)] min-h-48 w-full sm:h-[min(65vh,620px)] sm:min-h-80"
                 />
               </div>
               {initialMetric === "precio" && (
-                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] leading-tight text-slate-600 sm:mt-4 sm:gap-x-5 sm:gap-y-2 sm:text-sm sm:leading-normal">
                   <span><span className="font-semibold text-amber-600">SH / SL</span> {UI_TEXT.table.history.priceAnalysis.legendSessionRange}</span>
                   <span><span className="font-semibold text-violet-500">RH / RL</span> {UI_TEXT.table.history.priceAnalysis.legendFiveSessionRange}</span>
                   <span><span className="font-semibold text-sky-500">SMA 50</span> {UI_TEXT.table.history.priceAnalysis.legendSma50}</span>

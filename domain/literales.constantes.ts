@@ -55,6 +55,7 @@ export const UI_TEXT = {
       addSearchError: "No se pudo consultar Yahoo Finance. Inténtalo de nuevo.",
       addInvalid: "Yahoo no devolvió una cotización válida de una acción para añadir.",
       addSuccess: (name: string) => `${name} se añadió a Empresas Radar.`,
+      lastScan: (date: string) => `Precios actualizados: ${date}`,
     },
   },
   login: {
@@ -82,6 +83,7 @@ export const UI_TEXT = {
       TIER_1: "Candidatas prioritarias de rebote",
       TOP: "Gran capitalización (TOP)",
       MID: "Capitalización media (MID)",
+      ALL: "Todas las empresas",
     },
     subtitles: {
       TIER_0: "Sobreventa y filtros de calidad superados",
@@ -99,6 +101,7 @@ export const UI_TEXT = {
       recentFloor: "Suelo reciente",
       sma200: "vs SMA200",
       lastPrice: "Último precio",
+      change: "Variación",
       previousDayChange: "Variación respecto al último escaneo del día anterior",
       sector: "Sector",
       dividend: "Dividendo",
@@ -241,7 +244,7 @@ export const UI_TEXT = {
     },
     emptyStates: {
       default: "No hay registros para mostrar.",
-      companies: "No hay empresas en esta categoría.",
+      companies: "No hay empresas en el radar.",
       noCompaniesMatchSearch: "No hay empresas que coincidan con la búsqueda.",
       opportunities: "No hay oportunidades que cumplan el segundo filtro.",
       watchlist: "No tienes ninguna empresa en seguimiento. Puedes marcar empresas usando el icono de favoritos en la pantalla de Oportunidades o en Empresas Radar.",
@@ -249,6 +252,8 @@ export const UI_TEXT = {
     },
     sorting: {
       byColumn: (label: string) => `Ordenar por ${label.toLowerCase()}`,
+      sortBy: "Ordenar por",
+      reverse: "Invertir el orden",
     },
   },
   floor: {

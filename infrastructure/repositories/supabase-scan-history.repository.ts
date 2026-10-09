@@ -1,7 +1,7 @@
 // infrastructure/repositories/supabase-scan-history.repository.ts
 import { createClient } from "@supabase/supabase-js";
 import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port";
-import { CompanyRecord, CompanyScanQuote, StockCandidate } from "@/domain/models/trading";
+import { CompanyRecord, CompanyScanQuote, ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { CompanyHistoryPoint } from "@/domain/models/company-history";
 import { BacktestGroup } from "@/domain/models/backtest";
 import { isScanHistorySchemaUnavailable, isTransientSupabaseError } from "@/infrastructure/repositories/supabase-error-utils";
@@ -110,6 +110,30 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
           ? undefined
           : Number(row.precio_anterior),
     }));
+  }
+
+  /**
+   * Último registro escrito por un escaneo (una sola fila, consulta barata).
+   * El escaneo guarda por trozos: mientras `scannedAt` siga cambiando, el lote no ha terminado.
+   */
+  async getLatestScanStatus(): Promise<ScanStatus | null> {
+    type LatestScanRow = { lote_id: string; escaneado_en: string };
+
+    const { data, error } = await this.supabase
+      .from("historico_escaneos")
+      .select("lote_id, escaneado_en")
+      .order("escaneado_en", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      if (isScanHistorySchemaUnavailable(error.code) || isTransientSupabaseError(error)) {
+        return null;
+      }
+      throw new Error(`No se pudo consultar el estado del último escaneo: ${error.message}`);
+    }
+
+    const latest = (data as LatestScanRow[] | null)?.[0];
+    return latest ? { loteId: latest.lote_id, scannedAt: latest.escaneado_en } : null;
   }
 
   async getRecentCompanyHistory(companyId: number): Promise<CompanyHistoryPoint[]> {

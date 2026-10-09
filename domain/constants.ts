@@ -36,6 +36,7 @@ export const APP_ROUTES = {
   OPORTUNIDADES: "/oportunidades",
   SEGUIMIENTO: "/seguimiento",
   EMPRESAS_RADAR: "/empresas-radar",
+  IMPULSO_ALCISTA: "/impulso-alcista",
 } as const;
 
 export const DIVIDEND_KINGS = [

@@ -184,6 +184,10 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
     const container = containerRef.current;
     if (!container || points.length === 0) return;
 
+    const mobileViewport = window.matchMedia("(max-width: 639px)");
+    const scaleMargins = mobileViewport.matches
+      ? { top: 0.05, bottom: 0.05 }
+      : { top: 0.2, bottom: 0.1 };
     const chart = createChart(container, {
       width: container.clientWidth,
       height: container.clientHeight,
@@ -196,7 +200,10 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
         vertLines: { color: "rgba(148, 163, 184, 0.08)" },
         horzLines: { color: "rgba(148, 163, 184, 0.12)" },
       },
-      rightPriceScale: { borderColor: "rgba(148, 163, 184, 0.2)" },
+      rightPriceScale: {
+        borderColor: "rgba(148, 163, 184, 0.2)",
+        scaleMargins,
+      },
       timeScale: { borderColor: "rgba(148, 163, 184, 0.2)", timeVisible: true },
       crosshair: { vertLine: { labelBackgroundColor: "#475569" }, horzLine: { labelBackgroundColor: "#475569" } },
     });
@@ -285,6 +292,14 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
     }
 
     chart.timeScale().fitContent();
+    const updateScaleMargins = () => {
+      chart.priceScale("right").applyOptions({
+        scaleMargins: mobileViewport.matches
+          ? { top: 0.05, bottom: 0.05 }
+          : { top: 0.2, bottom: 0.1 },
+      });
+    };
+    mobileViewport.addEventListener("change", updateScaleMargins);
     const resizeObserver = new ResizeObserver(() => {
       if (container.clientWidth > 0 && container.clientHeight > 0) {
         chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
@@ -294,6 +309,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
 
     return () => {
       resizeObserver.disconnect();
+      mobileViewport.removeEventListener("change", updateScaleMargins);
       chart.remove();
     };
   }, [points, metric, sessions, onPriceAnalysis]);

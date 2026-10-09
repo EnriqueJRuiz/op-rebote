@@ -9,6 +9,10 @@ export interface Column<T> {
   header: string;
   render: (item: T) => ReactNode;
   sortValue?: (item: T) => string | number | null | undefined;
+  // Nombre con el que se anuncia el orden si no coincide con la cabecera (p. ej. precio ordenado por %).
+  sortLabel?: string;
+  // Dirección del primer clic en la cabecera (por defecto ascendente). Útil para %: mayores primero.
+  firstSortDirection?: "asc" | "desc";
   cellClassName?: string;
   headerClassName?: string;
 }
@@ -26,6 +30,8 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   containerClassName?: string;
   mobileRow?: (item: T, expanded: boolean, toggle: () => void) => ReactNode;
+  // En móvil las cabeceras no se ven: muestra un selector para ordenar por las columnas ordenables.
+  showMobileSort?: boolean;
   rowClassName?: (item: T) => string;
 }
 
@@ -42,7 +48,7 @@ function compareValues(first: string | number | null | undefined, second: string
 export function DataTable<T>({
   title, subtitle, data, columns, rowKey,
   pageSizeOptions = [10, 25, 50, 100], initialPageSize = 10, initialSortIndex = null,
-  recordsLabel = UI_TEXT.table.pagination.defaultRecords, emptyMessage = UI_TEXT.table.emptyStates.default, containerClassName = "", mobileRow, rowClassName,
+  recordsLabel = UI_TEXT.table.pagination.defaultRecords, emptyMessage = UI_TEXT.table.emptyStates.default, containerClassName = "", mobileRow, showMobileSort = false, rowClassName,
 }: DataTableProps<T>) {
   const availablePageSizes = pageSizeOptions.length > 0 ? pageSizeOptions : [10, 25, 50, 100];
   const defaultPageSize = availablePageSizes.includes(initialPageSize) ? initialPageSize : availablePageSizes[0];
@@ -52,7 +58,11 @@ export function DataTable<T>({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [expandedKey, setExpandedKey] = useState<string | number | null>(null);
   const sortedData = sortIndex === null ? data : [...data].sort((first, second) => {
-    const comparison = compareValues(columns[sortIndex].sortValue?.(first), columns[sortIndex].sortValue?.(second));
+    const firstValue = columns[sortIndex].sortValue?.(first);
+    const secondValue = columns[sortIndex].sortValue?.(second);
+    const comparison = compareValues(firstValue, secondValue);
+    // Los registros sin dato van siempre al final, sea cual sea la dirección del orden.
+    if (firstValue == null || secondValue == null) return comparison;
     return sortDirection === "asc" ? comparison : -comparison;
   });
   const pageCount = Math.max(1, Math.ceil(sortedData.length / pageSize));
@@ -62,11 +72,17 @@ export function DataTable<T>({
   const visibleData = sortedData.slice((safePage - 1) * pageSize, safePage * pageSize);
   const changeSort = (index: number) => {
     if (!columns[index].sortValue) return;
-    setSortDirection((direction) => sortIndex === index ? (direction === "asc" ? "desc" : "asc") : "asc");
+    setSortDirection((direction) => sortIndex === index ? (direction === "asc" ? "desc" : "asc") : (columns[index].firstSortDirection ?? "asc"));
     setSortIndex(index);
     setCurrentPage(1);
     setExpandedKey(null);
   };
+  const toggleSortDirection = () => {
+    setSortDirection((direction) => direction === "asc" ? "desc" : "asc");
+    setCurrentPage(1);
+    setExpandedKey(null);
+  };
+  const sortableColumns = columns.map((column, index) => ({ column, index })).filter(({ column }) => column.sortValue);
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, pageCount)));
     setExpandedKey(null);
@@ -84,7 +100,7 @@ export function DataTable<T>({
             <tr className="border-b border-slate-200 text-sm text-slate-600">
               {columns.map((column, index) => (
                 <th key={column.header} className={`p-4 ${column.headerClassName ?? ""}`}>
-                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-slate-900" title={UI_TEXT.table.sorting.byColumn(column.header)}>
+                  {column.sortValue ? <button type="button" onClick={() => changeSort(index)} className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-slate-900" title={UI_TEXT.table.sorting.byColumn(column.sortLabel ?? column.header)}>
                     {column.header}{sortIndex === index && (sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </button> : column.header}
                 </th>
@@ -100,6 +116,16 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
+      {mobileRow && showMobileSort && sortableColumns.length > 0 && <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 md:hidden">
+        <label htmlFor={`${title ?? "data-table"}-mobile-sort`} className="sr-only">{UI_TEXT.table.sorting.sortBy}</label>
+        <select id={`${title ?? "data-table"}-mobile-sort`} value={sortIndex ?? ""} onChange={(event) => { if (event.target.value !== "") changeSort(Number(event.target.value)); }} className="min-w-0 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+          {sortIndex === null && <option value="" disabled>{UI_TEXT.table.sorting.sortBy}…</option>}
+          {sortableColumns.map(({ column, index }) => <option key={column.header} value={index}>{UI_TEXT.table.sorting.sortBy}: {(column.sortLabel ?? column.header).toLowerCase()}</option>)}
+        </select>
+        <button type="button" onClick={toggleSortDirection} disabled={sortIndex === null} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label={UI_TEXT.table.sorting.reverse} title={UI_TEXT.table.sorting.reverse}>
+          {sortDirection === "asc" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+        </button>
+      </div>}
       {mobileRow && <div className="divide-y divide-slate-100 px-4 md:hidden">{visibleData.map((item) => {
         const key = rowKey(item);
         const expanded = expandedKey === key;

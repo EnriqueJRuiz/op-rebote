@@ -43,6 +43,16 @@ export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCom
   );
 }
 
+/**
+ * Variación porcentual respecto al cierre anterior (la misma que muestra PriceChange).
+ * Devuelve null si falta algún dato válido, para que orden y filtros traten igual a esas empresas.
+ */
+export function getScanQuoteChangePercent(quote?: CompanyScanQuote): number | null {
+  if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) return null;
+  if (!quote.previousDayPrice || quote.previousDayPrice <= 0) return null;
+  return ((quote.price - quote.previousDayPrice) / quote.previousDayPrice) * 100;
+}
+
 export function getCompanyColumns(scanQuoteByCompanyId: Map<number, CompanyScanQuote>): Column<CompanyRecord>[] {
   return [
     {
@@ -66,7 +76,10 @@ export function getCompanyColumns(scanQuoteByCompanyId: Map<number, CompanyScanQ
     },
     {
       header: UI_TEXT.table.columns.lastPrice,
-      sortValue: (empresa) => scanQuoteByCompanyId.get(empresa.id)?.price,
+      // Se ordena por el % de subida/bajada, no por el importe del precio.
+      sortValue: (empresa) => getScanQuoteChangePercent(scanQuoteByCompanyId.get(empresa.id)),
+      sortLabel: UI_TEXT.table.columns.change,
+      firstSortDirection: "desc", // primer clic: las que más han subido arriba
       render: (empresa) => renderCompanyScannedPrice(empresa, scanQuoteByCompanyId),
     },
     {

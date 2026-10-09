@@ -52,6 +52,12 @@ export interface CompanyScanQuote {
   previousDayPrice?: number;
 }
 
+// Marca de la última escritura del escaneo: sirve para saber si hay datos nuevos sin recargar todo.
+export interface ScanStatus {
+  loteId: string;
+  scannedAt: string; // ISO del último registro guardado
+}
+
 export interface BacktestGroupStats {
   casos: number;
   exitoPct: number;

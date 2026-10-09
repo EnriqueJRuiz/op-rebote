@@ -16,6 +16,7 @@ import {
 } from "./company-filters";
 import {
   getCompanyColumns,
+  getScanQuoteChangePercent,
   renderCompanyScannedPrice,
 } from "./company-columns";
 
@@ -65,15 +66,8 @@ export function CompanyTable({
       if (!matchesSearch) return false;
 
       if (priceFilter !== FILTER_ALL) {
-        const quote = scanQuoteByCompanyId.get(empresa.id);
-        if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) {
-          return false;
-        }
-        if (!quote.previousDayPrice || quote.previousDayPrice <= 0) {
-          return false;
-        }
-        const changePercent =
-          ((quote.price - quote.previousDayPrice) / quote.previousDayPrice) * 100;
+        const changePercent = getScanQuoteChangePercent(scanQuoteByCompanyId.get(empresa.id));
+        if (changePercent === null) return false;
         if (priceFilter === "up" && changePercent <= 0) return false;
         if (priceFilter === "down" && changePercent >= 0) return false;
       }
@@ -121,6 +115,7 @@ export function CompanyTable({
         rowKey={(empresa) => empresa.id}
         initialSortIndex={1}
         recordsLabel={UI_TEXT.table.pagination.companyRecords}
+        showMobileSort
         emptyMessage={
           normalizedSearchTerm
             ? UI_TEXT.table.emptyStates.noCompaniesMatchSearch
