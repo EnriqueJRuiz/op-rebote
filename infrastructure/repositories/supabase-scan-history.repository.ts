@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { ScanHistoryRepositoryPort } from "@/application/ports/scan-history-repository.port";
 import { CompanyRecord, CompanyScanQuote, ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { CompanyHistoryPoint } from "@/domain/models/company-history";
+import { BullishImpulseSample } from "@/domain/models/bullish-impulse";
 import { BacktestGroup } from "@/domain/models/backtest";
 import { isScanHistorySchemaUnavailable, isTransientSupabaseError } from "@/infrastructure/repositories/supabase-error-utils";
 
@@ -186,6 +187,68 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
         precio_anterior: row.precio_anterior === null ? null : Number(row.precio_anterior),
       }))
       .reverse();
+  }
+
+  async getRecentBullishImpulseSamples(since: string): Promise<BullishImpulseSample[]> {
+    type RelatedCompany = { id: number; ticker: string; nombre: string | null };
+    type SampleRow = {
+      escaneado_en: string;
+      apertura: number | null;
+      maximo: number | null;
+      minimo: number | null;
+      precio: number | null;
+      volumen_intervalo: number | null;
+      intervalo_segundos: number | null;
+      empresas: RelatedCompany | RelatedCompany[] | null;
+    };
+
+    const samples: BullishImpulseSample[] = [];
+    const pageSize = 1000;
+    const pageBatchSize = 5;
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const offsets = Array.from({ length: pageBatchSize }, (_, index) => offset + index * pageSize);
+      const pages = await Promise.all(offsets.map(async (pageOffset) => {
+        const { data, error } = await this.supabase
+          .from("historico_escaneos")
+          .select("escaneado_en, apertura, maximo, minimo, precio, volumen_intervalo, intervalo_segundos, empresas!inner(id, ticker, nombre)")
+          .gte("escaneado_en", since)
+          .order("escaneado_en", { ascending: true })
+          .order("empresa_id", { ascending: true })
+          .range(pageOffset, pageOffset + pageSize - 1);
+
+        if (error) {
+          throw new Error(`No se pudieron recuperar las muestras para Impulso Alcista: ${error.message}`);
+        }
+        return (data as SampleRow[] | null) ?? [];
+      }));
+
+      for (const page of pages) {
+        for (const row of page) {
+          const company = Array.isArray(row.empresas) ? row.empresas[0] : row.empresas;
+          if (!company) continue;
+          samples.push({
+            companyId: company.id,
+            ticker: company.ticker,
+            nombre: company.nombre ?? company.ticker,
+            timestamp: row.escaneado_en,
+            open: row.apertura === null ? null : Number(row.apertura),
+            high: row.maximo === null ? null : Number(row.maximo),
+            low: row.minimo === null ? null : Number(row.minimo),
+            close: row.precio === null ? null : Number(row.precio),
+            intervalVolume: row.volumen_intervalo === null ? null : Number(row.volumen_intervalo),
+            intervalSeconds: row.intervalo_segundos === null ? null : Number(row.intervalo_segundos),
+          });
+        }
+      }
+
+      hasMore = pages[pages.length - 1].length === pageSize;
+      offset += pageBatchSize * pageSize;
+    }
+
+    return samples;
   }
 
   async getLatestOpportunities(): Promise<StockCandidate[]> {
