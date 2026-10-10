@@ -1,5 +1,6 @@
+import { AutoRefresh } from "@/components/auto-refresh";
 import { SearchReboundsButton } from "@/components/buttons/search-button";
-import { StockCandidate } from "@/domain/models/trading";
+import { ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
@@ -9,16 +10,21 @@ export const revalidate = 0;
 
 export default async function OpportunitiesPage() {
   const { scanHistoryRepository } = createApplicationDependencies();
-  let latestOpportunities: StockCandidate[] = [];
 
-  try {
-    latestOpportunities = await scanHistoryRepository.getLatestOpportunities();
-  } catch (error) {
-    console.warn("No se pudo cargar el último lote de oportunidades:", error);
-  }
+  const [latestOpportunities, scanStatus] = await Promise.all([
+    scanHistoryRepository.getLatestOpportunities().catch((error) => {
+      console.warn("No se pudo cargar el último lote de oportunidades:", error);
+      return [] as StockCandidate[];
+    }),
+    scanHistoryRepository.getLatestScanStatus().catch((error) => {
+      console.warn("No se pudo cargar el estado del último escaneo:", error);
+      return null as ScanStatus | null;
+    }),
+  ]);
 
   return (
     <main className="min-h-screen p-8">
+      <AutoRefresh renderedScannedAt={scanStatus?.scannedAt ?? null} />
       <div className="mx-auto max-w-7xl">
         <SearchReboundsButton
           initialOpportunities={latestOpportunities}

@@ -24,7 +24,15 @@ export function SearchReboundsButton({ initialOpportunities, title, description,
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<StockCandidate[]>(initialOpportunities);
+  const [syncedOpportunities, setSyncedOpportunities] = useState<StockCandidate[]>(initialOpportunities);
   const router = useRouter();
+
+  // router.refresh() (AutoRefresh, volver a la pestaña, escaneo manual) manda props nuevas, pero
+  // useState solo usa el valor inicial: sin esto la lista se quedaba con los datos del primer render.
+  if (syncedOpportunities !== initialOpportunities) {
+    setSyncedOpportunities(initialOpportunities);
+    setOpportunities(initialOpportunities);
+  }
 
   const handleClick = async () => {
     // Para bloquear la búsqueda manual el sábado y domingo después de las pruebas, descomentar:
