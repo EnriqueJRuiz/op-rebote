@@ -1,5 +1,17 @@
 import { BullishSignal, IntradayCandle } from "@/domain/models/bullish-impulse";
 
+/** Horas que se muestran las señales en pantalla. El historial completo sigue guardado en la base de datos. */
+export const SIGNAL_WINDOW_HOURS = 6;
+
+/**
+ * Decide qué señal se enseña de cada empresa (una sola): la CONFIRMADA manda sobre la TEMPRANA,
+ * y entre señales del mismo tipo gana la más reciente.
+ */
+export function isBetterSignal(candidate: BullishSignal, current: BullishSignal): boolean {
+  if (candidate.tipo !== current.tipo) return candidate.tipo === "CONFIRMADA";
+  return Date.parse(candidate.detectadaEn) > Date.parse(current.detectadaEn);
+}
+
 /** Reglas iniciales y explícitas. Deben calibrarse con backtests antes de usarlas como órdenes. */
 export function detectBullishSignals(
   companyId: number,

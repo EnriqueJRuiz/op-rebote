@@ -189,9 +189,16 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       .reverse();
   }
 
+  /**
+   * Muestras intradía desde `since`, ordenadas por fecha. Pensado para ser rápido:
+   *  - lee por franjas de tiempo (todas en paralelo) en vez de paginar con OFFSET,
+   *    cuyo coste crece con cada página porque Postgres recorre y descarta las anteriores;
+   *  - no hace JOIN con `empresas` en cada fila: se leen las empresas una vez y se cruzan en memoria.
+   * Requiere un índice sobre historico_escaneos (escaneado_en, empresa_id).
+   */
   async getRecentBullishImpulseSamples(since: string): Promise<BullishImpulseSample[]> {
-    type RelatedCompany = { id: number; ticker: string; nombre: string | null };
     type SampleRow = {
+      empresa_id: number;
       escaneado_en: string;
       apertura: number | null;
       maximo: number | null;
@@ -199,55 +206,85 @@ export class SupabaseScanHistoryRepository implements ScanHistoryRepositoryPort 
       precio: number | null;
       volumen_intervalo: number | null;
       intervalo_segundos: number | null;
-      empresas: RelatedCompany | RelatedCompany[] | null;
     };
+    type CompanyRef = { id: number; ticker: string; nombre: string | null };
 
-    const samples: BullishImpulseSample[] = [];
-    const pageSize = 1000;
-    const pageBatchSize = 5;
-    let offset = 0;
-    let hasMore = true;
+    const SLICE_MS = 20 * 60 * 1000; // con muestras cada 10 min, una franja cabe casi siempre en una sola consulta
+    const PAGE_SIZE = 1000; // límite por petición de Supabase
+    const CONCURRENCY = 8;
 
-    while (hasMore) {
-      const offsets = Array.from({ length: pageBatchSize }, (_, index) => offset + index * pageSize);
-      const pages = await Promise.all(offsets.map(async (pageOffset) => {
-        const { data, error } = await this.supabase
+    const { data: companyRows, error: companiesError } = await this.supabase
+      .from("empresas")
+      .select("id, ticker, nombre");
+    if (companiesError) {
+      throw new Error(`No se pudieron recuperar las empresas para Impulso Alcista: ${companiesError.message}`);
+    }
+    const companies = new Map<number, CompanyRef>(
+      ((companyRows as CompanyRef[] | null) ?? []).map((company) => [company.id, company])
+    );
+
+    const startMs = Date.parse(since);
+    const endMs = Date.now();
+    const slices: { from: string; to: string | null }[] = [];
+    for (let at = startMs; at <= endMs; at += SLICE_MS) {
+      // La última franja queda abierta por arriba para no perder lo que se guarde mientras se lee.
+      slices.push({
+        from: new Date(at).toISOString(),
+        to: at + SLICE_MS <= endMs ? new Date(at + SLICE_MS).toISOString() : null,
+      });
+    }
+
+    const readSlice = async ({ from, to }: { from: string; to: string | null }): Promise<SampleRow[]> => {
+      const rows: SampleRow[] = [];
+      for (let offset = 0; ; offset += PAGE_SIZE) {
+        let query = this.supabase
           .from("historico_escaneos")
-          .select("escaneado_en, apertura, maximo, minimo, precio, volumen_intervalo, intervalo_segundos, empresas!inner(id, ticker, nombre)")
-          .gte("escaneado_en", since)
+          .select("empresa_id, escaneado_en, apertura, maximo, minimo, precio, volumen_intervalo, intervalo_segundos")
+          .gte("escaneado_en", from);
+        if (to) query = query.lt("escaneado_en", to);
+
+        const { data, error } = await query
           .order("escaneado_en", { ascending: true })
           .order("empresa_id", { ascending: true })
-          .range(pageOffset, pageOffset + pageSize - 1);
+          .range(offset, offset + PAGE_SIZE - 1);
 
         if (error) {
           throw new Error(`No se pudieron recuperar las muestras para Impulso Alcista: ${error.message}`);
         }
-        return (data as SampleRow[] | null) ?? [];
-      }));
-
-      for (const page of pages) {
-        for (const row of page) {
-          const company = Array.isArray(row.empresas) ? row.empresas[0] : row.empresas;
-          if (!company) continue;
-          samples.push({
-            companyId: company.id,
-            ticker: company.ticker,
-            nombre: company.nombre ?? company.ticker,
-            timestamp: row.escaneado_en,
-            open: row.apertura === null ? null : Number(row.apertura),
-            high: row.maximo === null ? null : Number(row.maximo),
-            low: row.minimo === null ? null : Number(row.minimo),
-            close: row.precio === null ? null : Number(row.precio),
-            intervalVolume: row.volumen_intervalo === null ? null : Number(row.volumen_intervalo),
-            intervalSeconds: row.intervalo_segundos === null ? null : Number(row.intervalo_segundos),
-          });
-        }
+        const page = (data as SampleRow[] | null) ?? [];
+        rows.push(...page);
+        if (page.length < PAGE_SIZE) return rows;
       }
+    };
 
-      hasMore = pages[pages.length - 1].length === pageSize;
-      offset += pageBatchSize * pageSize;
+    const rowsBySlice: SampleRow[][] = new Array(slices.length);
+    let cursor = 0;
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, slices.length) }, async () => {
+      while (cursor < slices.length) {
+        const index = cursor++;
+        rowsBySlice[index] = await readSlice(slices[index]);
+      }
+    }));
+
+    const samples: BullishImpulseSample[] = [];
+    for (const rows of rowsBySlice) {
+      for (const row of rows) {
+        const company = companies.get(row.empresa_id);
+        if (!company) continue;
+        samples.push({
+          companyId: company.id,
+          ticker: company.ticker,
+          nombre: company.nombre ?? company.ticker,
+          timestamp: row.escaneado_en,
+          open: row.apertura === null ? null : Number(row.apertura),
+          high: row.maximo === null ? null : Number(row.maximo),
+          low: row.minimo === null ? null : Number(row.minimo),
+          close: row.precio === null ? null : Number(row.precio),
+          intervalVolume: row.volumen_intervalo === null ? null : Number(row.volumen_intervalo),
+          intervalSeconds: row.intervalo_segundos === null ? null : Number(row.intervalo_segundos),
+        });
+      }
     }
-
     return samples;
   }
 

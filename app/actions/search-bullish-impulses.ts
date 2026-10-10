@@ -1,13 +1,21 @@
 "use server";
 
 import { BullishImpulseSample, BullishSignal, IntradayCandle } from "@/domain/models/bullish-impulse";
-import { detectBullishSignals } from "@/domain/rules/bullish-impulse.rules";
-import { createApplicationDependencies } from "@/infrastructure/composition";
+import { SIGNAL_WINDOW_HOURS, detectBullishSignals, isBetterSignal } from "@/domain/rules/bullish-impulse.rules";
+import { SupabaseScanHistoryRepository } from "@/infrastructure/repositories/supabase-scan-history.repository";
 
-const HISTORY_LOOKBACK_DAYS = 4;
+// Se leen unas horas más que la ventana visible: hacen falta 12 muestras previas para evaluar la primera señal.
+const HISTORY_LOOKBACK_HOURS = SIGNAL_WINDOW_HOURS + 3;
 const MAX_SAMPLE_GAP_SECONDS = 30 * 60;
 const STANDARD_SAMPLE_SECONDS = 10 * 60;
-const MAX_SIGNALS = 500;
+// Mientras no haya un escaneo nuevo el resultado no cambia, así que se reutiliza (con tope por seguridad).
+const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+
+type ImpulseResult = { signals: BullishSignal[]; scannedAt: string | null; error?: string };
+
+// Un único repositorio: no se construye toda la composición (con el adaptador de Yahoo) solo para leer una tabla.
+const scanHistoryRepository = new SupabaseScanHistoryRepository();
+let cache: { key: string; builtAt: number; result: ImpulseResult } | null = null;
 
 function hasValidPrices(
   sample: BullishImpulseSample
@@ -17,31 +25,34 @@ function hasValidPrices(
       .every((price) => price !== null && Number.isFinite(price) && price > 0);
 }
 
-function createSignals(samples: BullishImpulseSample[]): BullishSignal[] {
-  const samplesByTicker = new Map<string, BullishImpulseSample[]>();
+/** Devuelve UNA señal por empresa (la última; la confirmada manda sobre la temprana), de más reciente a más antigua. */
+function createSignals(samples: BullishImpulseSample[], visibleSince: number): BullishSignal[] {
+  const samplesByCompany = new Map<number, BullishImpulseSample[]>();
   for (const sample of samples) {
-    const tickerSamples = samplesByTicker.get(sample.ticker) ?? [];
-    tickerSamples.push(sample);
-    samplesByTicker.set(sample.ticker, tickerSamples);
+    const companySamples = samplesByCompany.get(sample.companyId) ?? [];
+    companySamples.push(sample);
+    samplesByCompany.set(sample.companyId, companySamples);
   }
 
-  const signals: BullishSignal[] = [];
-  for (const [ticker, tickerSamples] of samplesByTicker) {
+  const bestByCompany = new Map<number, BullishSignal>();
+  for (const [companyId, companySamples] of samplesByCompany) {
+    companySamples.sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
+    const { ticker, nombre } = companySamples[0];
     let segment: IntradayCandle[] = [];
     let segmentDate: string | null = null;
 
     const scanSegment = () => {
       for (let index = 11; index < segment.length; index++) {
-        signals.push(...detectBullishSignals(
-          tickerSamples[0].companyId,
-          ticker,
-          tickerSamples[0].nombre,
-          segment.slice(index - 11, index + 1)
-        ));
+        // Fuera de la ventana visible no se evalúa: solo servía de contexto para las primeras muestras.
+        if (segment[index].timestamp.getTime() < visibleSince) continue;
+        for (const signal of detectBullishSignals(companyId, ticker, nombre, segment.slice(index - 11, index + 1))) {
+          const current = bestByCompany.get(companyId);
+          if (!current || isBetterSignal(signal, current)) bestByCompany.set(companyId, signal);
+        }
       }
     };
 
-    for (const sample of tickerSamples) {
+    for (const sample of companySamples) {
       const sampleDate = sample.timestamp.slice(0, 10);
       if (!hasValidPrices(sample)) {
         scanSegment();
@@ -81,22 +92,29 @@ function createSignals(samples: BullishImpulseSample[]): BullishSignal[] {
     scanSegment();
   }
 
-  return signals
-    .sort((first, second) => Date.parse(second.detectadaEn) - Date.parse(first.detectadaEn))
-    .slice(0, MAX_SIGNALS);
+  return [...bestByCompany.values()]
+    .sort((first, second) => Date.parse(second.detectadaEn) - Date.parse(first.detectadaEn));
 }
 
-async function loadBullishImpulseSignals(): Promise<{
-  signals: BullishSignal[];
-  scannedAt: string | null;
-  error?: string;
-}> {
+async function loadBullishImpulseSignals(forceRecalculate = false): Promise<ImpulseResult> {
   try {
-    const { scanHistoryRepository } = createApplicationDependencies();
-    const since = new Date(Date.now() - HISTORY_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    // Consulta de una sola fila: sirve para saber si hay un escaneo nuevo desde la última vez.
+    const latestScan = await scanHistoryRepository.getLatestScanStatus();
+    const key = latestScan?.scannedAt ?? "sin-escaneos";
+    if (!forceRecalculate && cache && cache.key === key && Date.now() - cache.builtAt < CACHE_MAX_AGE_MS) {
+      return cache.result;
+    }
+
+    const now = Date.now();
+    const since = new Date(now - HISTORY_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
     const samples = await scanHistoryRepository.getRecentBullishImpulseSamples(since);
-    const signals = createSignals(samples);
-    return { signals, scannedAt: samples[samples.length - 1]?.timestamp ?? null };
+    const visibleSince = now - SIGNAL_WINDOW_HOURS * 60 * 60 * 1000;
+    const result: ImpulseResult = {
+      signals: createSignals(samples, visibleSince),
+      scannedAt: latestScan?.scannedAt ?? samples[samples.length - 1]?.timestamp ?? null,
+    };
+    cache = { key, builtAt: now, result };
+    return result;
   } catch (error) {
     console.error("No se pudieron calcular señales desde el historial de escaneos:", error);
     return {
@@ -107,11 +125,7 @@ async function loadBullishImpulseSignals(): Promise<{
   }
 }
 
-export async function getBullishImpulseSignals(): Promise<{
-  signals: BullishSignal[];
-  scannedAt: string | null;
-  error?: string;
-}> {
+export async function getBullishImpulseSignals(): Promise<ImpulseResult> {
   return loadBullishImpulseSignals();
 }
 
@@ -119,12 +133,13 @@ export async function scanBullishImpulseAction(): Promise<
   { success: true; message: string; signals: BullishSignal[] } |
   { success: false; message: string }
 > {
-  const result = await loadBullishImpulseSignals();
+  // "Recalcular" ignora la caché y vuelve a leer el historial.
+  const result = await loadBullishImpulseSignals(true);
   if (result.error) return { success: false, message: result.error };
 
   return {
     success: true,
-    message: `Señales recalculadas a partir de las muestras guardadas: ${result.signals.length} detectadas.`,
+    message: `Señales recalculadas a partir de las muestras guardadas: ${result.signals.length} empresas con señal en las últimas ${SIGNAL_WINDOW_HOURS} h.`,
     signals: result.signals,
   };
 }
