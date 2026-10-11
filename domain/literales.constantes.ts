@@ -169,6 +169,8 @@ export const UI_TEXT = {
       loading: "Cargando el historial de escaneos…",
       noData: "No hay datos disponibles para este indicador en las últimas sesiones.",
       close: "Cerrar gráfico",
+      openScanHistory: "Ver historial de escaneos",
+      openTradingView: "Ver gráfico de TradingView",
       period: "Periodo",
       oneSession: "1 sesión",
       fiveSessions: "5 sesiones",
