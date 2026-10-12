@@ -1,5 +1,7 @@
 import YahooFinance from "yahoo-finance2";
 import { MarketRepositoryPort } from "@/application/ports/market-repository.port";
+import { IntradayBar } from "@/domain/models/intraday";
+import { mapIntradayBars } from "./yahoo-intraday.mapper";
 import { CompanyMetadata, CompanySearchMatch, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
@@ -135,6 +137,16 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
           "",
       }];
     });
+  }
+
+  async getIntradayBars(ticker: string): Promise<IntradayBar[]> {
+    // 12 días naturales cubren 5 sesiones completas más la anterior aunque haya fines de semana o festivos.
+    const chartResult = await this.yf.chart(ticker, {
+      period1: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+      interval: "5m",
+      includePrePost: true,
+    });
+    return mapIntradayBars(chartResult.quotes, chartResult.meta);
   }
 
   private async fetchQuote(ticker: string) {

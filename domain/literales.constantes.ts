@@ -171,6 +171,12 @@ export const UI_TEXT = {
       close: "Cerrar gráfico",
       openScanHistory: "Ver historial de escaneos",
       openTradingView: "Ver gráfico de TradingView",
+      compare: {
+        tradingView: "TradingView",
+        own: "Yahoo · niveles y medias propios",
+        error: "No se pudieron cargar las velas de Yahoo.",
+        rangeLabel: "Periodo del gráfico",
+      },
       period: "Periodo",
       oneSession: "1 sesión",
       fiveSessions: "5 sesiones",
@@ -196,6 +202,10 @@ export const UI_TEXT = {
         legendSessionRange: "Máximo / mínimo de la sesión",
         legendFiveSessionRange: "Máximo / mínimo de 5 sesiones",
         legendSma50: "Media sobre la última muestra de cada sesión",
+        legendPrevSessionRange: "Máximo / mínimo de la sesión anterior",
+        legendPrevCloseOpen: "Cierre anterior / apertura de hoy (el % es la variación del precio actual)",
+        legendEma20: "Media exponencial de 20 velas",
+        legendEma50: "Media exponencial de 50 velas",
       },
     },
     filters: {

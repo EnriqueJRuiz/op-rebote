@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { getCompanyHistoryAction } from "@/app/actions/get-company-history";
+import { getCompanyIntradayAction } from "@/app/actions/get-company-intraday";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import {
   COMPANY_HISTORY_METRICS,
@@ -11,6 +12,7 @@ import {
   getCompanyHistoryMetricValue,
 } from "./company-history.types";
 import { CompanyHistoryPoint } from "@/domain/models/company-history";
+import type { IntradayBar } from "@/domain/models/intraday";
 import type { PriceAnalysis } from "./company-history-chart";
 
 const CompanyHistoryChart = dynamic(
@@ -36,6 +38,9 @@ export function CompanyHistoryDialog({
   onClose,
 }: CompanyHistoryDialogProps) {
   const [points, setPoints] = useState<CompanyHistoryPoint[] | null>(null);
+  // Velas reales de Yahoo (solo para el gráfico de precio). Si fallan, se usa el historial de escaneos.
+  const [bars, setBars] = useState<IntradayBar[] | null>(null);
+  const [barsSettled, setBarsSettled] = useState(initialMetric !== "precio");
   const [sessionCount, setSessionCount] = useState<1 | 5>(5);
   const [priceAnalysis, setPriceAnalysis] = useState<PriceAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +62,24 @@ export function CompanyHistoryDialog({
       active = false;
     };
   }, [companyId]);
+
+  useEffect(() => {
+    if (initialMetric !== "precio") return;
+    let active = true;
+    getCompanyIntradayAction(ticker)
+      .then((result) => {
+        if (active && result.bars) setBars(result.bars);
+      })
+      .catch((requestError: unknown) => {
+        console.error("Falló la petición de velas de Yahoo:", requestError);
+      })
+      .finally(() => {
+        if (active) setBarsSettled(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ticker, initialMetric]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -145,11 +168,11 @@ export function CompanyHistoryDialog({
         <div className="p-2 sm:p-7">
           {error ? (
             <p role="alert" className="py-16 text-center text-sm text-rose-700">{error}</p>
-          ) : points === null ? (
+          ) : points === null || !barsSettled ? (
             <p role="status" className="py-16 text-center text-sm text-slate-500">
               {UI_TEXT.table.history.loading}
             </p>
-          ) : visiblePoints.length === 0 ? (
+          ) : visiblePoints.length === 0 && !(initialMetric === "precio" && bars && bars.length > 0) ? (
             <p className="py-16 text-center text-sm text-slate-500">{UI_TEXT.table.history.noData}</p>
           ) : (
             <>
@@ -210,6 +233,7 @@ export function CompanyHistoryDialog({
               <div className="mt-2 rounded-xl border border-slate-100 bg-white p-1 sm:mt-5 sm:p-2">
                 <CompanyHistoryChart
                   points={metricPoints}
+                  bars={bars ?? undefined}
                   metric={initialMetric}
                   sessions={sessionCount}
                   onPriceAnalysis={setPriceAnalysis}
@@ -219,8 +243,19 @@ export function CompanyHistoryDialog({
               {initialMetric === "precio" && (
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] leading-tight text-slate-600 sm:mt-4 sm:gap-x-5 sm:gap-y-2 sm:text-sm sm:leading-normal">
                   <span><span className="font-semibold text-amber-600">SH / SL</span> {UI_TEXT.table.history.priceAnalysis.legendSessionRange}</span>
+                  {bars && bars.length > 0 && (
+                    <span><span className="font-semibold text-teal-600">PH / PL</span> {UI_TEXT.table.history.priceAnalysis.legendPrevSessionRange}</span>
+                  )}
                   <span><span className="font-semibold text-violet-500">RH / RL</span> {UI_TEXT.table.history.priceAnalysis.legendFiveSessionRange}</span>
-                  <span><span className="font-semibold text-sky-500">SMA 50</span> {UI_TEXT.table.history.priceAnalysis.legendSma50}</span>
+                  {bars && bars.length > 0 ? (
+                    <>
+                      <span><span className="font-semibold text-slate-500">CA</span> / <span className="font-semibold text-blue-900">AP</span> {UI_TEXT.table.history.priceAnalysis.legendPrevCloseOpen}</span>
+                      <span><span className="font-semibold text-sky-500">EMA 20</span> {UI_TEXT.table.history.priceAnalysis.legendEma20}</span>
+                      <span><span className="font-semibold text-pink-500">EMA 50</span> {UI_TEXT.table.history.priceAnalysis.legendEma50}</span>
+                    </>
+                  ) : (
+                    <span><span className="font-semibold text-sky-500">SMA 50</span> {UI_TEXT.table.history.priceAnalysis.legendSma50}</span>
+                  )}
                 </div>
               )}
             </>

@@ -40,7 +40,7 @@ function TradingViewChartComponent({ ticker, className }: TradingViewChartProps)
     script.innerHTML = JSON.stringify({
       autosize: true,
       symbol,
-      interval: "30",
+      interval: "5",
       range: "5D",
       timezone: "Europe/Madrid",
       locale: "es",

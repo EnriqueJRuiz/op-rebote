@@ -1,5 +1,6 @@
 // application/ports/market-repository.port.ts
 import { HistoricalCandle } from "@/domain/models/backtest";
+import { IntradayBar } from "@/domain/models/intraday";
 import { CompanyMetadata, CompanySearchMatch, StockCandidate, UniverseStock } from "@/domain/models/trading";
 
 export interface MarketRepositoryPort {
@@ -16,4 +17,7 @@ export interface MarketRepositoryPort {
   }>;
 
   getHistoricalCandles(ticker: string): Promise<HistoricalCandle[]>;
+
+  // Velas intradía reales (5 min) de los últimos días, con pre-market y after-hours.
+  getIntradayBars(ticker: string): Promise<IntradayBar[]>;
 }

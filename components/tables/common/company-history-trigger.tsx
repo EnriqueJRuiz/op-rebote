@@ -6,6 +6,7 @@ import { UI_TEXT } from "@/domain/literales.constantes";
 import { COMPANY_HISTORY_METRICS, CompanyHistoryMetric } from "./company-history.types";
 import { CompanyHistoryDialog } from "./company-history-dialog";
 import { TradingViewDialog } from "./tradingview/tradingview-dialog";
+import { CompanyCompareDialog } from "./company-compare-dialog";
 
 interface CompanyHistoryTriggerProps {
   companyId?: number;
@@ -26,11 +27,17 @@ export function CompanyHistoryTrigger({
 }: CompanyHistoryTriggerProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tradingViewOpen, setTradingViewOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const metricLabel = COMPANY_HISTORY_METRICS.find((item) => item.key === metric)?.label ?? metric;
   const clickable = companyId !== undefined;
-  // Pinchar el precio abre el gráfico de TradingView; el resto de indicadores y el ojito abren el historial de escaneos.
+  // Pinchar el precio abre el gráfico de TradingView (en escritorio, junto al gráfico propio de Yahoo);
+  // el resto de indicadores y el ojito abren el historial de escaneos.
   const priceOpensTradingView = metric === "precio";
-  const open = () => (priceOpensTradingView ? setTradingViewOpen(true) : setHistoryOpen(true));
+  const open = () => {
+    if (!priceOpensTradingView) setHistoryOpen(true);
+    else if (window.matchMedia("(min-width: 1024px)").matches) setCompareOpen(true);
+    else setTradingViewOpen(true);
+  };
   const label = priceOpensTradingView ? UI_TEXT.table.history.openTradingView : `Ver gráfico de ${metricLabel}`;
 
   const trigger = (
@@ -90,6 +97,13 @@ export function CompanyHistoryTrigger({
           ticker={ticker}
           companyName={companyName}
           onClose={() => setTradingViewOpen(false)}
+        />
+      )}
+      {compareOpen && clickable && (
+        <CompanyCompareDialog
+          ticker={ticker}
+          companyName={companyName}
+          onClose={() => setCompareOpen(false)}
         />
       )}
     </>

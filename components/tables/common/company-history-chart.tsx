@@ -5,16 +5,21 @@ import {
   CandlestickSeries,
   ColorType,
   createChart,
+  HistogramSeries,
   LineSeries,
+  TickMarkType,
   type AutoscaleInfoProvider,
+  type Time,
   type UTCTimestamp,
 } from "lightweight-charts";
 import type { CompanyHistoryPoint } from "@/domain/models/company-history";
+import type { IntradayBar } from "@/domain/models/intraday";
 import { CompanyHistoryMetric, getCompanyHistoryMetricValue } from "./company-history.types";
 import { UI_TEXT } from "@/domain/literales.constantes";
 
 type Props = {
   points: CompanyHistoryPoint[];
+  bars?: IntradayBar[];
   metric: CompanyHistoryMetric;
   sessions: 1 | 5;
   className?: string;
@@ -42,6 +47,8 @@ type Candle = {
   low: number;
   close: number;
   session: string;
+  volume?: number;
+  extended?: boolean;
 };
 
 function makePriceCandles(points: CompanyHistoryPoint[]): Candle[] {
@@ -80,6 +87,128 @@ function makePriceCandles(points: CompanyHistoryPoint[]): Candle[] {
   }
 
   return candles;
+}
+
+// Los niveles (máx./mín. de sesión, sesión anterior y 5 días) incluyen las velas de pre-market y after-hours.
+// Poner a false para calcularlos solo con la sesión regular (lo que muestra el gráfico de TradingView).
+const LEVELS_INCLUDE_EXTENDED_HOURS = true;
+
+type ChartLevel = {
+  title: string;
+  value: number;
+  color: string;
+  includeInOneSessionScale: boolean;
+  lineStyle?: number;
+};
+
+const EMA_LINES = [
+  { length: 20, color: "#38bdf8" },
+  { length: 50, color: "#f472b6" },
+];
+
+const EXTENDED_UP = "rgba(34, 197, 94, 0.45)";
+const EXTENDED_DOWN = "rgba(239, 68, 68, 0.45)";
+
+function makeBarCandles(bars: IntradayBar[]): Candle[] {
+  return [...bars]
+    .sort((a, b) => a.time - b.time)
+    .map((bar) => ({
+      time: bar.time as UTCTimestamp,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      session: bar.day,
+      volume: bar.volume,
+      extended: bar.extended,
+    }));
+}
+
+// Las velas de pre-market y after-hours se pintan más claras.
+function toCandleData(candle: Candle) {
+  if (!candle.extended) return candle;
+  const color = candle.close >= candle.open ? EXTENDED_UP : EXTENDED_DOWN;
+  return { ...candle, color, wickColor: color, borderColor: color };
+}
+
+// Una vela por sesión: apertura, máximo, mínimo y cierre del día (cierre regular, salvo en la sesión en curso).
+function aggregateSessions(candles: Candle[]): Candle[] {
+  const bySession = new Map<string, Candle[]>();
+  for (const candle of candles) {
+    const list = bySession.get(candle.session);
+    if (list) list.push(candle);
+    else bySession.set(candle.session, [candle]);
+  }
+  const sessions = [...bySession.entries()];
+  return sessions.map(([session, list], index) => {
+    const regular = list.filter((candle) => !candle.extended);
+    const closeSource = index === sessions.length - 1 || regular.length === 0 ? list : regular;
+    return {
+      time: list[0].time,
+      open: list[0].open,
+      high: Math.max(...list.map((candle) => candle.high)),
+      low: Math.min(...list.map((candle) => candle.low)),
+      close: closeSource[closeSource.length - 1].close,
+      session,
+    };
+  });
+}
+
+// EMA clásica: se inicia con la media simple de las primeras "length" velas.
+function computeEma(candles: Candle[], length: number): Map<number, number> {
+  const values = new Map<number, number>();
+  if (candles.length < length) return values;
+  const alpha = 2 / (length + 1);
+  let ema = candles.slice(0, length).reduce((sum, candle) => sum + candle.close, 0) / length;
+  values.set(Number(candles[length - 1].time), ema);
+  for (let index = length; index < candles.length; index++) {
+    ema = candles[index].close * alpha + ema * (1 - alpha);
+    values.set(Number(candles[index].time), ema);
+  }
+  return values;
+}
+
+// lightweight-charts pinta en UTC; se formatea en hora de Madrid para que coincida con TradingView.
+const CHART_TIME_ZONE = "Europe/Madrid";
+const crosshairTimeFormat = new Intl.DateTimeFormat("es-ES", {
+  timeZone: CHART_TIME_ZONE,
+  day: "numeric",
+  month: "short",
+  year: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+const tickYearFormat = new Intl.DateTimeFormat("es-ES", { timeZone: CHART_TIME_ZONE, year: "numeric" });
+const tickMonthFormat = new Intl.DateTimeFormat("es-ES", { timeZone: CHART_TIME_ZONE, month: "short" });
+const tickDayFormat = new Intl.DateTimeFormat("es-ES", { timeZone: CHART_TIME_ZONE, day: "numeric" });
+const tickTimeFormat = new Intl.DateTimeFormat("es-ES", {
+  timeZone: CHART_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function formatCrosshairTime(time: Time): string {
+  const parts: Record<string, string> = {};
+  for (const part of crosshairTimeFormat.formatToParts(new Date(Number(time) * 1000))) {
+    parts[part.type] = part.value;
+  }
+  return `${parts.day} ${parts.month} '${parts.year} ${parts.hour}:${parts.minute}`;
+}
+
+function formatTickMark(time: Time, type: TickMarkType): string {
+  const date = new Date(Number(time) * 1000);
+  switch (type) {
+    case TickMarkType.Year:
+      return tickYearFormat.format(date);
+    case TickMarkType.Month:
+      return tickMonthFormat.format(date);
+    case TickMarkType.DayOfMonth:
+      return tickDayFormat.format(date);
+    default:
+      return tickTimeFormat.format(date);
+  }
 }
 
 function makeIndicatorData(points: CompanyHistoryPoint[], metric: CompanyHistoryMetric) {
@@ -177,17 +306,20 @@ function analyzePrice(candles: Candle[], dailyCloses: Candle[], visibleSessions:
   };
 }
 
-export function CompanyHistoryChart({ points, metric, sessions, className, onPriceAnalysis }: Props) {
+export function CompanyHistoryChart({ points, bars, metric, sessions, className, onPriceAnalysis }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || points.length === 0) return;
+    const useBars = metric === "precio" && !!bars && bars.length > 0;
+    if (!container || (points.length === 0 && !useBars)) return;
 
     const mobileViewport = window.matchMedia("(max-width: 639px)");
-    const scaleMargins = mobileViewport.matches
-      ? { top: 0.05, bottom: 0.05 }
-      : { top: 0.2, bottom: 0.1 };
+    // Con velas de Yahoo hay panel de volumen debajo, así que se deja más margen inferior.
+    const getScaleMargins = () => mobileViewport.matches
+      ? { top: 0.05, bottom: useBars ? 0.25 : 0.05 }
+      : { top: 0.2, bottom: useBars ? 0.28 : 0.1 };
+    const scaleMargins = getScaleMargins();
     const chart = createChart(container, {
       width: container.clientWidth,
       height: container.clientHeight,
@@ -204,11 +336,16 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
         borderColor: "rgba(148, 163, 184, 0.2)",
         scaleMargins,
       },
-      timeScale: { borderColor: "rgba(148, 163, 184, 0.2)", timeVisible: true },
+      localization: { timeFormatter: formatCrosshairTime },
+      timeScale: {
+        borderColor: "rgba(148, 163, 184, 0.2)",
+        timeVisible: true,
+        tickMarkFormatter: formatTickMark,
+      },
       crosshair: { vertLine: { labelBackgroundColor: "#475569" }, horzLine: { labelBackgroundColor: "#475569" } },
     });
     if (metric === "precio") {
-      const allCandles = makePriceCandles(points);
+      const allCandles = useBars && bars ? makeBarCandles(bars) : makePriceCandles(points);
       const allSessions = [...new Set(allCandles.map((candle) => candle.session))];
       const visibleSessions = allSessions.slice(-sessions);
       const visibleCandles = allCandles.filter((candle) => visibleSessions.includes(candle.session));
@@ -222,27 +359,59 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
         priceLineVisible: false,
         lastValueVisible: false,
       });
-      candleSeries.setData(visibleCandles);
+      candleSeries.setData(useBars ? visibleCandles.map(toCandleData) : visibleCandles);
 
       if (visibleCandles.length > 0) {
         const recentSession = visibleCandles[visibleCandles.length - 1].session;
-        const recentSessionCandles = visibleCandles.filter((candle) => candle.session === recentSession);
-        const recentFiveSessions = new Set(allSessions.slice(-5));
-        const recentFiveSessionCandles = allCandles.filter((candle) => recentFiveSessions.has(candle.session));
+        // Con velas de Yahoo, los niveles pueden calcularse solo con la sesión regular (ver LEVELS_INCLUDE_EXTENDED_HOURS).
+        const levelCandles = useBars && !LEVELS_INCLUDE_EXTENDED_HOURS
+          ? allCandles.filter((candle) => !candle.extended)
+          : allCandles;
+        const candlesOf = (sessionIds: string[]) => levelCandles.filter((candle) => sessionIds.includes(candle.session));
+        const recentSessionCandles = candlesOf([recentSession]);
+        const recentFiveSessionCandles = candlesOf(allSessions.slice(-5));
+        const previousSession = allSessions.length >= 2 ? allSessions[allSessions.length - 2] : undefined;
+        const previousSessionCandles = previousSession ? candlesOf([previousSession]) : [];
+
         const lastBySession = new Map<string, Candle>();
         for (const candle of allCandles) lastBySession.set(candle.session, candle);
 
-        const dailyCloses = [...lastBySession.values()];
+        const dailyCloses = useBars ? aggregateSessions(allCandles) : [...lastBySession.values()];
         const analysis = analyzePrice(allCandles, dailyCloses, visibleSessions);
         onPriceAnalysis?.(analysis);
         const dailyCloseIndexes = new Map(dailyCloses.map((candle, index) => [candle.session, index]));
         const makeLevelData = (value: number) => visibleCandles.map(({ time }) => ({ time, value }));
 
-        const levels = [
-          { value: Math.max(...recentSessionCandles.map((candle) => candle.high)), color: "#f59e0b", includeInOneSessionScale: true },
-          { value: Math.min(...recentSessionCandles.map((candle) => candle.low)), color: "#f59e0b", includeInOneSessionScale: true },
-          { value: Math.max(...recentFiveSessionCandles.map((candle) => candle.high)), color: "#a78bfa", includeInOneSessionScale: false },
-          { value: Math.min(...recentFiveSessionCandles.map((candle) => candle.low)), color: "#a78bfa", includeInOneSessionScale: false },
+        // Cierre anterior (cierre regular de la sesión previa) y apertura de hoy (primera vela regular), solo con velas de Yahoo.
+        // La etiqueta del eje muestra cuánto se aleja el precio actual de cada uno.
+        const lastClose = visibleCandles[visibleCandles.length - 1].close;
+        const previousClose = useBars && dailyCloses.length >= 2 ? dailyCloses[dailyCloses.length - 2].close : undefined;
+        const todayRegularCandles = useBars
+          ? allCandles.filter((candle) => candle.session === recentSession && !candle.extended)
+          : [];
+        const openPrice = todayRegularCandles.length > 0 ? todayRegularCandles[0].open : undefined;
+        const changeFrom = (reference: number) => {
+          const change = ((lastClose - reference) / reference) * 100;
+          return `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
+        };
+
+        const levels: ChartLevel[] = [
+          { title: "SH", value: Math.max(...recentSessionCandles.map((candle) => candle.high)), color: "#f59e0b", includeInOneSessionScale: true },
+          { title: "SL", value: Math.min(...recentSessionCandles.map((candle) => candle.low)), color: "#f59e0b", includeInOneSessionScale: true },
+          ...(useBars && previousSessionCandles.length > 0
+            ? [
+                { title: "PH", value: Math.max(...previousSessionCandles.map((candle) => candle.high)), color: "#14b8a6", includeInOneSessionScale: false },
+                { title: "PL", value: Math.min(...previousSessionCandles.map((candle) => candle.low)), color: "#14b8a6", includeInOneSessionScale: false },
+              ]
+            : []),
+          { title: "RH", value: Math.max(...recentFiveSessionCandles.map((candle) => candle.high)), color: "#a78bfa", includeInOneSessionScale: false },
+          { title: "RL", value: Math.min(...recentFiveSessionCandles.map((candle) => candle.low)), color: "#a78bfa", includeInOneSessionScale: false },
+          ...(previousClose !== undefined
+            ? [{ title: `CA ${changeFrom(previousClose)}`, value: previousClose, color: "#64748b", includeInOneSessionScale: true, lineStyle: 1 }]
+            : []),
+          ...(openPrice !== undefined
+            ? [{ title: `AP ${changeFrom(openPrice)}`, value: openPrice, color: "#1e3a8a", includeInOneSessionScale: true, lineStyle: 1 }]
+            : []),
         ];
 
         for (const level of levels) {
@@ -251,31 +420,66 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
           const line = chart.addSeries(LineSeries, {
             color: level.color,
             lineWidth: 1,
-            lineStyle: 2,
+            lineStyle: level.lineStyle ?? 2,
+            title: useBars ? level.title : "",
             priceLineVisible: false,
-            lastValueVisible: false,
+            lastValueVisible: useBars,
             autoscaleInfoProvider,
           });
           line.setData(makeLevelData(level.value));
         }
 
-        const smaData = visibleCandles.flatMap(({ time, session, close }) => {
-          const sessionIndex = dailyCloseIndexes.get(session);
-          if (sessionIndex === undefined || sessionIndex < 49) return [];
-          const previous49Closes = dailyCloses
-            .slice(sessionIndex - 49, sessionIndex)
-            .reduce((sum, candle) => sum + candle.close, 0);
-          return [{ time, value: (previous49Closes + close) / 50 }];
-        });
-        if (smaData.length > 0) {
-          const sma = chart.addSeries(LineSeries, {
-            color: "#38bdf8",
-            lineWidth: 2,
-            title: UI_TEXT.table.history.priceAnalysis.sma50Title,
+        if (useBars) {
+          // Tendencias: EMA 20 y EMA 50 sobre todas las velas descargadas (el calentamiento no se ve en pantalla).
+          for (const ema of EMA_LINES) {
+            const values = computeEma(allCandles, ema.length);
+            const data = visibleCandles.flatMap(({ time }) => {
+              const value = values.get(Number(time));
+              return value === undefined ? [] : [{ time, value }];
+            });
+            if (data.length === 0) continue;
+            const line = chart.addSeries(LineSeries, {
+              color: ema.color,
+              lineWidth: 2,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            line.setData(data);
+          }
+
+          const volumeSeries = chart.addSeries(HistogramSeries, {
+            priceFormat: { type: "volume" },
+            priceScaleId: "volume",
             priceLineVisible: false,
             lastValueVisible: false,
           });
-          sma.setData(smaData);
+          chart.priceScale("volume").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+          volumeSeries.setData(
+            visibleCandles.map((candle) => ({
+              time: candle.time,
+              value: candle.volume ?? 0,
+              color: candle.close >= candle.open ? "rgba(34, 197, 94, 0.35)" : "rgba(239, 68, 68, 0.35)",
+            })),
+          );
+        } else {
+          const smaData = visibleCandles.flatMap(({ time, session, close }) => {
+            const sessionIndex = dailyCloseIndexes.get(session);
+            if (sessionIndex === undefined || sessionIndex < 49) return [];
+            const previous49Closes = dailyCloses
+              .slice(sessionIndex - 49, sessionIndex)
+              .reduce((sum, candle) => sum + candle.close, 0);
+            return [{ time, value: (previous49Closes + close) / 50 }];
+          });
+          if (smaData.length > 0) {
+            const sma = chart.addSeries(LineSeries, {
+              color: "#38bdf8",
+              lineWidth: 2,
+              title: UI_TEXT.table.history.priceAnalysis.sma50Title,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            sma.setData(smaData);
+          }
         }
       }
     } else {
@@ -293,11 +497,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
 
     chart.timeScale().fitContent();
     const updateScaleMargins = () => {
-      chart.priceScale("right").applyOptions({
-        scaleMargins: mobileViewport.matches
-          ? { top: 0.05, bottom: 0.05 }
-          : { top: 0.2, bottom: 0.1 },
-      });
+      chart.priceScale("right").applyOptions({ scaleMargins: getScaleMargins() });
     };
     mobileViewport.addEventListener("change", updateScaleMargins);
     const resizeObserver = new ResizeObserver(() => {
@@ -312,7 +512,7 @@ export function CompanyHistoryChart({ points, metric, sessions, className, onPri
       mobileViewport.removeEventListener("change", updateScaleMargins);
       chart.remove();
     };
-  }, [points, metric, sessions, onPriceAnalysis]);
+  }, [points, bars, metric, sessions, onPriceAnalysis]);
 
   return <div ref={containerRef} className={className ?? "h-[360px] w-full"} />;
 }
