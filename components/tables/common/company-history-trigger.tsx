@@ -15,6 +15,7 @@ interface CompanyHistoryTriggerProps {
   currency?: string;
   metric: CompanyHistoryMetric;
   children: React.ReactNode;
+  showEye?: boolean; // Parámetro opcional para mostrar u ocultar el ojo
 }
 
 export function CompanyHistoryTrigger({
@@ -24,14 +25,14 @@ export function CompanyHistoryTrigger({
   currency,
   metric,
   children,
+  showEye = true, // Por defecto se muestra si no se indica lo contrario
 }: CompanyHistoryTriggerProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tradingViewOpen, setTradingViewOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const metricLabel = COMPANY_HISTORY_METRICS.find((item) => item.key === metric)?.label ?? metric;
   const clickable = companyId !== undefined;
-  // Pinchar el precio abre el gráfico de TradingView (en escritorio, junto al gráfico propio de Yahoo);
-  // el resto de indicadores y el ojito abren el historial de escaneos.
+  
   const priceOpensTradingView = metric === "precio";
   const open = () => {
     if (!priceOpensTradingView) setHistoryOpen(true);
@@ -63,7 +64,7 @@ export function CompanyHistoryTrigger({
 
   return (
     <>
-      {priceOpensTradingView && clickable ? (
+      {priceOpensTradingView && clickable && showEye ? (
         <span className="inline-flex items-center gap-1.5">
           {trigger}
           <button

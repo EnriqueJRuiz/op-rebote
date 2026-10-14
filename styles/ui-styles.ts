@@ -10,6 +10,12 @@ export const UI_STYLES = {
     primary: "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
     primaryFull: "inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
     icon: "cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40",
+    // Variantes compactas para botones dentro de filas de tabla.
+    primarySm: "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 shadow-sm transition-all hover:border-teal-400 hover:bg-teal-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
+    secondary: "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50",
+    secondarySm: "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50",
+    // Acciones que no se pueden deshacer (p. ej. cerrar una operación).
+    danger: "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition-all hover:border-rose-400 hover:bg-rose-600 hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
   },
 
   follow: {
@@ -66,6 +72,26 @@ export const UI_STYLES = {
     select: "h-10 w-full appearance-none rounded-md border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm text-slate-700 shadow-sm outline-none transition-colors hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
     input: "w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
     icon: "pointer-events-none absolute top-1/2 -translate-y-1/2 text-slate-400",
+  },
+
+  // Campos de formulario dentro de diálogos. En móvil el texto es de 16px para que iOS no haga zoom al enfocar.
+  form: {
+    label: "mb-1 block text-sm font-medium text-slate-700",
+    input: "w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-base text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:text-sm",
+    hint: "mt-1 text-xs text-slate-500",
+    error: "text-sm text-rose-700",
+  },
+
+  modal: {
+    overlay: "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-2 sm:p-4",
+    panel: "max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl sm:max-h-[calc(100dvh-2rem)]",
+    header: "flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 sm:px-5",
+    title: "text-lg font-bold text-slate-900",
+    description: "mt-1 text-sm text-slate-500",
+    closeButton: "cursor-pointer rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50",
+    body: "space-y-4 p-4 sm:p-5",
+    // En móvil el botón principal queda arriba y a ancho completo; en escritorio, alineados a la derecha.
+    footer: "flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end",
   },
 
   badge: {

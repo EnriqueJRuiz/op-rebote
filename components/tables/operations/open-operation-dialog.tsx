@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { FormEvent, useId, useState } from "react";
 import { abrirOperacionAction } from "@/app/actions/operaciones.actions";
+import { UI_TEXT } from "@/domain/literales.constantes";
+import { UI_STYLES } from "@/styles/ui-styles";
+import { OperationDialogFrame } from "./operation-dialog-frame";
 
 export interface OpenOperationDialogProps {
   companyId: number;
   ticker: string;
   companyName: string;
   precioActual: number;
-  isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -19,140 +20,131 @@ export function OpenOperationDialog({
   ticker,
   companyName,
   precioActual,
-  isOpen,
   onClose,
   onSuccess,
 }: OpenOperationDialogProps) {
+  const fieldId = useId();
+  // El diálogo se monta al elegir una señal, así que el precio inicial siempre es el de esa señal.
+  const [precioEntrada, setPrecioEntrada] = useState(precioActual.toString());
   const [capital, setCapital] = useState("1000");
   const [trailingStop, setTrailingStop] = useState("2.00");
-  const [precioEntrada, setPrecioEntrada] = useState(precioActual.toString());
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Sincroniza el precio de entrada si cambia el precio actual de la señal
-  useEffect(() => {
-    setPrecioEntrada(precioActual.toString());
-  }, [precioActual]);
-
-  // Manejo de la tecla Escape idéntico a tus otros modales
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
+    setError("");
 
-    const res = await abrirOperacionAction({
-      empresa_id: companyId,
-      precio_entrada: Number(precioEntrada), // Envía el precio que hayas editado manualmente
-      capital_invertido: Number(capital),
-      trailing_stop_pct: Number(trailingStop),
-    });
+    try {
+      const result = await abrirOperacionAction({
+        empresa_id: companyId,
+        precio_entrada: Number(precioEntrada), // el precio editado a mano (el del bróker)
+        capital_invertido: Number(capital),
+        trailing_stop_pct: Number(trailingStop),
+      });
 
-    setLoading(false);
-    if (res.success) {
-      onClose();
-      if (onSuccess) onSuccess();
-    } else {
-      alert(`Error al abrir la operación: ${res.error}`);
+      if (result.success) {
+        onClose();
+        onSuccess?.();
+        return;
+      }
+      setError(UI_TEXT.operations.openDialog.error(String(result.error ?? "")));
+    } catch (requestError) {
+      setError(UI_TEXT.operations.openDialog.error(requestError instanceof Error ? requestError.message : ""));
     }
+    setLoading(false);
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-2 backdrop-blur-sm sm:p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <OperationDialogFrame
+      title={UI_TEXT.operations.openDialog.title}
+      description={
+        <>
+          <span className={`${UI_STYLES.badge.ticker} mr-2`}>{ticker}</span>
+          {companyName}
+        </>
+      }
+      busy={loading}
+      onClose={onClose}
     >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="open-operation-title"
-        className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)]"
-      >
-        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
-          <h2 id="open-operation-title" className="text-lg font-bold text-slate-900">
-            {companyName} <span className="text-sm font-medium text-slate-500">({ticker})</span>
-          </h2>
+      <form onSubmit={handleSubmit} className={UI_STYLES.modal.body}>
+        <div>
+          <label htmlFor={`${fieldId}-entry`} className={UI_STYLES.form.label}>
+            {UI_TEXT.operations.openDialog.entryPrice}
+          </label>
+          <input
+            id={`${fieldId}-entry`}
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min="0"
+            required
+            value={precioEntrada}
+            onChange={(event) => setPrecioEntrada(event.target.value)}
+            aria-describedby={`${fieldId}-entry-hint`}
+            className={UI_STYLES.form.input}
+          />
+          <p id={`${fieldId}-entry-hint`} className={UI_STYLES.form.hint}>
+            {UI_TEXT.operations.openDialog.entryPriceHint}
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor={`${fieldId}-capital`} className={UI_STYLES.form.label}>
+            {UI_TEXT.operations.openDialog.capital}
+          </label>
+          <input
+            id={`${fieldId}-capital`}
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min="0"
+            required
+            value={capital}
+            onChange={(event) => setCapital(event.target.value)}
+            className={UI_STYLES.form.input}
+          />
+        </div>
+
+        <div>
+          <label htmlFor={`${fieldId}-trailing`} className={UI_STYLES.form.label}>
+            {UI_TEXT.operations.openDialog.trailingStop}
+          </label>
+          <input
+            id={`${fieldId}-trailing`}
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min="0"
+            max="100"
+            required
+            value={trailingStop}
+            onChange={(event) => setTrailingStop(event.target.value)}
+            className={UI_STYLES.form.input}
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className={UI_STYLES.form.error}>
+            {error}
+          </p>
+        )}
+
+        <div className={UI_STYLES.modal.footer}>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar modal"
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            disabled={loading}
+            className={UI_STYLES.button.secondary}
           >
-            <X size={18} aria-hidden="true" />
+            {UI_TEXT.operations.openDialog.cancel}
           </button>
-        </header>
-
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
-              Precio de Entrada (Editable / Bróker)
-            </label>
-            <input
-              type="number"
-              step="any"
-              value={precioEntrada}
-              onChange={(e) => setPrecioEntrada(e.target.value)}
-              required
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
-              Capital Invertido (€)
-            </label>
-            <input
-              type="number"
-              value={capital}
-              onChange={(e) => setCapital(e.target.value)}
-              required
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
-              % Trailing Stop
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              value={trailingStop}
-              onChange={(e) => setTrailingStop(e.target.value)}
-              required
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-slate-400 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {loading ? "Abriendo..." : "Confirmar y Activar"}
-            </button>
-          </div>
-        </form>
-      </section>
-    </div>
+          <button type="submit" disabled={loading} className={UI_STYLES.button.primary}>
+            {loading ? UI_TEXT.operations.openDialog.confirming : UI_TEXT.operations.openDialog.confirm}
+          </button>
+        </div>
+      </form>
+    </OperationDialogFrame>
   );
 }

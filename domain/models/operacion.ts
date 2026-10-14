@@ -18,6 +18,8 @@ export interface Operacion {
   fecha_cierre: string | null;
   max_price: number | null;
   trailing_stop_pct: number | null;
+  precio_actual?: number | null;
+  precio_anterior_lote?: number | null;
 }
 
 export interface CreateOperacionInput {

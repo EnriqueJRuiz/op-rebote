@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Activity, ChevronDown, RefreshCw, ShieldCheck } from "lucide-react";
+import { Activity, ChevronDown, Plus, RefreshCw, ShieldCheck } from "lucide-react";
 import { Column, DataTable } from "@/components/tables/core/DataTable";
 import { CompanyHistoryTrigger } from "@/components/tables/common/company-history-trigger";
 import { UI_STYLES } from "@/styles/ui-styles";
@@ -14,7 +14,7 @@ import {
 } from "@/app/actions/search-bullish-impulses";
 import { obtenerOperacionesActivasAction } from "@/app/actions/operaciones.actions";
 import { OpenOperationDialog } from "@/components/tables/operations/open-operation-dialog";
-import { OperationsTable } from "@/components/tables/operations/operacionesActivasTable";
+import { OperationsTable } from "@/components/tables/operations/operations-table";
 
 export function BullishImpulsePanel() {
   const [signals, setSignals] = useState<BullishSignal[]>([]);
@@ -54,6 +54,10 @@ export function BullishImpulsePanel() {
   const refreshOperations = async () => {
     const ops = await obtenerOperacionesActivasAction();
     setActiveOperations(ops);
+  };
+
+  const handleOperationClosed = (id: number) => {
+    setActiveOperations((current) => current.filter((operation) => operation.id !== id));
   };
 
   const SIGNAL_COLUMNS: Column<BullishSignal>[] = [
@@ -113,16 +117,19 @@ export function BullishImpulsePanel() {
       cellClassName: "whitespace-nowrap",
     },
     {
-      header: "Operativa",
+      header: UI_TEXT.pages.bullishImpulse.columns.operate,
       render: (signal) => (
         <button
           type="button"
           onClick={() => setSelectedSignal(signal)}
-          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
+          aria-label={UI_TEXT.operations.openAria(signal.ticker)}
+          className={`${UI_STYLES.button.primarySm} whitespace-nowrap`}
         >
-          Seguir
+          <Plus size={14} aria-hidden="true" />
+          {UI_TEXT.operations.openButton}
         </button>
       ),
+      headerClassName: "text-right",
       cellClassName: "text-right",
     },
   ];
@@ -141,7 +148,7 @@ export function BullishImpulsePanel() {
   const panel = (title: string, subtitle: string, rows: BullishSignal[]) => (
     <DataTable
       title={title}
-      subtitle={`${subtitle}.`}
+      subtitle={subtitle}
       data={rows}
       columns={SIGNAL_COLUMNS}
       rowKey={(signal) => `${signal.ticker}-${signal.tipo}-${signal.detectadaEn}`}
@@ -228,9 +235,11 @@ export function BullishImpulsePanel() {
                 <button
                   type="button"
                   onClick={() => setSelectedSignal(signal)}
-                  className="w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+                  aria-label={UI_TEXT.operations.openAria(signal.ticker)}
+                  className={UI_STYLES.button.primaryFull}
                 >
-                  Seguir Operación
+                  <Plus size={16} aria-hidden="true" />
+                  {UI_TEXT.operations.openButton}
                 </button>
               </div>
             </div>
@@ -303,11 +312,11 @@ export function BullishImpulsePanel() {
       {panel(UI_TEXT.pages.bullishImpulse.panels.confirmedTitle, UI_TEXT.pages.bullishImpulse.panels.confirmedSubtitle, confirmed)}
       {panel(UI_TEXT.pages.bullishImpulse.panels.earlyTitle, UI_TEXT.pages.bullishImpulse.panels.earlySubtitle, early)}
 
-      {/* 3ª TABLA: OPERACIONES ACTIVAS */}
-      <div className="space-y-4 pt-6 border-t border-slate-200">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900">Operaciones Activas (Trailing Stop)</h2>
-        <OperationsTable initialOperaciones={activeOperations} />
-      </div>
+      <OperationsTable
+        operaciones={activeOperations}
+        isLoading={isLoading}
+        onClosed={handleOperationClosed}
+      />
 
       <p className="text-xs leading-5 text-slate-500">{UI_TEXT.pages.bullishImpulse.footerNote}</p>
 
@@ -318,7 +327,6 @@ export function BullishImpulsePanel() {
           ticker={selectedSignal.ticker}
           companyName={selectedSignal.nombre}
           precioActual={selectedSignal.precio}
-          isOpen={!!selectedSignal}
           onClose={() => setSelectedSignal(null)}
           onSuccess={() => {
             refreshOperations();
