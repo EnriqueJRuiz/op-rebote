@@ -41,6 +41,12 @@ export interface StrategyConfig {
     RECENT_LOW_DAYS: number;
     AVG_VOLUME_DAYS: number;
   };
+  BULLISH_IMPULSE: {
+    MIN_SUSTAINED_PERIODS: number;
+    MAX_DRAWDOWN_LIMIT: number;
+    DEFAULT_TRAILING_STOP: number;
+    MIN_RETURN_THRESHOLD: number;
+  };
 }
 
 type Obj = Record<string, unknown>;
@@ -95,6 +101,7 @@ function parseStrategyConfig(): StrategyConfig {
   const uTop = section(u, "TOP", "UNIVERSE.");
   const uMid = section(u, "MID", "UNIVERSE.");
   const y = section(json, "YAHOO", "");
+  const b = section(json, "BULLISH_IMPULSE", "");
 
   return {
     TRADING: {
@@ -132,6 +139,12 @@ function parseStrategyConfig(): StrategyConfig {
       BACKTEST_YEARS_OFFSET: num(y, "BACKTEST_YEARS_OFFSET", "YAHOO."),
       RECENT_LOW_DAYS: days(y, "RECENT_LOW_DAYS", "YAHOO."),
       AVG_VOLUME_DAYS: days(y, "AVG_VOLUME_DAYS", "YAHOO."),
+    },
+    BULLISH_IMPULSE: {
+      MIN_SUSTAINED_PERIODS: days(b, "MIN_SUSTAINED_PERIODS", "BULLISH_IMPULSE."),
+      MAX_DRAWDOWN_LIMIT: num(b, "MAX_DRAWDOWN_LIMIT", "BULLISH_IMPULSE."),
+      DEFAULT_TRAILING_STOP: num(b, "DEFAULT_TRAILING_STOP", "BULLISH_IMPULSE."),
+      MIN_RETURN_THRESHOLD: num(b, "MIN_RETURN_THRESHOLD", "BULLISH_IMPULSE."),
     },
   };
 }

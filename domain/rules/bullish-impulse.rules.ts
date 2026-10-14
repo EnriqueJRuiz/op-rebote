@@ -1,4 +1,5 @@
 import { BullishSignal, IntradayCandle } from "@/domain/models/bullish-impulse";
+import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 
 /** Horas que se muestran las señales en pantalla. El historial completo sigue guardado en la base de datos. */
 export const SIGNAL_WINDOW_HOURS = 6;
@@ -12,7 +13,10 @@ export function isBetterSignal(candidate: BullishSignal, current: BullishSignal)
   return Date.parse(candidate.detectadaEn) > Date.parse(current.detectadaEn);
 }
 
-/** Reglas iniciales y explícitas. Deben calibrarse con backtests antes de usarlas como órdenes. */
+/**
+ * Detecta impulsos alcistas basados en tendencias reales y sostenidas intradía,
+ * filtrando el ruido temporal de 10 min y aplicando los umbrales de estrategia.
+ */
 export function detectBullishSignals(
   companyId: number,
   ticker: string,
@@ -27,7 +31,6 @@ export function detectBullishSignals(
 
   const last = valid[valid.length - 1];
   const prev = valid[valid.length - 2];
-  const before = valid[valid.length - 3];
   const previousBars = valid.slice(-11, -1);
   const priorVolumes = previousBars.flatMap((candle) =>
     candle.volume !== null && candle.volume > 0 ? [candle.volume] : []
@@ -41,25 +44,68 @@ export function detectBullishSignals(
   const changePct = ((last.close - prev.close) / prev.close) * 100;
   const signals: BullishSignal[] = [];
 
-  // Aviso temprano: mejora de cierres consecutivos y volumen de muestra al menos normal.
-  const early = last.close > prev.close && prev.close >= before.close && (relativeVolume === null || relativeVolume >= 0.8);
-  if (early) {
+  // Parámetros de la estrategia de impulso sostenido
+  const minSustained = STRATEGY_CONFIG.BULLISH_IMPULSE.MIN_SUSTAINED_PERIODS;
+  const minReturn = STRATEGY_CONFIG.BULLISH_IMPULSE.MIN_RETURN_THRESHOLD;
+  const maxDrawdownLimit = STRATEGY_CONFIG.BULLISH_IMPULSE.MAX_DRAWDOWN_LIMIT;
+
+  // 1. Validación de tendencia sostenida en bloques recientes (Filtro de ruido de 10 min)
+  const recentSlice = valid.slice(-(minSustained + 1));
+  let ascendingCount = 0;
+  for (let i = 1; i < recentSlice.length; i++) {
+    if (recentSlice[i].close >= recentSlice[i - 1].close) {
+      ascendingCount++;
+    }
+  }
+
+  const baselinePrice = recentSlice[0].close;
+  const totalReturn = (last.close - baselinePrice) / baselinePrice;
+
+  // Validación de retroceso máximo local (evitar falsos impulsos que ya están cayendo)
+  const recentHigh = Math.max(...recentSlice.map((c) => c.high));
+  const drawdownFromRecentHigh = (recentHigh - last.close) / recentHigh;
+  const isValidDrawdown = drawdownFromRecentHigh < maxDrawdownLimit;
+
+  // Estructura alcista firme y validada
+  const isSustainedStructure = 
+    ascendingCount >= minSustained && 
+    totalReturn >= minReturn && 
+    isValidDrawdown;
+
+  // Aviso Temprano: Detecta que se ha consolidado una estructura alcista sostenida a lo largo de los bloques
+  if (isSustainedStructure) {
     signals.push({
-      companyId, ticker, nombre, tipo: "TEMPRANA", precio: last.close, variacionBarraPct: changePct,
-      volumenRelativo: relativeVolume, detectadaEn: last.timestamp.toISOString(),
-      motivo: "Dos cierres consecutivos al alza; vigilar si el impulso continúa.",
+      companyId,
+      ticker,
+      nombre,
+      tipo: "TEMPRANA",
+      precio: last.close,
+      variacionBarraPct: changePct,
+      volumenRelativo: relativeVolume,
+      detectadaEn: last.timestamp.toISOString(),
+      motivo: "Tendencia alcista sostenida confirmada en bloques de 10 min; estructura firme.",
     });
   }
 
-  // Confirmación: cierre por encima del máximo de las 10 muestras anteriores y RVOL >= 1.2.
+  // Confirmación: Ruptura limpia del máximo de las 10 muestras anteriores con volumen institucional y tendencia sólida
   const priorHigh = Math.max(...previousBars.map((c) => c.high));
-  const confirmed = last.close > priorHigh && (relativeVolume === null || relativeVolume >= 1.2);
+  const confirmed = last.close > priorHigh && 
+                    (relativeVolume === null || relativeVolume >= 1.2) && 
+                    isSustainedStructure;
+
   if (confirmed) {
     signals.push({
-      companyId, ticker, nombre, tipo: "CONFIRMADA", precio: last.close, variacionBarraPct: changePct,
-      volumenRelativo: relativeVolume, detectadaEn: last.timestamp.toISOString(),
-      motivo: "Ruptura del máximo de las 10 muestras anteriores con volumen relativo suficiente.",
+      companyId,
+      ticker,
+      nombre,
+      tipo: "CONFIRMADA",
+      precio: last.close,
+      variacionBarraPct: changePct,
+      volumenRelativo: relativeVolume,
+      detectadaEn: last.timestamp.toISOString(),
+      motivo: "Ruptura de máximos previos con tendencia sostenida confirmada y volumen relativo suficiente.",
     });
   }
+
   return signals;
 }

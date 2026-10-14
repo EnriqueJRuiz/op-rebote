@@ -7,83 +7,36 @@ import { CompanyHistoryTrigger } from "@/components/tables/common/company-histor
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
+import { Operacion } from "@/domain/models/operacion";
 import {
   getBullishImpulseSignals,
   scanBullishImpulseAction,
 } from "@/app/actions/search-bullish-impulses";
-
-const SIGNAL_COLUMNS: Column<BullishSignal>[] = [
-  {
-    header: UI_TEXT.pages.bullishImpulse.columns.company,
-    sortValue: (signal) => signal.ticker,
-    render: (signal) => (
-      <div>
-        <div className="font-semibold text-slate-900">{signal.ticker}</div>
-        <div className="max-w-48 truncate text-xs text-slate-500">{signal.nombre}</div>
-      </div>
-    ),
-  },
-  {
-    header: UI_TEXT.pages.bullishImpulse.columns.price,
-    sortValue: (signal) => signal.precio,
-    render: (signal) => (
-      <CompanyHistoryTrigger
-        companyId={signal.companyId}
-        ticker={signal.ticker}
-        companyName={signal.nombre}
-        metric="precio"
-      >
-        {signal.precio.toLocaleString("es-ES", { maximumFractionDigits: 3 })}
-      </CompanyHistoryTrigger>
-    ),
-    cellClassName: "whitespace-nowrap tabular-nums",
-  },
-  {
-    header: UI_TEXT.pages.bullishImpulse.columns.sample,
-    sortValue: (signal) => signal.variacionBarraPct,
-    render: (signal) => (
-      <CompanyHistoryTrigger
-        companyId={signal.companyId}
-        ticker={signal.ticker}
-        companyName={signal.nombre}
-        metric="precio"
-      >
-        <span className={signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"}>
-          {signal.variacionBarraPct.toFixed(2)}%
-        </span>
-      </CompanyHistoryTrigger>
-    ),
-  },
-  {
-    header: UI_TEXT.pages.bullishImpulse.columns.relativeVolume,
-    sortValue: (signal) => signal.volumenRelativo,
-    render: (signal) => signal.volumenRelativo == null ? "—" : `${signal.volumenRelativo.toFixed(2)}×`,
-  },
-  {
-    header: UI_TEXT.pages.bullishImpulse.columns.detected,
-    sortValue: (signal) => signal.detectadaEn,
-    render: (signal) => new Date(signal.detectadaEn).toLocaleString("es-ES", {
-      dateStyle: "short",
-      timeStyle: "short",
-    }),
-    cellClassName: "whitespace-nowrap",
-  },
-];
+import { obtenerOperacionesActivasAction } from "@/app/actions/operaciones.actions";
+import { OpenOperationDialog } from "@/components/tables/operations/open-operation-dialog";
+import { OperationsTable } from "@/components/tables/operations/operacionesActivasTable";
 
 export function BullishImpulsePanel() {
   const [signals, setSignals] = useState<BullishSignal[]>([]);
+  const [activeOperations, setActiveOperations] = useState<Operacion[]>([]);
+  const [selectedSignal, setSelectedSignal] = useState<BullishSignal | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // Cargar señales y operaciones activas al montar el componente
   useEffect(() => {
     let active = true;
-    getBullishImpulseSignals()
-      .then((result) => {
+    Promise.all([
+      getBullishImpulseSignals(),
+      obtenerOperacionesActivasAction()
+    ])
+      .then(([signalsResult, operationsResult]) => {
         if (!active) return;
-        setSignals(result.signals);
-        setMessage(result.error ?? "");
+        setSignals(signalsResult.signals);
+        setMessage(signalsResult.error ?? "");
+        setActiveOperations(operationsResult);
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -98,14 +51,93 @@ export function BullishImpulsePanel() {
     };
   }, []);
 
+  const refreshOperations = async () => {
+    const ops = await obtenerOperacionesActivasAction();
+    setActiveOperations(ops);
+  };
+
+  const SIGNAL_COLUMNS: Column<BullishSignal>[] = [
+    {
+      header: UI_TEXT.pages.bullishImpulse.columns.company,
+      sortValue: (signal) => signal.ticker,
+      render: (signal) => (
+        <div>
+          <div className="font-semibold text-slate-900">{signal.ticker}</div>
+          <div className="max-w-48 truncate text-xs text-slate-500">{signal.nombre}</div>
+        </div>
+      ),
+    },
+    {
+      header: UI_TEXT.pages.bullishImpulse.columns.price,
+      sortValue: (signal) => signal.precio,
+      render: (signal) => (
+        <CompanyHistoryTrigger
+          companyId={signal.companyId}
+          ticker={signal.ticker}
+          companyName={signal.nombre}
+          metric="precio"
+        >
+          {signal.precio.toLocaleString("es-ES", { maximumFractionDigits: 3 })}
+        </CompanyHistoryTrigger>
+      ),
+      cellClassName: "whitespace-nowrap tabular-nums",
+    },
+    {
+      header: UI_TEXT.pages.bullishImpulse.columns.sample,
+      sortValue: (signal) => signal.variacionBarraPct,
+      render: (signal) => (
+        <CompanyHistoryTrigger
+          companyId={signal.companyId}
+          ticker={signal.ticker}
+          companyName={signal.nombre}
+          metric="precio"
+        >
+          <span className={signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"}>
+            {signal.variacionBarraPct.toFixed(2)}%
+          </span>
+        </CompanyHistoryTrigger>
+      ),
+    },
+    {
+      header: UI_TEXT.pages.bullishImpulse.columns.relativeVolume,
+      sortValue: (signal) => signal.volumenRelativo,
+      render: (signal) => signal.volumenRelativo == null ? "—" : `${signal.volumenRelativo.toFixed(2)}×`,
+    },
+    {
+      header: UI_TEXT.pages.bullishImpulse.columns.detected,
+      sortValue: (signal) => signal.detectadaEn,
+      render: (signal) => new Date(signal.detectadaEn).toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }),
+      cellClassName: "whitespace-nowrap",
+    },
+    {
+      header: "Operativa",
+      render: (signal) => (
+        <button
+          type="button"
+          onClick={() => setSelectedSignal(signal)}
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
+        >
+          Seguir
+        </button>
+      ),
+      cellClassName: "text-right",
+    },
+  ];
+
   const early = signals.filter((s) => s.tipo === "TEMPRANA");
   const confirmed = signals.filter((s) => s.tipo === "CONFIRMADA");
+  
   const runScan = () => startTransition(async () => {
     const result = await scanBullishImpulseAction();
     setMessage(result.message);
     if (result.success) setSignals(result.signals);
   });
+
   const fmt = (date: string) => new Date(date).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
+  
   const panel = (title: string, subtitle: string, rows: BullishSignal[]) => (
     <DataTable
       title={title}
@@ -192,6 +224,15 @@ export function BullishImpulsePanel() {
                 <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.pages.bullishImpulse.labels.reason}</p>
                 <p className={UI_STYLES.table.mobileValue}>{signal.motivo}</p>
               </div>
+              <div className="col-span-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSignal(signal)}
+                  className="w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+                >
+                  Seguir Operación
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -216,10 +257,8 @@ export function BullishImpulsePanel() {
         </button>
       </header>
 
-      {/* Grid adaptativo: 1 columna en móvil, 3 columnas en escritorio */}
+      {/* Grid adaptativo */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        
-        {/* 1. Bloque Configuración (Acordeón colapsado en móvil, abierto en escritorio) */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 md:col-span-1">
           <button
             type="button"
@@ -247,29 +286,45 @@ export function BullishImpulsePanel() {
           </div>
         </div>
 
-        {/* 2 y 3. Tarjetas divididas 50%-50% en móvil (grid-cols-2), primero Verde y luego Amarilla */}
         <div className="col-span-1 grid grid-cols-2 gap-3 md:col-span-2">
-          
-          {/* Señales confirmadas (Verde) */}
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
             <div className="text-sm font-medium text-emerald-900">{UI_TEXT.pages.bullishImpulse.cards.confirmedTitle}</div>
             <div className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{confirmed.length}</div>
           </div>
-
-          {/* Señales tempranas (Amarilla) */}
           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
             <div className="text-sm font-medium text-amber-900">{UI_TEXT.pages.bullishImpulse.cards.earlyTitle}</div>
             <div className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{early.length}</div>
           </div>
-
         </div>
-
       </div>
 
       {message && <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">{message}</div>}
+      
       {panel(UI_TEXT.pages.bullishImpulse.panels.confirmedTitle, UI_TEXT.pages.bullishImpulse.panels.confirmedSubtitle, confirmed)}
       {panel(UI_TEXT.pages.bullishImpulse.panels.earlyTitle, UI_TEXT.pages.bullishImpulse.panels.earlySubtitle, early)}
+
+      {/* 3ª TABLA: OPERACIONES ACTIVAS */}
+      <div className="space-y-4 pt-6 border-t border-slate-200">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900">Operaciones Activas (Trailing Stop)</h2>
+        <OperationsTable initialOperaciones={activeOperations} />
+      </div>
+
       <p className="text-xs leading-5 text-slate-500">{UI_TEXT.pages.bullishImpulse.footerNote}</p>
+
+      {/* MODAL DE APERTURA DE OPERACIÓN */}
+      {selectedSignal && (
+        <OpenOperationDialog
+          companyId={selectedSignal.companyId}
+          ticker={selectedSignal.ticker}
+          companyName={selectedSignal.nombre}
+          precioActual={selectedSignal.precio}
+          isOpen={!!selectedSignal}
+          onClose={() => setSelectedSignal(null)}
+          onSuccess={() => {
+            refreshOperations();
+          }}
+        />
+      )}
     </div>
   );
 }

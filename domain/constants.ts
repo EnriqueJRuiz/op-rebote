@@ -9,6 +9,7 @@ export const APP_CONFIG = {
   DB: {
     TABLES: {
       EMPRESAS: "empresas",
+      OPERACIONES: "operaciones",
     },
     COLUMNS: {
       TICKER: "ticker",
