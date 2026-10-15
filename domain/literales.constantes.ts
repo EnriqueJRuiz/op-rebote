@@ -356,8 +356,19 @@ export const UI_TEXT = {
     closeDialog: {
       title: "Cerrar operación",
       description: "Se registrará como vendida y dejará de aparecer entre las operaciones activas.",
-      exitPrice: "Salida estimada",
-      exitPriceHint: "Como precio de salida se usa el máximo alcanzado.",
+      exitPrice: "Precio de salida",
+      // Qué precio se propone por defecto según los datos disponibles.
+      exitPriceHint: {
+        last: "Se propone el último precio conocido. Cámbialo para ver otra salida.",
+        max: "Sin cotización reciente: se propone el máximo alcanzado. Cámbialo para ver otra salida.",
+        entry: "Sin cotización reciente: se propone el precio de entrada. Cámbialo para ver otra salida.",
+      },
+      resetPrice: "Restablecer",
+      invested: "Capital invertido",
+      exitAmount: "Importe de salida",
+      costs: "Comisiones e impuestos",
+      result: "Resultado",
+      resultPct: (pct: string) => `${pct} sobre el capital invertido`,
       cancel: "Cancelar",
       confirm: "Cerrar operación",
       confirming: "Cerrando...",

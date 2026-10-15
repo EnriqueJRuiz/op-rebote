@@ -12,6 +12,19 @@ const CAPITAL_FORMAT = new Intl.NumberFormat("es-ES", {
   currency: APP_CONFIG.BASE_CURRENCY,
 });
 
+// Para resultados: muestra + o - salvo en cero.
+const SIGNED_CAPITAL_FORMAT = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: APP_CONFIG.BASE_CURRENCY,
+  signDisplay: "exceptZero",
+});
+
+const SIGNED_PERCENT_FORMAT = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: "exceptZero",
+});
+
 type Nullable = number | null | undefined;
 
 function isNumber(value: Nullable): value is number {
@@ -26,6 +39,16 @@ export function formatOperationPrice(value: Nullable) {
 export function formatOperationCapital(value: Nullable) {
   if (!isNumber(value)) return UI_TEXT.table.values.notAvailable;
   return CAPITAL_FORMAT.format(value);
+}
+
+export function formatOperationSignedCapital(value: Nullable) {
+  if (!isNumber(value)) return UI_TEXT.table.values.notAvailable;
+  return SIGNED_CAPITAL_FORMAT.format(value);
+}
+
+export function formatOperationSignedPercent(value: Nullable) {
+  if (!isNumber(value)) return UI_TEXT.table.values.notAvailable;
+  return `${SIGNED_PERCENT_FORMAT.format(value)}${UI_TEXT.table.formatting.percentageUnit}`;
 }
 
 export function formatOperationPercent(value: Nullable) {

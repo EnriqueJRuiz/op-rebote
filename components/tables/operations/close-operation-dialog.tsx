@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { cerrarOperacionAction } from "@/app/actions/operaciones.actions";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
+import { calcularResultadoOperacion } from "@/domain/rules/operacion.rules";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { CloseOperationSummary } from "./close-operation-summary";
 import { OperationDialogFrame } from "./operation-dialog-frame";
-import { formatOperationPrice, formatOperationCapital, getOperationName, getOperationTicker } from "./operation-cells";
+import { getOperationName, getOperationTicker } from "./operation-cells";
 
 interface CloseOperationDialogProps {
   operacion: Operacion;
@@ -14,27 +16,35 @@ interface CloseOperationDialogProps {
   onClosed: (id: number) => void;
 }
 
+type ExitPriceSource = keyof typeof UI_TEXT.operations.closeDialog.exitPriceHint;
+
+// Precio de salida propuesto: el último precio conocido; si no hay, el máximo; y si no, la entrada.
+function getDefaultExitPrice(operacion: Operacion): { price: number; source: ExitPriceSource } {
+  const { precio_actual: last, max_price: max } = operacion;
+  if (typeof last === "number" && Number.isFinite(last)) return { price: last, source: "last" };
+  if (typeof max === "number" && Number.isFinite(max)) return { price: max, source: "max" };
+  return { price: operacion.precio_entrada, source: "entry" };
+}
+
 export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOperationDialogProps) {
+  const fieldId = useId();
+  const texts = UI_TEXT.operations.closeDialog;
+  const defaultExit = getDefaultExitPrice(operacion);
+  // Los precios de Yahoo arrastran ruido de coma flotante (52.13000106…); 7 cifras significativas lo quitan
+  // sin perder precisión en precios muy pequeños (con decimales fijos, 0.00004 acabaría siendo 0).
+  const defaultInput = String(Number(defaultExit.price.toPrecision(7)));
+
+  const [exitInput, setExitInput] = useState(defaultInput);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Usamos el precio actual (último precio) como salida estimada, con fallback al máximo o entrada.
-  const exitPrice = operacion.precio_actual ?? operacion.max_price ?? operacion.precio_entrada;
+  const exitPrice = exitInput.trim() === "" ? NaN : Number(exitInput);
+  const validExitPrice = Number.isFinite(exitPrice) && exitPrice > 0;
+  const resultado = validExitPrice ? calcularResultadoOperacion(operacion, exitPrice) : null;
 
-  // Cálculos precisos de variación y cantidad ganada/perdida
-  const diff = exitPrice - operacion.precio_entrada;
-  const variationPct = operacion.precio_entrada > 0 ? (diff / operacion.precio_entrada) * 100 : 0;
-  const profitAmount = typeof operacion.capital_invertido === "number" ? operacion.capital_invertido * (variationPct / 100) : null;
-
-  const isPositive = diff > 0;
-  const isNegative = diff < 0;
-  const colorClass = isPositive 
-    ? "text-emerald-700 font-semibold" 
-    : isNegative 
-      ? "text-rose-700 font-semibold" 
-      : "text-slate-800 font-semibold";
-
-  const handleConfirm = async () => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validExitPrice) return;
     setLoading(true);
     setError("");
 
@@ -44,16 +54,16 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
         onClosed(operacion.id);
         return;
       }
-      setError(UI_TEXT.operations.closeDialog.error(String(result.error ?? "")));
+      setError(texts.error(String(result.error ?? "")));
     } catch (requestError) {
-      setError(UI_TEXT.operations.closeDialog.error(requestError instanceof Error ? requestError.message : ""));
+      setError(texts.error(requestError instanceof Error ? requestError.message : ""));
     }
     setLoading(false);
   };
 
   return (
     <OperationDialogFrame
-      title={UI_TEXT.operations.closeDialog.title}
+      title={texts.title}
       description={
         <>
           <span className={`${UI_STYLES.badge.ticker} mr-2`}>{getOperationTicker(operacion)}</span>
@@ -63,33 +73,43 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
       busy={loading}
       onClose={onClose}
     >
-      <div className={UI_STYLES.modal.body}>
-        <p className="text-sm text-slate-600">{UI_TEXT.operations.closeDialog.description}</p>
+      <form onSubmit={handleSubmit} className={UI_STYLES.modal.body}>
+        <p className="text-sm text-slate-600">{texts.description}</p>
 
-        <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 text-sm">
-          <div className="flex items-center justify-between gap-3 px-3 py-2">
-            <dt className="text-slate-500">{UI_TEXT.table.columns.entryPrice}</dt>
-            <dd className="font-medium tabular-nums text-slate-800">
-              {formatOperationPrice(operacion.precio_entrada)}
-            </dd>
+        <div>
+          <label htmlFor={`${fieldId}-exit`} className={UI_STYLES.form.label}>
+            {texts.exitPrice}
+          </label>
+          <div className="flex items-start gap-2">
+            <input
+              id={`${fieldId}-exit`}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min="0"
+              required
+              value={exitInput}
+              onChange={(event) => setExitInput(event.target.value)}
+              aria-describedby={`${fieldId}-exit-hint`}
+              className={`${UI_STYLES.form.input} min-w-0 flex-1`}
+            />
+            {exitInput !== defaultInput && (
+              <button
+                type="button"
+                onClick={() => setExitInput(defaultInput)}
+                disabled={loading}
+                className={UI_STYLES.button.secondary}
+              >
+                {texts.resetPrice}
+              </button>
+            )}
           </div>
-          <div className="flex items-center justify-between gap-3 px-3 py-2">
-            <dt className="text-slate-500">{UI_TEXT.operations.closeDialog.exitPrice}</dt>
-            <dd className="font-medium tabular-nums text-slate-800">{formatOperationPrice(exitPrice)}</dd>
-          </div>
-          <div className="flex items-center justify-between gap-3 px-3 py-2">
-            <dt className="text-slate-500">Resultado estimado</dt>
-            <dd className={`tabular-nums ${colorClass}`}>
-              {isPositive ? "+" : ""}{variationPct.toFixed(2)}%
-              {profitAmount !== null && (
-                <span className="ml-2">
-                  ({isPositive ? "+" : ""}{formatOperationCapital(profitAmount)})
-                </span>
-              )}
-            </dd>
-          </div>
-        </dl>
-        <p className={UI_STYLES.form.hint}>{UI_TEXT.operations.closeDialog.exitPriceHint}</p>
+          <p id={`${fieldId}-exit-hint`} className={UI_STYLES.form.hint}>
+            {texts.exitPriceHint[defaultExit.source]}
+          </p>
+        </div>
+
+        <CloseOperationSummary operacion={operacion} resultado={resultado} />
 
         {error && (
           <p role="alert" className={UI_STYLES.form.error}>
@@ -104,18 +124,17 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
             disabled={loading}
             className={UI_STYLES.button.secondary}
           >
-            {UI_TEXT.operations.closeDialog.cancel}
+            {texts.cancel}
           </button>
           <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={loading}
+            type="submit"
+            disabled={loading || !validExitPrice}
             className={UI_STYLES.button.danger}
           >
-            {loading ? UI_TEXT.operations.closeDialog.confirming : UI_TEXT.operations.closeDialog.confirm}
+            {loading ? texts.confirming : texts.confirm}
           </button>
         </div>
-      </div>
+      </form>
     </OperationDialogFrame>
   );
 }

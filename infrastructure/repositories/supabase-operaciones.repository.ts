@@ -2,6 +2,7 @@ import { OperacionesRepository } from "@/application/ports/operaciones-repositor
 import { Operacion, CreateOperacionInput } from "@/domain/models/operacion";
 import { createClient } from "@supabase/supabase-js";
 import { APP_CONFIG } from "@/domain/constants";
+import { calcularResultadoOperacion } from "@/domain/rules/operacion.rules";
 
 export class SupabaseOperacionesRepository implements OperacionesRepository {
   private supabase = createClient(
@@ -66,6 +67,11 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
   }
 
   async close(id: number, precioSalida: number): Promise<Operacion> {
+    // El precio de salida lo escribe el usuario: no se guarda nada que no sea un precio válido.
+    if (!Number.isFinite(precioSalida) || precioSalida <= 0) {
+      throw new Error("El precio de salida no es válido");
+    }
+
     const { data: op, error: fetchError } = await await this.supabase
       .from(APP_CONFIG.DB.TABLES.OPERACIONES)
       .select("*")
@@ -76,8 +82,7 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
       throw new Error("Operación no encontrada");
     }
 
-    const beneficioBruto = (precioSalida - op.precio_entrada) * (op.cantidad_acciones || 0);
-    const beneficioNeto = beneficioBruto - op.comisiones_broker - op.impuestos;
+    const { beneficioNeto } = calcularResultadoOperacion(op, precioSalida);
     const resultadoEstado = beneficioNeto >= 0 ? "BENEFICIO" : "PERDIDA";
 
     const { data, error } = await await this.supabase
