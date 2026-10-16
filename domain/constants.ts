@@ -6,6 +6,11 @@ export const APP_CONFIG = {
   INITIAL_CAPITAL_TEST: 100,
   MONTHLY_CONTRIBUTION: 25,
 
+  BROKER: {
+    // Comisión fija por orden (compra o venta), en BASE_CURRENCY. Es el valor propuesto al cerrar una operación.
+    COMMISSION_PER_ORDER: 1,
+  },
+
   DB: {
     TABLES: {
       EMPRESAS: "empresas",

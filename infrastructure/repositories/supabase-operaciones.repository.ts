@@ -66,10 +66,13 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
     return data;
   }
 
-  async close(id: number, precioSalida: number): Promise<Operacion> {
-    // El precio de salida lo escribe el usuario: no se guarda nada que no sea un precio válido.
+  async close(id: number, precioSalida: number, comisiones?: number): Promise<Operacion> {
+    // El precio de salida y las comisiones los escribe el usuario: no se guarda nada que no sea válido.
     if (!Number.isFinite(precioSalida) || precioSalida <= 0) {
       throw new Error("El precio de salida no es válido");
+    }
+    if (comisiones !== undefined && (!Number.isFinite(comisiones) || comisiones < 0)) {
+      throw new Error("Las comisiones no son válidas");
     }
 
     const { data: op, error: fetchError } = await await this.supabase
@@ -82,13 +85,14 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
       throw new Error("Operación no encontrada");
     }
 
-    const { beneficioNeto } = calcularResultadoOperacion(op, precioSalida);
+    const { beneficioNeto } = calcularResultadoOperacion(op, precioSalida, comisiones);
     const resultadoEstado = beneficioNeto >= 0 ? "BENEFICIO" : "PERDIDA";
 
     const { data, error } = await await this.supabase
       .from(APP_CONFIG.DB.TABLES.OPERACIONES)
       .update({
         precio_salida: precioSalida,
+        ...(comisiones !== undefined && { comisiones_broker: comisiones }),
         fecha_cierre: new Date().toISOString(),
         beneficio_neto: beneficioNeto,
         resultado_estado: resultadoEstado,

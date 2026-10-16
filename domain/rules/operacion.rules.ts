@@ -24,14 +24,16 @@ type OperacionParaResultado = Pick<
  */
 export function calcularResultadoOperacion(
   operacion: OperacionParaResultado,
-  precioSalida: number
+  precioSalida: number,
+  // Comisiones totales (entrada + salida). Si no se indican, se usan las guardadas en la operación.
+  comisiones?: number
 ): ResultadoOperacion {
   const acciones =
     operacion.cantidad_acciones ??
     (operacion.precio_entrada > 0 ? operacion.capital_invertido / operacion.precio_entrada : 0);
   const importeSalida = acciones * precioSalida;
   const beneficioBruto = (precioSalida - operacion.precio_entrada) * acciones;
-  const costes = (operacion.comisiones_broker || 0) + (operacion.impuestos || 0);
+  const costes = (comisiones ?? (operacion.comisiones_broker || 0)) + (operacion.impuestos || 0);
   const beneficioNeto = beneficioBruto - costes;
   const rentabilidadPct =
     operacion.capital_invertido > 0 ? (beneficioNeto / operacion.capital_invertido) * 100 : null;

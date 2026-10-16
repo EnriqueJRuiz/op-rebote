@@ -47,9 +47,9 @@ export async function abrirOperacionAction(formData: {
   }
 }
 
-export async function cerrarOperacionAction(id: number, precioSalida: number) {
+export async function cerrarOperacionAction(id: number, precioSalida: number, comisiones?: number) {
   try {
-    const opCerrada = await operacionesRepository.close(id, precioSalida);
+    const opCerrada = await operacionesRepository.close(id, precioSalida, comisiones);
     revalidatePath("/"); // Refresca la vista
     return { success: true, data: opCerrada };
   } catch (error: any) {

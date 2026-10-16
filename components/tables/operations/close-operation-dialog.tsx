@@ -1,14 +1,34 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
-import { cerrarOperacionAction } from "@/app/actions/operaciones.actions";
+import { ReactNode, useId } from "react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
-import { calcularResultadoOperacion } from "@/domain/rules/operacion.rules";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { CloseOperationSummary } from "./close-operation-summary";
 import { OperationDialogFrame } from "./operation-dialog-frame";
-import { getOperationName, getOperationTicker } from "./operation-cells";
+import {
+  formatOperationCapital,
+  formatOperationPrice,
+  formatOperationSignedCapital,
+  formatOperationSignedPercent,
+  getOperationName,
+  getOperationTicker,
+} from "./operation-cells";
+import { useCloseOperationForm } from "./use-close-operation-form";
+
+const RESULT_TONES = {
+  gain: { box: "border-emerald-200 bg-emerald-50/60", text: "text-emerald-700" },
+  loss: { box: "border-rose-200 bg-rose-50/60", text: "text-rose-700" },
+  even: { box: "border-slate-200 bg-slate-50/70", text: "text-slate-800" },
+} as const;
+
+function SummaryRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="font-medium tabular-nums text-slate-800">{children}</dd>
+    </div>
+  );
+}
 
 interface CloseOperationDialogProps {
   operacion: Operacion;
@@ -16,50 +36,17 @@ interface CloseOperationDialogProps {
   onClosed: (id: number) => void;
 }
 
-type ExitPriceSource = keyof typeof UI_TEXT.operations.closeDialog.exitPriceHint;
-
-// Precio de salida propuesto: el último precio conocido; si no hay, el máximo; y si no, la entrada.
-function getDefaultExitPrice(operacion: Operacion): { price: number; source: ExitPriceSource } {
-  const { precio_actual: last, max_price: max } = operacion;
-  if (typeof last === "number" && Number.isFinite(last)) return { price: last, source: "last" };
-  if (typeof max === "number" && Number.isFinite(max)) return { price: max, source: "max" };
-  return { price: operacion.precio_entrada, source: "entry" };
-}
-
 export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOperationDialogProps) {
   const fieldId = useId();
   const texts = UI_TEXT.operations.closeDialog;
-  const defaultExit = getDefaultExitPrice(operacion);
-  // Los precios de Yahoo arrastran ruido de coma flotante (52.13000106…); 7 cifras significativas lo quitan
-  // sin perder precisión en precios muy pequeños (con decimales fijos, 0.00004 acabaría siendo 0).
-  const defaultInput = String(Number(defaultExit.price.toPrecision(7)));
+  const form = useCloseOperationForm(operacion, onClosed);
+  const { resultado } = form;
+  const tone = RESULT_TONES[form.resultTone];
 
-  const [exitInput, setExitInput] = useState(defaultInput);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const exitPrice = exitInput.trim() === "" ? NaN : Number(exitInput);
-  const validExitPrice = Number.isFinite(exitPrice) && exitPrice > 0;
-  const resultado = validExitPrice ? calcularResultadoOperacion(operacion, exitPrice) : null;
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!validExitPrice) return;
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await cerrarOperacionAction(operacion.id, exitPrice);
-      if (result.success) {
-        onClosed(operacion.id);
-        return;
-      }
-      setError(texts.error(String(result.error ?? "")));
-    } catch (requestError) {
-      setError(texts.error(requestError instanceof Error ? requestError.message : ""));
-    }
-    setLoading(false);
-  };
+  const commissionFields = [
+    { key: "entry", label: texts.entryCommission, value: form.entryCommissionInput, onChange: form.setEntryCommissionInput },
+    { key: "exit", label: texts.exitCommission, value: form.exitCommissionInput, onChange: form.setExitCommissionInput },
+  ];
 
   return (
     <OperationDialogFrame
@@ -70,10 +57,10 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
           {getOperationName(operacion)}
         </>
       }
-      busy={loading}
+      busy={form.loading}
       onClose={onClose}
     >
-      <form onSubmit={handleSubmit} className={UI_STYLES.modal.body}>
+      <form onSubmit={form.handleSubmit} className={UI_STYLES.modal.body}>
         <p className="text-sm text-slate-600">{texts.description}</p>
 
         <div>
@@ -88,16 +75,16 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
               step="any"
               min="0"
               required
-              value={exitInput}
-              onChange={(event) => setExitInput(event.target.value)}
+              value={form.exitInput}
+              onChange={(event) => form.setExitInput(event.target.value)}
               aria-describedby={`${fieldId}-exit-hint`}
               className={`${UI_STYLES.form.input} min-w-0 flex-1`}
             />
-            {exitInput !== defaultInput && (
+            {form.exitPriceEdited && (
               <button
                 type="button"
-                onClick={() => setExitInput(defaultInput)}
-                disabled={loading}
+                onClick={form.resetExitPrice}
+                disabled={form.loading}
                 className={UI_STYLES.button.secondary}
               >
                 {texts.resetPrice}
@@ -105,15 +92,66 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
             )}
           </div>
           <p id={`${fieldId}-exit-hint`} className={UI_STYLES.form.hint}>
-            {texts.exitPriceHint[defaultExit.source]}
+            {texts.exitPriceHint[form.exitPriceSource]}
           </p>
         </div>
 
-        <CloseOperationSummary operacion={operacion} resultado={resultado} />
+        <div>
+          {/* items-end: si una etiqueta salta de línea en pantallas estrechas, los campos siguen alineados. */}
+          <div className="grid grid-cols-2 items-end gap-3">
+            {commissionFields.map((field) => (
+              <div key={field.key}>
+                <label htmlFor={`${fieldId}-${field.key}-commission`} className={UI_STYLES.form.label}>
+                  {field.label}
+                </label>
+                <input
+                  id={`${fieldId}-${field.key}-commission`}
+                  type="number"
+                  inputMode="decimal"
+                  step="any"
+                  min="0"
+                  placeholder="0"
+                  value={field.value}
+                  onChange={(event) => field.onChange(event.target.value)}
+                  aria-describedby={`${fieldId}-commissions-hint`}
+                  className={UI_STYLES.form.input}
+                />
+              </div>
+            ))}
+          </div>
+          <p id={`${fieldId}-commissions-hint`} className={UI_STYLES.form.hint}>
+            {texts.commissionsHint}
+          </p>
+        </div>
 
-        {error && (
+        <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 text-sm">
+          <SummaryRow label={UI_TEXT.table.columns.entryPrice}>
+            {formatOperationPrice(operacion.precio_entrada)}
+          </SummaryRow>
+          <SummaryRow label={texts.invested}>{formatOperationCapital(operacion.capital_invertido)}</SummaryRow>
+          <SummaryRow label={texts.exitAmount}>
+            {resultado ? formatOperationCapital(resultado.importeSalida) : UI_TEXT.table.values.notAvailable}
+          </SummaryRow>
+          {resultado && resultado.costes > 0 && (
+            <SummaryRow label={texts.costs}>{formatOperationSignedCapital(-resultado.costes)}</SummaryRow>
+          )}
+        </dl>
+
+        <div className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-3 ${tone.box}`}>
+          <span className="text-sm font-medium text-slate-700">{texts.result}</span>
+          <span className={`text-right tabular-nums ${tone.text}`}>
+            <span className="block text-lg font-bold">{formatOperationSignedCapital(resultado?.beneficioNeto)}</span>
+            {resultado?.rentabilidadPct != null && (
+              <span className="block text-xs font-medium">
+                {texts.resultPct(formatOperationSignedPercent(resultado.rentabilidadPct))}
+              </span>
+            )}
+          </span>
+        </div>
+
+        {form.error && (
           <p role="alert" className={UI_STYLES.form.error}>
-            {error}
+            {form.error}
           </p>
         )}
 
@@ -121,17 +159,17 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
+            disabled={form.loading}
             className={UI_STYLES.button.secondary}
           >
             {texts.cancel}
           </button>
           <button
             type="submit"
-            disabled={loading || !validExitPrice}
+            disabled={form.loading || !form.canClose}
             className={UI_STYLES.button.danger}
           >
-            {loading ? texts.confirming : texts.confirm}
+            {form.loading ? texts.confirming : texts.confirm}
           </button>
         </div>
       </form>
