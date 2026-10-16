@@ -12,7 +12,7 @@ import {
   formatCurrencyPrice,
   getFloorDistancePercent,
   PriceChange,
-} from "@/components/common/trading-cells";
+} from "@/components/ui/core/trading-cells";
 import {
   OpportunityFilterThresholds,
   OpportunityFundamentalsInline,

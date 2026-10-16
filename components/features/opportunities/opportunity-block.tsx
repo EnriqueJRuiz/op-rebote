@@ -14,7 +14,7 @@ import {
   BacktestInfo,
   formatCurrencyPrice,
   PriceChange,
-} from "@/components/common/trading-cells";
+} from "@/components/ui/core/trading-cells";
 import {
   assessOpportunity,
   OpportunityFundamentalsInline,

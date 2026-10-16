@@ -5,7 +5,7 @@ import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { Column } from "@/components/ui/core/DataTable";
-import { DividendBadge, PriceChange } from "@/components/common/trading-cells";
+import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
 import { OpenOperationButton } from "@/components/ui/buttons/open-operation-button";
 import { CompanyHistoryTrigger } from "./history/company-history-trigger";

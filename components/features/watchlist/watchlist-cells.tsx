@@ -3,7 +3,7 @@
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
-import { getFloorDistanceTrend } from "@/components/common/trading-cells";
+import { getFloorDistanceTrend } from "@/components/ui/core/trading-cells";
 import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
 
 export function getFloorDistancePercent(row: WatchlistRowData): number | null {

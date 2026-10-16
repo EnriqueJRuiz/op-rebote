@@ -2,7 +2,7 @@
 
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
-import { getFloorDistancePercent } from "@/components/common/trading-cells";
+import { getFloorDistancePercent } from "@/components/ui/core/trading-cells";
 
 export interface OpportunityFilterThresholds {
   oversoldRsi: number;
