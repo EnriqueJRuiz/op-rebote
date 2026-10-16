@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { AppIconArtwork } from "@/components/app-icon-artwork";
+import { AppIconArtwork } from "@/components/ui/layout/app-icon-artwork";
 
 export function generateImageMetadata() {
   return [

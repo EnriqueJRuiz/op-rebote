@@ -1,5 +1,5 @@
-import { AutoRefresh } from "@/components/auto-refresh";
-import { WatchlistTable } from "@/components/tables/watchlist/watchlist-table";
+import { AutoRefresh } from "@/components/ui/layout/auto-refresh";
+import { WatchlistTable } from "@/components/features/watchlist";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyRecord, CompanyScanQuote, ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { createApplicationDependencies } from "@/infrastructure/composition";

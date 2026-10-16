@@ -1,9 +1,9 @@
-import { AutoRefresh } from "@/components/auto-refresh";
-import { SearchReboundsButton } from "@/components/buttons/search-button";
+import { AutoRefresh } from "@/components/ui/layout/auto-refresh";
 import { ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
+import { SearchReboundsButton } from "@/components/ui/buttons/search-button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

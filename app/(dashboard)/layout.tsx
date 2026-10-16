@@ -1,5 +1,5 @@
-import { Sidebar } from "@/components/sidebar";
-import { RefreshOnResume } from "@/components/refresh-on-resume";
+import { Sidebar } from "@/components/ui/sidebar";
+import { RefreshOnResume } from "@/components/ui/layout/refresh-on-resume";
 import { WatchlistProvider } from "@/context/watchlist-context";
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
