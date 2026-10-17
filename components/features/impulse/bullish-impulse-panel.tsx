@@ -2,16 +2,13 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Activity, RefreshCw } from "lucide-react";
+import { DataTable } from "@/components/ui/core/DataTable";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
-import { Operacion } from "@/domain/models/operacion";
 import {
   getBullishImpulseSignals,
   scanBullishImpulseAction,
 } from "@/app/actions/search-bullish-impulses";
-import { obtenerOperacionesActivasAction } from "@/app/actions/operaciones.actions";
-import { DataTable } from "../../ui/core/DataTable";
-import { OperationsTable } from "../operations/operations-table";
 import { OperationDialog } from "../operations/operation-dialog";
 import { getBullishImpulseColumns } from "./bullish-impulse-columns";
 import { renderBullishMobileRow } from "./bullish-impulse-mobile-row";
@@ -19,24 +16,20 @@ import { BullishImpulseConfig } from "./bullish-impulse-config";
 
 export function BullishImpulsePanel() {
   const [signals, setSignals] = useState<BullishSignal[]>([]);
-  const [activeOperations, setActiveOperations] = useState<Operacion[]>([]);
   const [selectedSignal, setSelectedSignal] = useState<BullishSignal | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // Cargar señales al montar el componente
   useEffect(() => {
     let active = true;
-    Promise.all([
-      getBullishImpulseSignals(),
-      obtenerOperacionesActivasAction()
-    ])
-      .then(([signalsResult, operationsResult]) => {
+    getBullishImpulseSignals()
+      .then((signalsResult) => {
         if (!active) return;
         setSignals(signalsResult.signals);
         setMessage(signalsResult.error ?? "");
-        setActiveOperations(operationsResult);
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -51,20 +44,12 @@ export function BullishImpulsePanel() {
     };
   }, []);
 
-  const refreshOperations = async () => {
-    const ops = await obtenerOperacionesActivasAction();
-    setActiveOperations(ops);
-  };
-
-  const handleOperationClosed = (id: number) => {
-    setActiveOperations((current) => current.filter((operation) => operation.id !== id));
-  };
-
-  const runScan = () => startTransition(async () => {
-    const result = await scanBullishImpulseAction();
-    setMessage(result.message);
-    if (result.success) setSignals(result.signals);
-  });
+  const runScan = () =>
+    startTransition(async () => {
+      const result = await scanBullishImpulseAction();
+      setMessage(result.message);
+      if (result.success) setSignals(result.signals);
+    });
 
   const early = signals.filter((s) => s.tipo === "TEMPRANA");
   const confirmed = signals.filter((s) => s.tipo === "CONFIRMADA");
@@ -79,8 +64,14 @@ export function BullishImpulsePanel() {
       rowKey={(signal) => `${signal.ticker}-${signal.tipo}-${signal.detectadaEn}`}
       initialPageSize={10}
       pageSizeOptions={[10, 25, 50]}
-      emptyMessage={isLoading ? UI_TEXT.pages.bullishImpulse.emptyLoading : UI_TEXT.pages.bullishImpulse.emptyNoSignals}
-      mobileRow={(signal, expanded, toggle) => renderBullishMobileRow(signal, expanded, toggle, setSelectedSignal)}
+      emptyMessage={
+        isLoading
+          ? UI_TEXT.pages.bullishImpulse.emptyLoading
+          : UI_TEXT.pages.bullishImpulse.emptyNoSignals
+      }
+      mobileRow={(signal, expanded, toggle) =>
+        renderBullishMobileRow(signal, expanded, toggle, setSelectedSignal)
+      }
       showMobileSort
     />
   );
@@ -90,17 +81,28 @@ export function BullishImpulsePanel() {
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-700">
-            <Activity size={16}/> {UI_TEXT.pages.bullishImpulse.badgeStrategy}
+            <Activity size={16} /> {UI_TEXT.pages.bullishImpulse.badgeStrategy}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{UI_TEXT.pages.bullishImpulse.title}</h1>
-          <p className="mt-2 max-w-3xl text-slate-600">{UI_TEXT.pages.bullishImpulse.description}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            {UI_TEXT.pages.bullishImpulse.title}
+          </h1>
+          <p className="mt-2 max-w-3xl text-slate-600">
+            {UI_TEXT.pages.bullishImpulse.description}
+          </p>
         </div>
-        <button onClick={runScan} disabled={isPending} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"> 
-          <RefreshCw size={16} className={isPending ? "animate-spin" : ""}/>
-          {isPending ? UI_TEXT.pages.bullishImpulse.recalculating : UI_TEXT.pages.bullishImpulse.recalculateButton}
+        <button
+          onClick={runScan}
+          disabled={isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          <RefreshCw size={16} className={isPending ? "animate-spin" : ""} />
+          {isPending
+            ? UI_TEXT.pages.bullishImpulse.recalculating
+            : UI_TEXT.pages.bullishImpulse.recalculateButton}
         </button>
       </header>
 
+      {/* Grid adaptativo */}
       <BullishImpulseConfig
         isConfigOpen={isConfigOpen}
         setIsConfigOpen={setIsConfigOpen}
@@ -108,19 +110,26 @@ export function BullishImpulsePanel() {
         earlyCount={early.length}
       />
 
-      {message && <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">{message}</div>}
-      
-      {renderTable(UI_TEXT.pages.bullishImpulse.panels.confirmedTitle, UI_TEXT.pages.bullishImpulse.panels.confirmedSubtitle, confirmed)}
-      {renderTable(UI_TEXT.pages.bullishImpulse.panels.earlyTitle, UI_TEXT.pages.bullishImpulse.panels.earlySubtitle, early)}
+      {message && (
+        <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+          {message}
+        </div>
+      )}
 
-      <OperationsTable
-        operaciones={activeOperations}
-        isLoading={isLoading}
-        onClosed={handleOperationClosed}
-      />
+      {renderTable(
+        UI_TEXT.pages.bullishImpulse.panels.confirmedTitle,
+        UI_TEXT.pages.bullishImpulse.panels.confirmedSubtitle,
+        confirmed
+      )}
+      {renderTable(
+        UI_TEXT.pages.bullishImpulse.panels.earlyTitle,
+        UI_TEXT.pages.bullishImpulse.panels.earlySubtitle,
+        early
+      )}
 
       <p className="text-xs leading-5 text-slate-500">{UI_TEXT.pages.bullishImpulse.footerNote}</p>
 
+      {/* MODAL DE APERTURA DE OPERACIÓN */}
       {selectedSignal && (
         <OperationDialog
           companyId={selectedSignal.companyId}
@@ -128,9 +137,6 @@ export function BullishImpulsePanel() {
           companyName={selectedSignal.nombre}
           precioActual={selectedSignal.precio}
           onClose={() => setSelectedSignal(null)}
-          onSuccess={() => {
-            refreshOperations();
-          }}
         />
       )}
     </div>

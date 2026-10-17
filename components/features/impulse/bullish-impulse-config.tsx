@@ -1,7 +1,7 @@
 import { ShieldCheck, ChevronDown } from "lucide-react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 
-interface BullishConfigProps {
+interface BullishImpulseConfigProps {
   isConfigOpen: boolean;
   setIsConfigOpen: (open: boolean) => void;
   confirmedCount: number;
@@ -13,7 +13,7 @@ export function BullishImpulseConfig({
   setIsConfigOpen,
   confirmedCount,
   earlyCount,
-}: BullishConfigProps) {
+}: BullishImpulseConfigProps) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <div className="rounded-xl border border-slate-200 bg-white p-4 md:col-span-1">
@@ -27,7 +27,9 @@ export function BullishImpulseConfig({
           </div>
           <ChevronDown
             size={18}
-            className={`text-slate-500 transition-transform md:hidden ${isConfigOpen ? "rotate-180" : ""}`}
+            className={`text-slate-500 transition-transform md:hidden ${
+              isConfigOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 

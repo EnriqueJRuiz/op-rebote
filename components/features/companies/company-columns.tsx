@@ -1,14 +1,13 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { Column } from "@/components/ui/core/DataTable";
 import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { OpenOperationButton } from "@/components/ui/buttons/open-operation-button";
 import { CompanyHistoryTrigger } from "./history/company-history-trigger";
+import { OpenOperationButton } from "../operations/open-operation-button";
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {
@@ -57,10 +56,9 @@ export function getScanQuoteChangePercent(quote?: CompanyScanQuote): number | nu
 
 export function getCompanyColumns(
   scanQuoteByCompanyId: Map<number, CompanyScanQuote>,
-  onOpenOperation: (empresa: CompanyRecord) => void
+  onOperate: (empresa: CompanyRecord) => void
 ): Column<CompanyRecord>[] {
   return [
-   
     {
       header: "",
       render: (empresa) => (
@@ -97,16 +95,14 @@ export function getCompanyColumns(
       header: UI_TEXT.table.columns.dividend,
       render: (empresa) => <DividendBadge empresa={empresa} />,
     },
-   {
-      header: "",
-      render: (empresa) => (
-        <OpenOperationButton
-          onClick={() => onOpenOperation(empresa)}
-          aria-label={`Abrir operación para ${empresa.nombre} (${empresa.ticker})`}
-          title="Abrir operación"
-        />
-      ),
-      cellClassName: "w-10 px-2 text-center",
-    }
+    {
+      header: UI_TEXT.table.columns.operate,
+      render: (empresa) =>
+        empresa.ticker === undefined ? null : (
+          <OpenOperationButton ticker={empresa.ticker} onClick={() => onOperate(empresa)} />
+        ),
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+    },
   ];
 }

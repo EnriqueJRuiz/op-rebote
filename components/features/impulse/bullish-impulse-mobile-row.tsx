@@ -1,15 +1,9 @@
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
 import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
-
-interface BullishMobileRowProps {
-  signal: BullishSignal;
-  expanded: boolean;
-  toggle: () => void;
-  onOpenOperation: (signal: BullishSignal) => void;
-}
+import { OpenOperationButton } from "../operations/open-operation-button";
 
 export function renderBullishMobileRow(
   signal: BullishSignal,
@@ -17,7 +11,8 @@ export function renderBullishMobileRow(
   toggle: () => void,
   onOpenOperation: (signal: BullishSignal) => void
 ) {
-  const fmt = (date: string) => new Date(date).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
+  const fmt = (date: string) =>
+    new Date(date).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
 
   return (
     <div className={UI_STYLES.table.mobileRow}>
@@ -39,14 +34,22 @@ export function renderBullishMobileRow(
           companyName={signal.nombre}
           metric="precio"
         >
-          <span className={`whitespace-nowrap font-medium ${signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+          <span
+            className={`whitespace-nowrap font-medium ${
+              signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"
+            }`}
+          >
             {signal.variacionBarraPct.toFixed(2)}%
           </span>
         </CompanyHistoryTrigger>
         <button
           type="button"
           onClick={toggle}
-          aria-label={expanded ? UI_TEXT.pages.bullishImpulse.aria.collapseSignal : UI_TEXT.pages.bullishImpulse.aria.expandSignal}
+          aria-label={
+            expanded
+              ? UI_TEXT.pages.bullishImpulse.aria.collapseSignal
+              : UI_TEXT.pages.bullishImpulse.aria.expandSignal
+          }
           aria-expanded={expanded}
         >
           <ChevronDown
@@ -69,20 +72,26 @@ export function renderBullishMobileRow(
             </CompanyHistoryTrigger>
           </div>
           <div>
-            <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.pages.bullishImpulse.labels.sampleVariation}</p>
+            <p className={UI_STYLES.table.mobileLabel}>
+              {UI_TEXT.pages.bullishImpulse.labels.sampleVariation}
+            </p>
             <CompanyHistoryTrigger
               companyId={signal.companyId}
               ticker={signal.ticker}
               companyName={signal.nombre}
               metric="precio"
             >
-              <span className={signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"}>
+              <span
+                className={signal.variacionBarraPct >= 0 ? "text-emerald-700" : "text-rose-700"}
+              >
                 {signal.variacionBarraPct.toFixed(2)}%
               </span>
             </CompanyHistoryTrigger>
           </div>
           <div>
-            <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.pages.bullishImpulse.labels.relativeVolume}</p>
+            <p className={UI_STYLES.table.mobileLabel}>
+              {UI_TEXT.pages.bullishImpulse.labels.relativeVolume}
+            </p>
             <p className={UI_STYLES.table.mobileValue}>
               {signal.volumenRelativo == null ? "—" : `${signal.volumenRelativo.toFixed(2)}×`}
             </p>
@@ -96,15 +105,11 @@ export function renderBullishMobileRow(
             <p className={UI_STYLES.table.mobileValue}>{signal.motivo}</p>
           </div>
           <div className="col-span-2 pt-2">
-            <button
-              type="button"
+            <OpenOperationButton
+              ticker={signal.ticker}
               onClick={() => onOpenOperation(signal)}
-              aria-label={UI_TEXT.operations.openAria(signal.ticker)}
-              className={UI_STYLES.button.primaryFull}
-            >
-              <Plus size={16} aria-hidden="true" />
-              {UI_TEXT.operations.openButton}
-            </button>
+              fullWidth
+            />
           </div>
         </div>
       )}

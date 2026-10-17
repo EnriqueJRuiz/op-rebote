@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, Bookmark, Building2, ChartNoAxesCombined, ChevronLeft, ChevronRight, Home, Target } from "lucide-react";
+import { Activity, Bookmark, Building2, ChartNoAxesCombined, ChevronLeft, ChevronRight, Home, Target, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +13,7 @@ const NAVIGATION_LINKS = [
   { href: APP_ROUTES.OPORTUNIDADES, label: UI_TEXT.navigation.opportunities, icon: Target },
   { href: APP_ROUTES.IMPULSO_ALCISTA, label: "Impulso Alcista", icon: Activity },
   { href: APP_ROUTES.SEGUIMIENTO, label: UI_TEXT.navigation.watchlist, icon: Bookmark },
+  { href: APP_ROUTES.OPERACIONES, label: UI_TEXT.navigation.operations, icon: Wallet },
 ] as const;
 
 const STYLES = {

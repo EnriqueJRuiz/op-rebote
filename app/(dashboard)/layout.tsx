@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/ui/sidebar";
+import { Sidebar } from "@/components/ui/layout/sidebar";
 import { RefreshOnResume } from "@/components/ui/layout/refresh-on-resume";
 import { WatchlistProvider } from "@/context/watchlist-context";
 

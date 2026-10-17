@@ -127,7 +127,7 @@ export function Sma200Distance({ row }: { row: { distSma200Pct?: number; backtes
     : UI_TEXT.table.values.noData;
 
   return (
-    <div className="leading-tight">
+    <span className="block leading-tight">
       <span
         className={hasDistance
           ? distance < 0 ? `font-medium ${UI_STYLES.badge.danger}` : `font-medium ${UI_STYLES.badge.success}`
@@ -146,7 +146,7 @@ export function Sma200Distance({ row }: { row: { distSma200Pct?: number; backtes
           )}
         </span>
       )}
-    </div>
+    </span>
   );
 }
 
@@ -241,17 +241,17 @@ export function BacktestInfo({ row, compact = false }: { row: { backtestCasos?: 
   const pocaMuestra = backtestCasos < 10;
 
   return (
-    <div className="leading-tight">
-      <div className="flex gap-2 font-semibold">
+    <span className="block leading-tight">
+      <span className="flex gap-2 font-semibold">
         <span className={UI_STYLES.badge.success} title="Señales históricas que alcanzaron el objetivo" aria-label={`${backtestExitoPct}% ganó`}>{backtestExitoPct}%{compact ? "" : " ganó"}</span>
         <span className={UI_STYLES.badge.warning} title="Señales históricas que terminaron estancadas" aria-label={`${backtestEstancadoPct}% estancó`}>{backtestEstancadoPct}%{compact ? "" : " estancó"}</span>
         <span className={UI_STYLES.badge.danger} title="Señales históricas que alcanzaron el stop" aria-label={`${backtestPerdidoPct}% perdió`}>{backtestPerdidoPct}%{compact ? "" : " perdió"}</span>
-      </div>
+      </span>
       <span className={`block text-xs ${UI_STYLES.text.muted}`}>
         {backtestCasos} casos · {backtestDiasMedios}d media
         {pocaMuestra && <span className={`ml-1 ${UI_STYLES.badge.warning}`}>(poca muestra)</span>}
       </span>
-    </div>
+    </span>
   );
 }
 
@@ -272,12 +272,12 @@ export function RsiBadge({ rsi }: { rsi?: number }) {
   }
 
   return (
-    <div className="leading-tight">
+    <span className="block leading-tight">
       <span className="font-semibold text-slate-800">{rsi.toFixed(2)}</span>
       <span className={`mt-0.5 block rounded px-1.5 py-0.5 text-[10px] border ${colorClass}`} title={`RSI (14): ${rsi.toFixed(2)}`}>
         {statusText}
       </span>
-    </div>
+    </span>
   );
 }
 

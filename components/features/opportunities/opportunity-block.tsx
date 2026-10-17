@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { getOpportunityColumns } from "./opportunity-columns";
 import {
   FloorDistance,
   Sma200Distance,
@@ -23,6 +22,8 @@ import {
 import { DataTable } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
 import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
+import { getOpportunityColumns } from "./opportunity-columns";
+import { OpenOperationButton } from "../operations/open-operation-button";
 
 interface OpportunityBlockProps {
   title: string;
@@ -32,8 +33,12 @@ interface OpportunityBlockProps {
 }
 
 export function OpportunityBlock({ title, opportunities, filterThresholds, subtitle }: OpportunityBlockProps) {
-  const columns = useMemo(() => getOpportunityColumns(filterThresholds), [filterThresholds]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<StockCandidate | null>(null);
 
+  const columns = useMemo(
+    () => getOpportunityColumns(filterThresholds, setSelectedOpportunity),
+    [filterThresholds]
+  );
   return (
     <DataTable
       title={title}
@@ -139,6 +144,12 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
                   <BacktestInfo row={opportunity} compact />
                 </p>
               </div>
+              {opportunity.ticker === undefined ? null : (
+                  <OpenOperationButton
+                    ticker={opportunity.ticker}
+                    onClick={() => setSelectedOpportunity(opportunity)}
+                  />
+                )}
             </div>
           )}
         </div>
