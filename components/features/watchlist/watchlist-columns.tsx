@@ -12,7 +12,7 @@ import {
   getFloorDistancePercent,
 } from "./watchlist-cells";
 import { Column } from "@/components/ui/core/DataTable";
-import { FollowButton } from "@/components/ui/buttons/follow-button";
+import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function getWatchlistColumns(): Column<WatchlistRowData>[] {

@@ -18,7 +18,7 @@ import {
   BacktestInfo,
 } from "./watchlist-cells";
 import { DataTable } from "@/components/ui/core/DataTable";
-import { FollowButton } from "@/components/ui/buttons/follow-button";
+import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 function normalizeSearch(value: string) {

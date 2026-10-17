@@ -1,4 +1,3 @@
-// components/sync-button.tsx
 "use client"; // <-- ¡Esta línea debe estar obligatoriamente en la parte más alta del archivo!
 
 import { useState } from "react";

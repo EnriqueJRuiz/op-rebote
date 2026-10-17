@@ -2,8 +2,7 @@ import { AutoRefresh } from "@/components/ui/layout/auto-refresh";
 import { CompanyScanQuote, ScanStatus } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
-import { SyncButton } from "@/components/ui/buttons/sync-button";
-import { CompanyTable } from "@/components/features/companies";
+import { CompanyTable, SyncButton } from "@/components/features/companies";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;

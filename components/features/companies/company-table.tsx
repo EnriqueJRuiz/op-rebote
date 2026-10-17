@@ -19,7 +19,7 @@ import {
   renderCompanyScannedPrice,
 } from "./company-columns";
 import { DividendBadge } from "@/components/ui/core/trading-cells";
-import { FollowButton } from "@/components/ui/buttons/follow-button";
+import { FollowButton } from "@/components/common/follow-button";
 import { DataTable } from "@/components/ui/core/DataTable";
 import { OperationDialog } from "@/components/features/operations/operation-dialog";
 import { OpenOperationButton } from "../operations/open-operation-button";

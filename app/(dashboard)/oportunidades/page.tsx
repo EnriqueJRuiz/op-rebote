@@ -3,7 +3,7 @@ import { ScanStatus, StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
-import { SearchReboundsButton } from "@/components/ui/buttons/search-button";
+import { SearchReboundsButton } from "@/components/features/opportunities";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

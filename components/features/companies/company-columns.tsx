@@ -5,7 +5,7 @@ import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { Column } from "@/components/ui/core/DataTable";
 import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
-import { FollowButton } from "@/components/ui/buttons/follow-button";
+import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 import { OpenOperationButton } from "../operations/open-operation-button";
 
