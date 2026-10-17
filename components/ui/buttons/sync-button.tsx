@@ -6,7 +6,7 @@ import { RefreshCw, Search } from "lucide-react";
 import { handleSyncMarketAction } from "@/app/actions/sync-market";
 import { handleSearchReboundsAction } from "@/app/actions/search-rebounds";
 import { useRouter } from "next/navigation";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { LoadingOverlay } from "@/components/ui/layout/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { AddCompanyButton } from "./add-company-button";

@@ -9,6 +9,7 @@ export const UI_TEXT = {
     home: "Inicio",
     opportunities: "Oportunidades",
     watchlist: "Seguimiento",
+    operations: "Operaciones",
     companies: "Empresas radar",
     open: "Abrir navegación",
     close: "Cerrar navegación",
@@ -17,6 +18,10 @@ export const UI_TEXT = {
     main: "Navegación principal",
   },
   pages: {
+    operations: {
+      title: "Operaciones",
+      description: "Operaciones abiertas con su trailing stop y su estado actual.",
+    },
     opportunities: {
       title: "Oportunidades de rebote",
       description: "Empresas candidatas a oportunidades de rebote.",
@@ -90,7 +95,6 @@ export const UI_TEXT = {
         sample: "Muestra",
         relativeVolume: "Volumen rel.",
         detected: "Detectada",
-        operate: "Operativa",
       },
       labels: {
         price: "Precio",
@@ -161,6 +165,7 @@ export const UI_TEXT = {
       searchByNameOrTicker: "Buscar por nombre o ticker",
       backtest: "Backtest histórico",
       actions: "Acciones",
+      operate: "Operativa",
       company: "Empresa",
       entryPrice: "Entrada",
       maxPrice: "Máx. alcanzado",
@@ -321,7 +326,7 @@ export const UI_TEXT = {
       opportunities: "No hay oportunidades que cumplan el segundo filtro.",
       watchlist: "No tienes ninguna empresa en seguimiento. Puedes marcar empresas usando el icono de favoritos en la pantalla de Oportunidades o en Empresas Radar.",
       watchlistFilter: "No hay empresas en seguimiento que coincidan con la búsqueda.",
-      operations: "No hay operaciones activas. Las que abras desde una señal aparecerán aquí.",
+      operations: "No hay operaciones activas. Las que abras aparecerán aquí.",
     },
     sorting: {
       byColumn: (label: string) => `Ordenar por ${label.toLowerCase()}`,
@@ -335,7 +340,7 @@ export const UI_TEXT = {
     openAria: (ticker: string) => `Abrir operación de ${ticker}`,
     closeAria: (ticker: string) => `Cerrar operación de ${ticker}`,
     activeTitle: "Operaciones activas",
-    activeSubtitle: "Simulaciones abiertas desde las señales, con su trailing stop.",
+    activeSubtitle: "Simulaciones abiertas, con su trailing stop.",
     emptyLoading: "Cargando operaciones…",
     fallbackTicker: (id: number) => `#${id}`,
     fallbackName: (companyId: number) => `Empresa ID: ${companyId}`,
@@ -351,6 +356,10 @@ export const UI_TEXT = {
       cancel: "Cancelar",
       confirm: "Abrir operación",
       confirming: "Abriendo...",
+      successTitle: "Operación abierta",
+      successDescription: (ticker: string) => `${ticker} se ha añadido a tus operaciones activas.`,
+      close: "Cerrar",
+      viewOperations: "Ver operaciones",
       error: (detail: string) => `No se pudo abrir la operación: ${detail}`,
     },
     closeDialog: {

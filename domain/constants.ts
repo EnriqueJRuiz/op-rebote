@@ -43,6 +43,7 @@ export const APP_ROUTES = {
   SEGUIMIENTO: "/seguimiento",
   EMPRESAS_RADAR: "/empresas-radar",
   IMPULSO_ALCISTA: "/impulso-alcista",
+  OPERACIONES: "/operaciones",
 } as const;
 
 export const DIVIDEND_KINGS = [

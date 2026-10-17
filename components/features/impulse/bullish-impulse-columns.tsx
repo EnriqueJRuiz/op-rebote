@@ -1,9 +1,8 @@
 import { Column } from "@/components/ui/core/DataTable";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
 import { UI_TEXT } from "@/domain/literales.constantes";
-import { UI_STYLES } from "@/styles/ui-styles";
 import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
-import { Plus } from "lucide-react";
+import { OpenOperationButton } from "../operations/open-operation-button";
 
 interface GetBullishColumnsProps {
   onOpenOperation: (signal: BullishSignal) => void;
@@ -57,29 +56,23 @@ export function getBullishImpulseColumns({
     {
       header: UI_TEXT.pages.bullishImpulse.columns.relativeVolume,
       sortValue: (signal) => signal.volumenRelativo,
-      render: (signal) => signal.volumenRelativo == null ? "—" : `${signal.volumenRelativo.toFixed(2)}×`,
+      render: (signal) =>
+        signal.volumenRelativo == null ? "—" : `${signal.volumenRelativo.toFixed(2)}×`,
     },
     {
       header: UI_TEXT.pages.bullishImpulse.columns.detected,
       sortValue: (signal) => signal.detectadaEn,
-      render: (signal) => new Date(signal.detectadaEn).toLocaleString("es-ES", {
-        dateStyle: "short",
-        timeStyle: "short",
-      }),
+      render: (signal) =>
+        new Date(signal.detectadaEn).toLocaleString("es-ES", {
+          dateStyle: "short",
+          timeStyle: "short",
+        }),
       cellClassName: "whitespace-nowrap",
     },
     {
-      header: UI_TEXT.pages.bullishImpulse.columns.operate,
+      header: UI_TEXT.table.columns.operate,
       render: (signal) => (
-        <button
-          type="button"
-          onClick={() => onOpenOperation(signal)}
-          aria-label={UI_TEXT.operations.openAria(signal.ticker)}
-          className={`${UI_STYLES.button.primarySm} whitespace-nowrap`}
-        >
-          <Plus size={14} aria-hidden="true" />
-          {UI_TEXT.operations.openButton}
-        </button>
+        <OpenOperationButton ticker={signal.ticker} onClick={() => onOpenOperation(signal)} />
       ),
       headerClassName: "text-right",
       cellClassName: "text-right",
