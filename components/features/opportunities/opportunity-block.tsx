@@ -21,9 +21,9 @@ import {
 } from "./opportunity-assessment";
 import { DataTable } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
 import { getOpportunityColumns } from "./opportunity-columns";
 import { OpenOperationButton } from "../operations/open-operation-button";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 interface OpportunityBlockProps {
   title: string;

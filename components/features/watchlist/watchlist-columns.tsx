@@ -13,7 +13,7 @@ import {
 } from "./watchlist-cells";
 import { Column } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function getWatchlistColumns(): Column<WatchlistRowData>[] {
   return [

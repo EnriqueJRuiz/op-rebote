@@ -6,8 +6,8 @@ import { UI_STYLES } from "@/styles/ui-styles";
 import { Column } from "@/components/ui/core/DataTable";
 import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { CompanyHistoryTrigger } from "./history/company-history-trigger";
 import { OpenOperationButton } from "../operations/open-operation-button";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {

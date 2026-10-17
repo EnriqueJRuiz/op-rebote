@@ -6,7 +6,7 @@ import { UI_TEXT } from "@/domain/literales.constantes";
 import { COMPANY_HISTORY_METRICS, CompanyHistoryMetric } from "./company-history.types";
 import { CompanyHistoryDialog } from "./company-history-dialog";
 import { TradingViewDialog } from "@/components/common/tradingview/tradingview-dialog";
-import { CompanyCompareDialog } from "../dialog/company-compare-dialog";
+import { CompanyCompareDialog } from "@/components/features/companies/dialog/company-compare-dialog";
 
 interface CompanyHistoryTriggerProps {
   companyId?: number;

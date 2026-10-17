@@ -10,7 +10,7 @@ import type { IntradayBar } from "@/domain/models/intraday";
 import { TradingViewChart } from "../../../common/tradingview/tradingview-chart";
 
 const CompanyHistoryChart = dynamic(
-  () => import("../history/company-history-chart").then((mod) => mod.CompanyHistoryChart),
+  () => import("@/components/common/history/company-history-chart").then((mod) => mod.CompanyHistoryChart),
   { loading: () => <div className="h-full w-full animate-pulse rounded-lg bg-slate-100" /> }
 );
 

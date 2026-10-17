@@ -12,7 +12,7 @@ import {
   getOperationTicker,
   MaxPriceValue,
 } from "./operation-cells";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 interface OperationMobileRowProps {
   operacion: Operacion;

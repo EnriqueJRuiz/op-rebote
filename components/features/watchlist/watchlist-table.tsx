@@ -19,7 +19,7 @@ import {
 } from "./watchlist-cells";
 import { DataTable } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 function normalizeSearch(value: string) {
   return value

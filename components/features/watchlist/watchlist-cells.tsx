@@ -4,7 +4,7 @@ import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
 import { getFloorDistanceTrend } from "@/components/ui/core/trading-cells";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function getFloorDistancePercent(row: WatchlistRowData): number | null {
   const { precio, minimoReciente } = row;

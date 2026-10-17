@@ -2,12 +2,12 @@
 "use client";
 
 
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 import { APP_CONFIG } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { TrendingDown, TrendingUp, Minus, X } from "lucide-react";
-import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
 
 const CAPITAL_FORMAT = new Intl.NumberFormat("es-ES", {
   style: "currency",
