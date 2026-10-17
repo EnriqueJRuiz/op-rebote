@@ -21,7 +21,6 @@ import { Column } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
 import { CompanyHistoryTrigger } from "../companies/history/company-history-trigger";
 import { OpenOperationButton } from "../operations/open-operation-button";
-import { OpenOperationButton } from "../operations/open-operation-button";
 
 export function getOpportunityColumns(
   filterThresholds: OpportunityFilterThresholds,
