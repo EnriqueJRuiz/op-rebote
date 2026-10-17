@@ -281,7 +281,7 @@ export function RsiBadge({ rsi }: { rsi?: number }) {
   );
 }
 
-export function DividendBadge({ empresa }: { empresa: CompanyRecord }) {
+export function DividendBadge({ empresa, hideYield = false }: { empresa: CompanyRecord; hideYield?: boolean }) {
   const tierLabel =
     empresa.dividend_tier === DIVIDEND_TIERS.KING
       ? UI_TEXT.table.values.dividendKing
@@ -305,17 +305,19 @@ export function DividendBadge({ empresa }: { empresa: CompanyRecord }) {
   };
 
   return (
-    <span className="inline-flex w-22.5 items-center justify-center">
+    <span className={`inline-flex items-center ${hideYield ? "w-auto justify-start" : "w-22.5 justify-center"}`}>
       {empresa.es_dividendo ? (
         <>
-          <span
-            className="w-13 text-right text-sm tabular-nums text-slate-700"
-            title={UI_TEXT.table.columns.dividendYield}
-          >
-            {formatDividendYield(empresa.dividend_yield)}
-          </span>
+          {!hideYield && (
+            <span
+              className="w-13 text-right text-sm tabular-nums text-slate-700"
+              title={UI_TEXT.table.columns.dividendYield}
+            >
+              {formatDividendYield(empresa.dividend_yield)}
+            </span>
+          )}
 
-          <span className="ml-2 flex w-4 justify-center">
+          <span className={`${hideYield ? "" : "ml-2"} flex w-4 justify-center`}>
             {tierLabel && (
               <span className={tierStyle} title={tierLabel} aria-label={tierLabel}>
                 <TierIcon size={14} aria-hidden="true" />
@@ -324,7 +326,7 @@ export function DividendBadge({ empresa }: { empresa: CompanyRecord }) {
           </span>
         </>
       ) : (
-        <span className="w-13 text-center text-slate-400">—</span>
+        !hideYield && <span className="w-13 text-center text-slate-400">—</span>
       )}
     </span>
   );

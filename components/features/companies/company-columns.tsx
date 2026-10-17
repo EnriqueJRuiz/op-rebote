@@ -6,8 +6,8 @@ import { UI_STYLES } from "@/styles/ui-styles";
 import { Column } from "@/components/ui/core/DataTable";
 import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/ui/buttons/follow-button";
-import { OpenOperationButton } from "../operations/open-operation-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
+import { OpenOperationButton } from "../operations/open-operation-button";
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {
@@ -44,10 +44,6 @@ export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCom
   );
 }
 
-/**
- * Variación porcentual respecto al cierre anterior (la misma que muestra PriceChange).
- * Devuelve null si falta algún dato válido, para que orden y filtros traten igual a esas empresas.
- */
 export function getScanQuoteChangePercent(quote?: CompanyScanQuote): number | null {
   if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) return null;
   if (!quote.previousDayPrice || quote.previousDayPrice <= 0) return null;
@@ -71,29 +67,49 @@ export function getCompanyColumns(
     {
       header: UI_TEXT.table.columns.name,
       sortValue: (empresa) => empresa.nombre,
-      render: (empresa) => <span className="font-bold text-slate-900">{empresa.nombre}</span>,
-    },
-    {
-      header: UI_TEXT.table.columns.ticker,
-      sortValue: (empresa) => empresa.ticker,
-      render: (empresa) => <span className={UI_STYLES.badge.ticker}>{empresa.ticker}</span>,
+      render: (empresa) => (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5">
+            <span className={UI_STYLES.badge.ticker}>{empresa.ticker}</span>
+            <DividendBadge empresa={empresa} hideYield={true} />
+          </div>
+          <span className="mt-0.5 text-sm font-normal text-slate-500">{empresa.nombre}</span>
+        </div>
+      ),
     },
     {
       header: UI_TEXT.table.columns.lastPrice,
-      // Se ordena por el % de subida/bajada, no por el importe del precio.
       sortValue: (empresa) => getScanQuoteChangePercent(scanQuoteByCompanyId.get(empresa.id)),
       sortLabel: UI_TEXT.table.columns.change,
-      firstSortDirection: "desc", // primer clic: las que más han subido arriba
+      firstSortDirection: "desc",
       render: (empresa) => renderCompanyScannedPrice(empresa, scanQuoteByCompanyId),
     },
     {
       header: UI_TEXT.table.columns.sector,
+      sortValue: (empresa) => empresa.sector || "", // Habilita la ordenación por sector
       render: (empresa) => empresa.sector || UI_TEXT.table.values.unknownSector,
       cellClassName: UI_STYLES.text.secondary,
     },
     {
       header: UI_TEXT.table.columns.dividend,
-      render: (empresa) => <DividendBadge empresa={empresa} />,
+      sortValue: (empresa) => empresa.dividend_yield ?? empresa.dividend_rate ?? 0, // Habilita la ordenación numérica por dividendo
+      render: (empresa) => {
+        if (!empresa.es_dividendo) return <span className={UI_STYLES.text.secondary}>—</span>;
+        
+        const yieldValue = empresa.dividend_yield
+          ? `${(empresa.dividend_yield * 100).toFixed(2)}%`
+          : empresa.dividend_rate
+          ? `${empresa.dividend_rate}%`
+          : "Sí";
+
+        return (
+          <span className="inline-flex w-22.5 items-center justify-center">
+            <span className="text-right text-sm tabular-nums text-slate-700" title={UI_TEXT.table.columns.dividendYield}>
+              {yieldValue}
+            </span>
+          </span>
+        );
+      },
     },
     {
       header: UI_TEXT.table.columns.operate,

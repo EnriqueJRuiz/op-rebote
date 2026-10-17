@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
+import { DIVIDEND_TIERS } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import {
@@ -77,8 +78,12 @@ export function CompanyTable({
         if (priceFilter === "down" && changePercent >= 0) return false;
       }
 
+      // Filtrado ampliado de dividendos
       if (dividendFilter === "yes" && !empresa.es_dividendo) return false;
+      if (dividendFilter === "king" && empresa.dividend_tier !== DIVIDEND_TIERS.KING) return false;
+      if (dividendFilter === "aristocrat" && empresa.dividend_tier !== DIVIDEND_TIERS.ARISTOCRAT) return false;
       if (dividendFilter === "no" && empresa.es_dividendo) return false;
+
       if (sectorFilter !== FILTER_ALL && getCompanySector(empresa) !== sectorFilter)
         return false;
 
@@ -139,9 +144,14 @@ export function CompanyTable({
                 className={`${UI_STYLES.table.mobileRowButton} flex-1`}
                 aria-expanded={expanded}
               >
-                <span className={UI_STYLES.table.mobileRowTitle}>
-                  {empresa.nombre}
+                {/* Agrupamos nombre e icono juntos para que mantengan una distancia estrecha */}
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className={UI_STYLES.table.mobileRowTitle}>
+                    {empresa.nombre}
+                  </span>
+                  <DividendBadge empresa={empresa} hideYield={true} />
                 </span>
+
                 <ChevronDown
                   className={`${UI_STYLES.table.mobileRowIcon} ${
                     expanded ? "rotate-180" : ""
@@ -156,8 +166,7 @@ export function CompanyTable({
                 <div>
                   <p className={UI_STYLES.table.mobileLabel}>
                     {UI_TEXT.table.columns.ticker}
-                  </p>
-                  <p className={`mt-1 ${UI_STYLES.badge.ticker}`}>
+                  </p>          <p className={`mt-1 ${UI_STYLES.badge.ticker}`}>
                     {empresa.ticker}
                   </p>
                 </div>
@@ -184,8 +193,16 @@ export function CompanyTable({
                   <p className={UI_STYLES.table.mobileLabel}>
                     {UI_TEXT.table.columns.dividend}
                   </p>
-                  <p className="mt-1">
-                    <DividendBadge empresa={empresa} />
+                  <p className="mt-1 font-medium text-slate-700">
+                    {empresa.es_dividendo ? (
+                      empresa.dividend_yield
+                        ? `${(empresa.dividend_yield * 100).toFixed(2)}%`
+                        : empresa.dividend_rate
+                        ? `${empresa.dividend_rate}%`
+                        : "Sí"
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </p>
                 </div>
 
@@ -198,7 +215,7 @@ export function CompanyTable({
               </div>
             )}
           </div>
-          )}
+        )}
       />
 
       {selectedCompany && (

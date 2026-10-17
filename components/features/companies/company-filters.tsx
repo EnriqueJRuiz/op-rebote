@@ -1,17 +1,19 @@
 "use client";
 
-import { ChevronDown, Search } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Search, Crown, ChessBishop } from "lucide-react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 
 export const FILTER_ALL = "all" as const;
 
 export type PriceFilter = typeof FILTER_ALL | "up" | "down";
-export type DividendFilter = typeof FILTER_ALL | "yes" | "no";
+export type DividendFilter = typeof FILTER_ALL | "yes" | "king" | "aristocrat" | "no";
 
 export interface FilterOption<Value extends string> {
   value: Value;
   label: string;
+  icon?: React.ReactNode;
 }
 
 export const PRICE_FILTER_OPTIONS: FilterOption<PriceFilter>[] = [
@@ -23,6 +25,16 @@ export const PRICE_FILTER_OPTIONS: FilterOption<PriceFilter>[] = [
 export const DIVIDEND_FILTER_OPTIONS: FilterOption<DividendFilter>[] = [
   { value: FILTER_ALL, label: UI_TEXT.table.filters.dividendAll },
   { value: "yes", label: UI_TEXT.table.filters.dividendYes },
+  { 
+    value: "king", 
+    label: "Dividend Kings", 
+    icon: <Crown size={14} className="text-amber-500" aria-hidden="true" /> 
+  },
+  { 
+    value: "aristocrat", 
+    label: "Dividend Aristocrats", 
+    icon: <ChessBishop size={14} className="text-slate-500" aria-hidden="true" /> 
+  },
   { value: "no", label: UI_TEXT.table.filters.dividendNo },
 ];
 
@@ -63,6 +75,85 @@ export function TableFilterSelect<Value extends string>({
         size={15}
         aria-hidden="true"
       />
+    </div>
+  );
+}
+
+// Selector personalizado específico para dividendos que permite mostrar los iconos SVG reales
+export function DividendFilterSelect({
+  value,
+  onChange,
+  className = "",
+}: {
+  value: DividendFilter;
+  onChange: (value: DividendFilter) => void;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = DIVIDEND_FILTER_OPTIONS.find((opt) => opt.value === value) || DIVIDEND_FILTER_OPTIONS[0];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className={`relative min-w-0 ${className}`} ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        // Usamos exactamente la misma clase de estilo y añadimos pr-8 para que el texto no tape la flecha absoluta
+        className={`w-full flex items-center text-left pr-8 ${UI_STYLES.filter.select}`}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="flex items-center gap-2 truncate">
+          {selectedOption.icon}
+          <span className="truncate">{selectedOption.label}</span>
+        </span>
+      </button>
+
+      {/* Posicionamiento absoluto idéntico al del componente TableFilterSelect */}
+      <ChevronDown
+        className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${UI_STYLES.filter.icon}`}
+        size={15}
+        aria-hidden="true"
+      />
+
+      {isOpen && (
+        <ul
+          role="listbox"
+          className="absolute z-50 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg py-1 text-sm"
+        >
+          {DIVIDEND_FILTER_OPTIONS.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 ${
+                  isSelected ? "font-medium text-slate-900 bg-slate-100/60" : "text-slate-700"
+                }`}
+              >
+                <span className="w-4 flex justify-center">{option.icon}</span>
+                <span className="truncate">{option.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
@@ -143,12 +234,9 @@ export function CompanyFilters({
         className="sm:min-w-48 sm:flex-none"
       />
 
-      {/* Dividendo */}
-      <TableFilterSelect
-        id={`company-dividend-${title.toLowerCase().replace(/\s+/g, "-")}`}
-        label={UI_TEXT.table.filters.dividendAriaLabel}
+      {/* Dividendo (usando el selector personalizado con iconos reales) */}
+      <DividendFilterSelect
         value={dividendFilter}
-        options={DIVIDEND_FILTER_OPTIONS}
         onChange={onDividendFilterChange}
         className="sm:min-w-48 sm:flex-none"
       />
