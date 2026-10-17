@@ -10,8 +10,8 @@ import { LoadingOverlay } from "@/components/ui/layout/loading-overlay";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { APP_CONFIG } from "@/domain/constants";
-import { OpportunityFilterThresholds } from "@/components/features/opportunities/opportunity-assessment";
-import { ReboundOpportunities } from "@/components/features/opportunities/rebound-opportunities";
+import { OpportunityFilterThresholds } from "@/components/features/opportunities";
+import { ReboundOpportunities } from "@/components/features/opportunities";
 
 interface SearchReboundsButtonProps {
   initialOpportunities: StockCandidate[];
