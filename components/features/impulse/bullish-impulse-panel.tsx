@@ -9,7 +9,7 @@ import {
   getBullishImpulseSignals,
   scanBullishImpulseAction,
 } from "@/app/actions/search-bullish-impulses";
-import { OperationDialog } from "../operations/operation-dialog";
+import { OperationDialog } from "@/components/features/operations";
 import { getBullishImpulseColumns } from "./bullish-impulse-columns";
 import { renderBullishMobileRow } from "./bullish-impulse-mobile-row";
 import { BullishImpulseConfig } from "./bullish-impulse-config";
