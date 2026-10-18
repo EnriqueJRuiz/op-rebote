@@ -23,7 +23,7 @@ export function ReboundOpportunities({ tier0, tier1, top, mid, filterThresholds 
   const allOpportunities = [...tier0, ...tier1, ...top, ...mid];
   const assessments = allOpportunities.map((opportunity) => ({
     opportunity,
-    assessment: assessOpportunity(opportunity),
+    assessment: assessOpportunity(opportunity, filterThresholds),
   }));
   const fullScoreCount = assessments.filter(({ assessment }) => assessment.score === 4).length;
   const oneMissingCount = assessments.filter(({ assessment }) => assessment.score === 3).length;

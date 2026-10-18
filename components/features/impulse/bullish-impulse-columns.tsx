@@ -1,16 +1,11 @@
-import { Column } from "@/components/ui/core/DataTable";
+
 import { BullishSignal } from "@/domain/models/bullish-impulse";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
+import { OpenOperationButton } from "@/components/common/open-operation";
+import { Column } from "@/components/ui/core/data-table";
 
-interface GetBullishColumnsProps {
-  onOpenOperation: (signal: BullishSignal) => void;
-}
-
-export function getBullishImpulseColumns({
-  onOpenOperation,
-}: GetBullishColumnsProps): Column<BullishSignal>[] {
+export function getBullishImpulseColumns(): Column<BullishSignal>[] {
   return [
     {
       header: UI_TEXT.pages.bullishImpulse.columns.company,
@@ -72,7 +67,12 @@ export function getBullishImpulseColumns({
     {
       header: UI_TEXT.table.columns.operate,
       render: (signal) => (
-        <OpenOperationButton ticker={signal.ticker} onClick={() => onOpenOperation(signal)} />
+        <OpenOperationButton
+          companyId={signal.companyId}
+          ticker={signal.ticker}
+          companyName={signal.nombre}
+          precioActual={signal.precio}
+        />
       ),
       headerClassName: "text-right",
       cellClassName: "text-right",

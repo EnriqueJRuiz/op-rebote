@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState  } from "react";
 import { ChevronDown } from "lucide-react";
 import { StockCandidate } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
@@ -19,11 +19,10 @@ import {
   OpportunityFundamentalsInline,
   OpportunityFilterThresholds,
 } from "./opportunity-assessment";
-import { DataTable } from "@/components/ui/core/DataTable";
+import { DataTable } from "@/components/ui/core/data-table";
 import { FollowButton } from "@/components/common/follow-button";
 import { getOpportunityColumns } from "./opportunity-columns";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
-import { OperationDialog } from "../operations/shared/operation-dialog";
+import { OpenOperationButton } from "@/components/common/open-operation";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 interface OpportunityBlockProps {
@@ -34,10 +33,9 @@ interface OpportunityBlockProps {
 }
 
 export function OpportunityBlock({ title, opportunities, filterThresholds, subtitle }: OpportunityBlockProps) {
-  const [selectedOpportunity, setSelectedOpportunity] = useState<StockCandidate | null>(null);
 
   const columns = useMemo(
-    () => getOpportunityColumns(filterThresholds, setSelectedOpportunity),
+    () => getOpportunityColumns(filterThresholds),
     [filterThresholds]
   );
 
@@ -54,7 +52,7 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
         emptyMessage={UI_TEXT.table.emptyStates.opportunities}
         containerClassName=""
         rowClassName={(opportunity) => {
-          const score = assessOpportunity(opportunity).score;
+          const score = assessOpportunity(opportunity, filterThresholds).score;
           if (score === 4) return "bg-emerald-50/70 hover:bg-emerald-100/70";
           if (score === 3) return "bg-amber-50/70 hover:bg-amber-100/70";
           return "hover:bg-slate-50";
@@ -147,28 +145,22 @@ export function OpportunityBlock({ title, opportunities, filterThresholds, subti
                     <BacktestInfo row={opportunity} compact />
                   </p>
                 </div>
-                {opportunity.ticker === undefined ? null : (
+                {opportunity.idEmpresa !== undefined && (
+                  <div className="col-span-2 pt-2">
                     <OpenOperationButton
+                      companyId={opportunity.idEmpresa}
                       ticker={opportunity.ticker}
-                      onClick={() => setSelectedOpportunity(opportunity)}
+                      companyName={opportunity.nombre}
+                      precioActual={opportunity.precio}
+                      fullWidth
                     />
-                  )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
       />
-
-      {selectedOpportunity && selectedOpportunity.idEmpresa !== undefined && (
-        <OperationDialog
-          companyId={selectedOpportunity.idEmpresa}
-          ticker={selectedOpportunity.ticker}
-          companyName={selectedOpportunity.nombre}
-          precioActual={selectedOpportunity.precio}
-          onClose={() => setSelectedOpportunity(null)}
-          onSuccess={() => setSelectedOpportunity(null)}
-        />
-      )}
     </>
   );
 }

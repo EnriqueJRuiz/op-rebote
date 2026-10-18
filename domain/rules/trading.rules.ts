@@ -20,23 +20,25 @@ export interface EvaluationResult {
  * Evalúa las reglas de negocio para determinar si un candidato supera los filtros de rebote y fundamentales.
  */
 export function evaluateStockCandidateValidity(stockData: StockCandidate): StockCandidate {
-  const { MIN_DAILY_VOLUME, MIN_CURRENT_RATIO, MAX_DEBT_TO_EQUITY, MIN_ROE } = TRADING_RULES;
+  const { MIN_DAILY_VOLUME, MIN_CURRENT_RATIO, MAX_DEBT_TO_EQUITY, MIN_ROE, RECENT_OVERSOLD_RSI_THRESHOLD, MIN_RELATIVE_VOLUME, MAX_MA_DEVIATION_PCT } = TRADING_RULES;
   // Radar técnico flexible: la sobreventa puede haber ocurrido en cualquiera de las últimas 3 sesiones.
   // No exigimos que el RSI siga deprimido hoy, porque eso excluía rebotes que ya empezaban a girar.
   const recentRsi = stockData.rsiMinimoReciente ?? stockData.rsi;
-  const cumpleRsiReciente = recentRsi <= 38;
+  const cumpleRsiReciente = typeof recentRsi === "number" && recentRsi <= RECENT_OVERSOLD_RSI_THRESHOLD;
   const cumpleVolumen = stockData.volumen >= MIN_DAILY_VOLUME;
-  const cumpleRvol = typeof stockData.volumenRelativo === "number" && stockData.volumenRelativo >= 0.9;
+  const cumpleRvol = typeof stockData.volumenRelativo === "number" && stockData.volumenRelativo >= MIN_RELATIVE_VOLUME;
   const cumpleGiro = stockData.reboteInicial === true;
+  const cumpleTendencia = typeof stockData.distSma200Pct === "number" && stockData.distSma200Pct >= -MAX_MA_DEVIATION_PCT;
   const cumpleLiquidez = stockData.currentRatio !== undefined && stockData.currentRatio >= MIN_CURRENT_RATIO;
   const cumpleDeuda = stockData.debtToEquity !== undefined && stockData.debtToEquity <= MAX_DEBT_TO_EQUITY;
   const cumpleRentabilidad = stockData.returnOnEquity !== undefined && stockData.returnOnEquity > MIN_ROE;
   const fundamentalesValidos = cumpleLiquidez && cumpleDeuda && cumpleRentabilidad;
 
   const reasons: string[] = [];
-  if (!cumpleRsiReciente) reasons.push("No ha alcanzado RSI(14) ≤ 38 en las últimas 3 sesiones.");
-  if (!cumpleGiro) reasons.push("Sin giro inicial: el precio no supera el mínimo de la sesión anterior.");
-  if (!cumpleRvol) reasons.push("Volumen relativo insuficiente (RVOL < 0,9).");
+  if (!cumpleRsiReciente) reasons.push(`No ha alcanzado RSI(14) ≤ ${RECENT_OVERSOLD_RSI_THRESHOLD} en las últimas ${TRADING_RULES.RECENT_RSI_SESSIONS} sesiones.`);
+  if (!cumpleGiro) reasons.push("Sin giro inicial: el precio no supera el cierre anterior.");
+  if (!cumpleRvol) reasons.push(`Volumen relativo insuficiente (RVOL < ${MIN_RELATIVE_VOLUME}).`);
+  if (!cumpleTendencia) reasons.push(`Precio más de ${MAX_MA_DEVIATION_PCT}% por debajo de la SMA200 o SMA200 sin datos.`);
   if (!cumpleVolumen) reasons.push(`Volumen insuficiente (< ${MIN_DAILY_VOLUME.toLocaleString()}).`);
   if (!cumpleLiquidez) reasons.push(`Current Ratio ausente o inferior a ${MIN_CURRENT_RATIO}.`);
   if (!cumpleDeuda) reasons.push(`Debt/Equity ausente o superior a ${MAX_DEBT_TO_EQUITY}.`);
@@ -46,7 +48,7 @@ export function evaluateStockCandidateValidity(stockData: StockCandidate): Stock
   return {
     ...stockData,
     fundamentalesValidos,
-    esValido: cumpleVolumen && cumpleRvol && cumpleRsiReciente && cumpleGiro,
+    esValido: cumpleVolumen && cumpleRvol && cumpleRsiReciente && cumpleGiro && cumpleTendencia,
     motivoDescarte: reasons.length > 0 ? reasons.join(" ") : undefined,
   };
 }

@@ -2,14 +2,13 @@ import { ChevronDown } from "lucide-react";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
+import { OpenOperationButton } from "@/components/common/open-operation";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function renderBullishMobileRow(
   signal: BullishSignal,
   expanded: boolean,
-  toggle: () => void,
-  onOpenOperation: (signal: BullishSignal) => void
+  toggle: () => void
 ) {
   const fmt = (date: string) =>
     new Date(date).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
@@ -106,8 +105,10 @@ export function renderBullishMobileRow(
           </div>
           <div className="col-span-2 pt-2">
             <OpenOperationButton
+              companyId={signal.companyId}
               ticker={signal.ticker}
-              onClick={() => onOpenOperation(signal)}
+              companyName={signal.nombre}
+              precioActual={signal.precio}
               fullWidth
             />
           </div>

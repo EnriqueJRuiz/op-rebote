@@ -6,7 +6,7 @@ import { Operacion } from "@/domain/models/operacion";
 import { CloseOperationDialog } from "../shared/close-operation-dialog";
 import { getOperationColumns } from "../active/operation-columns";
 import { OperationMobileRow } from "../active/operation-mobile-row";
-import { DataTable } from "@/components/ui/core/DataTable";
+import { DataTable } from "@/components/ui/core/data-table";
 
 interface OperationsTableProps {
   operaciones: Operacion[];

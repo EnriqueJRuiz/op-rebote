@@ -14,7 +14,7 @@ import {
   VariationCell,
   TrailingStopCell,
 } from "../shared/operation-cells";
-import { Column } from "@/components/ui/core/DataTable";
+import { Column } from "@/components/ui/core/data-table";
 
 export function getOperationColumns(onClose: (operacion: Operacion) => void): Column<Operacion>[] {
   return [

@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 
-interface OperationDialogFrameProps {
+interface DialogFrameProps {
   title: string;
   description?: ReactNode;
   // Mientras hay una petición en curso no se puede cerrar el diálogo (Escape, clic fuera ni la X).
@@ -14,13 +14,13 @@ interface OperationDialogFrameProps {
   children: ReactNode;
 }
 
-export function OperationDialogFrame({
+export function DialogFrame({
   title,
   description,
   busy = false,
   onClose,
   children,
-}: OperationDialogFrameProps) {
+}: DialogFrameProps) {
   const titleId = useId();
 
   useEffect(() => {

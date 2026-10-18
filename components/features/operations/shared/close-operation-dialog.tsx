@@ -4,7 +4,7 @@ import { ReactNode, useId } from "react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { OperationDialogFrame } from "../shared/operation-dialog-frame";
+import { DialogFrame } from "@/components/ui/core/dialog-frame";
 import {
   formatOperationCapital,
   formatOperationPrice,
@@ -47,7 +47,7 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
   const comisionesBD = operacion.comisiones_broker ?? 0;
 
   return (
-    <OperationDialogFrame
+    <DialogFrame
       title={texts.title}
       description={
         <>
@@ -147,6 +147,6 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
           </button>
         </div>
       </form>
-    </OperationDialogFrame>
+    </DialogFrame>
   );
 }

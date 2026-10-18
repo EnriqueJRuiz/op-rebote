@@ -3,11 +3,11 @@
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { Column } from "@/components/ui/core/DataTable";
 import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
+import { OpenOperationButton } from "@/components/common/open-operation";
+import { Column } from "@/components/ui/core/data-table";
 
 export function formatScannedPrice(value: number, currency?: string) {
   const formatted = value.toLocaleString("es-ES", {
@@ -52,7 +52,7 @@ export function getScanQuoteChangePercent(quote?: CompanyScanQuote): number | nu
 
 export function getCompanyColumns(
   scanQuoteByCompanyId: Map<number, CompanyScanQuote>,
-  onOperate: (empresa: CompanyRecord) => void
+  onOperationOpened: () => void
 ): Column<CompanyRecord>[] {
   return [
     {
@@ -115,7 +115,13 @@ export function getCompanyColumns(
       header: UI_TEXT.table.columns.operate,
       render: (empresa) =>
         empresa.ticker === undefined ? null : (
-          <OpenOperationButton ticker={empresa.ticker} onClick={() => onOperate(empresa)} />
+          <OpenOperationButton
+            companyId={empresa.id}
+            ticker={empresa.ticker}
+            companyName={empresa.nombre}
+            precioActual={scanQuoteByCompanyId.get(empresa.id)?.price ?? empresa.precio}
+            onSuccess={onOperationOpened}
+          />
         ),
       headerClassName: "text-right",
       cellClassName: "text-right",

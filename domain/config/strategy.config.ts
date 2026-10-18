@@ -12,6 +12,9 @@ export interface StrategyConfig {
   TRADING: {
     OVERSOLD_THRESHOLD: number;
     TIER1_RSI_THRESHOLD: number;
+    RECENT_OVERSOLD_RSI_THRESHOLD: number;
+    RECENT_RSI_SESSIONS: number;
+    MIN_RELATIVE_VOLUME: number;
     MIN_DAILY_VOLUME: number;
     TIME_STOP_DAYS: number;
     MAX_STOP_LOSS_PCT: number;
@@ -67,6 +70,15 @@ function num(parent: Obj, key: string, path: string): number {
   return value;
 }
 
+function optionalNum(parent: Obj, key: string, path: string, fallback: number): number {
+  const value = parent[key];
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`STRATEGY_CONFIG: "${path}${key}" debe ser un número.`);
+  }
+  return value;
+}
+
 function days(parent: Obj, key: string, path: string): number {
   const value = num(parent, key, path);
   if (!Number.isInteger(value) || value < 1) {
@@ -107,6 +119,9 @@ function parseStrategyConfig(): StrategyConfig {
     TRADING: {
       OVERSOLD_THRESHOLD: num(t, "OVERSOLD_THRESHOLD", "TRADING."),
       TIER1_RSI_THRESHOLD: num(t, "TIER1_RSI_THRESHOLD", "TRADING."),
+      RECENT_OVERSOLD_RSI_THRESHOLD: optionalNum(t, "RECENT_OVERSOLD_RSI_THRESHOLD", "TRADING.", 38),
+      RECENT_RSI_SESSIONS: Math.max(1, Math.floor(optionalNum(t, "RECENT_RSI_SESSIONS", "TRADING.", 3))),
+      MIN_RELATIVE_VOLUME: optionalNum(t, "MIN_RELATIVE_VOLUME", "TRADING.", 0.9),
       MIN_DAILY_VOLUME: num(t, "MIN_DAILY_VOLUME", "TRADING."),
       TIME_STOP_DAYS: num(t, "TIME_STOP_DAYS", "TRADING."),
       MAX_STOP_LOSS_PCT: num(t, "MAX_STOP_LOSS_PCT", "TRADING."),

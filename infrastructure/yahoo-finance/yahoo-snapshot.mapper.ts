@@ -124,8 +124,11 @@ export class YahooSnapshotMapper {
 
     const sma200 = this.calculateSma(allCloses);
     const previousSessionLow = recentLows.length >= 2 ? recentLows[recentLows.length - 2] : undefined;
-    const reboteInicial = typeof previousSessionLow === "number" && previousSessionLow > 0 && precioActual > previousSessionLow;
-    const reboteConfirmado = reboteInicial && typeof precioAnterior === "number" && precioActual > precioAnterior;
+    const rsi = this.calculateRsi(rsiCloses);
+    const rsiAnterior = this.calculatePreviousRsi(rsiCloses);
+    const superaCierreAnterior = typeof precioAnterior === "number" && precioActual > precioAnterior;
+    const reboteInicial = superaCierreAnterior && typeof previousSessionLow === "number" && previousSessionLow > 0 && precioActual > previousSessionLow;
+    const reboteConfirmado = reboteInicial && typeof rsiAnterior === "number" && rsi > rsiAnterior;
     const distSma200Pct = sma200 !== undefined && sma200 > 0 && precioActual > 0
       ? Number((((precioActual - sma200) / sma200) * 100).toFixed(2))
       : undefined;
@@ -134,9 +137,9 @@ export class YahooSnapshotMapper {
       ticker,
       nombre: quote.longName ?? quote.shortName ?? ticker,
       precio: precioActual,
-      rsi: this.calculateRsi(rsiCloses),
-      rsiAnterior: this.calculatePreviousRsi(rsiCloses),
-      rsiMinimoReciente: this.calculateRecentMinimumRsi(rsiCloses, 3),
+      rsi,
+      rsiAnterior,
+      rsiMinimoReciente: this.calculateRecentMinimumRsi(rsiCloses, STRATEGY_CONFIG.TRADING.RECENT_RSI_SESSIONS),
       reboteInicial,
       reboteConfirmado,
       volumen: volumenActual,

@@ -2,21 +2,19 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Activity, RefreshCw } from "lucide-react";
-import { DataTable } from "@/components/ui/core/DataTable";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
 import {
   getBullishImpulseSignals,
   scanBullishImpulseAction,
 } from "@/app/actions/search-bullish-impulses";
-import { OperationDialog } from "@/components/features/operations";
 import { getBullishImpulseColumns } from "./bullish-impulse-columns";
 import { renderBullishMobileRow } from "./bullish-impulse-mobile-row";
 import { BullishImpulseConfig } from "./bullish-impulse-config";
+import { DataTable } from "@/components/ui/core/data-table";
 
 export function BullishImpulsePanel() {
   const [signals, setSignals] = useState<BullishSignal[]>([]);
-  const [selectedSignal, setSelectedSignal] = useState<BullishSignal | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -53,7 +51,7 @@ export function BullishImpulsePanel() {
 
   const early = signals.filter((s) => s.tipo === "TEMPRANA");
   const confirmed = signals.filter((s) => s.tipo === "CONFIRMADA");
-  const columns = getBullishImpulseColumns({ onOpenOperation: setSelectedSignal });
+  const columns = getBullishImpulseColumns();
 
   const renderTable = (title: string, subtitle: string, rows: BullishSignal[]) => (
     <DataTable
@@ -70,7 +68,7 @@ export function BullishImpulsePanel() {
           : UI_TEXT.pages.bullishImpulse.emptyNoSignals
       }
       mobileRow={(signal, expanded, toggle) =>
-        renderBullishMobileRow(signal, expanded, toggle, setSelectedSignal)
+        renderBullishMobileRow(signal, expanded, toggle)
       }
       showMobileSort
     />
@@ -128,17 +126,6 @@ export function BullishImpulsePanel() {
       )}
 
       <p className="text-xs leading-5 text-slate-500">{UI_TEXT.pages.bullishImpulse.footerNote}</p>
-
-      {/* MODAL DE APERTURA DE OPERACIÓN */}
-      {selectedSignal && (
-        <OperationDialog
-          companyId={selectedSignal.companyId}
-          ticker={selectedSignal.ticker}
-          companyName={selectedSignal.nombre}
-          precioActual={selectedSignal.precio}
-          onClose={() => setSelectedSignal(null)}
-        />
-      )}
     </div>
   );
 }

@@ -17,7 +17,7 @@ import {
   Sma200Distance,
   BacktestInfo,
 } from "./watchlist-cells";
-import { DataTable } from "@/components/ui/core/DataTable";
+import { DataTable } from "@/components/ui/core/data-table";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 

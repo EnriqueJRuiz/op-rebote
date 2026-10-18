@@ -31,7 +31,9 @@ export default async function OpportunitiesPage() {
           title={UI_TEXT.pages.opportunities.title}
           description={UI_TEXT.pages.opportunities.description}
           filterThresholds={{
-            oversoldRsi: 38, // umbral de sobreventa reciente del radar; el backtest conserva su propio umbral.
+            oversoldRsi: STRATEGY_CONFIG.TRADING.RECENT_OVERSOLD_RSI_THRESHOLD,
+            minRelativeVolume: STRATEGY_CONFIG.TRADING.MIN_RELATIVE_VOLUME,
+            minSmaDistancePct: -STRATEGY_CONFIG.TRADING.MAX_MA_DEVIATION_PCT,
             minCurrentRatio: STRATEGY_CONFIG.TRADING.MIN_CURRENT_RATIO,
             maxDebtToEquity: STRATEGY_CONFIG.TRADING.MAX_DEBT_TO_EQUITY,
             minRoe: STRATEGY_CONFIG.TRADING.MIN_ROE,

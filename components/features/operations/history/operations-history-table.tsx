@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ChevronDown } from "lucide-react";
-import { DataTable } from "@/components/ui/core/DataTable";
+import { DataTable } from "@/components/ui/core/data-table";
 import { Operacion } from "@/domain/models/operacion";
 import { getHistoryColumns } from "../history/history-columns";
 import { UI_STYLES } from "@/styles/ui-styles";

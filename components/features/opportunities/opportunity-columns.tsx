@@ -17,14 +17,13 @@ import {
   OpportunityFilterThresholds,
   OpportunityFundamentalsInline,
 } from "./opportunity-assessment";
-import { Column } from "@/components/ui/core/DataTable";
+import { Column } from "@/components/ui/core/data-table";
 import { FollowButton } from "@/components/common/follow-button";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
+import { OpenOperationButton } from "@/components/common/open-operation";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function getOpportunityColumns(
-  filterThresholds: OpportunityFilterThresholds,
-  onOpenOperation: (opportunity: StockCandidate) => void
+  filterThresholds: OpportunityFilterThresholds
 ): Column<StockCandidate>[] {
   return [
     {
@@ -124,9 +123,15 @@ export function getOpportunityColumns(
     },
     {
       header: UI_TEXT.table.columns.operate,
+      // Sin idEmpresa no se puede abrir una operación, así que la celda queda vacía.
       render: (opportunity) =>
-        opportunity.ticker === undefined ? null : (
-          <OpenOperationButton ticker={opportunity.ticker} onClick={() => onOpenOperation(opportunity)} />
+        opportunity.idEmpresa === undefined ? null : (
+          <OpenOperationButton
+            companyId={opportunity.idEmpresa}
+            ticker={opportunity.ticker}
+            companyName={opportunity.nombre}
+            precioActual={opportunity.precio}
+          />
         ),
       headerClassName: "text-right",
       cellClassName: "text-right",

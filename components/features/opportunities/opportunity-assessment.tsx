@@ -9,14 +9,14 @@ export interface OpportunityFilterThresholds {
   minCurrentRatio: number;
   maxDebtToEquity: number;
   minRoe: number;
+  minRelativeVolume: number;
+  minSmaDistancePct: number;
 }
 
-const MIN_SMA_DISTANCE_PCT = -10;
-const MIN_RELATIVE_VOLUME = 0.9;
 const MIN_BACKTEST_CASES = 20;
 const MAX_BACKTEST_STAGNATION_PCT = 50;
 
-export function assessOpportunity(candidate: StockCandidate) {
+export function assessOpportunity(candidate: StockCandidate, thresholds: Pick<OpportunityFilterThresholds, "minRelativeVolume" | "minSmaDistancePct">) {
   const floorDistance = getFloorDistancePercent(candidate);
   const holdsRecentFloor = floorDistance !== null && floorDistance >= 0;
 
@@ -24,12 +24,13 @@ export function assessOpportunity(candidate: StockCandidate) {
     typeof candidate.distSma200Pct === "number" &&
     Number.isFinite(candidate.distSma200Pct);
   const trendNearSma =
-    hasSmaDistance && candidate.distSma200Pct! >= MIN_SMA_DISTANCE_PCT;
+     hasSmaDistance && candidate.distSma200Pct! >= thresholds.minSmaDistancePct;
+  const minRelativeVolume = thresholds.minRelativeVolume;
   const volumeConfirmed =
     typeof candidate.volumenRelativo === "number" &&
     Number.isFinite(candidate.volumenRelativo) &&
-    candidate.volumenRelativo >= MIN_RELATIVE_VOLUME;
-
+    candidate.volumenRelativo >= minRelativeVolume;
+    
   const favorableBacktest =
     typeof candidate.backtestCasos === "number" &&
     candidate.backtestCasos >= MIN_BACKTEST_CASES &&

@@ -20,9 +20,8 @@ import {
 } from "./company-columns";
 import { DividendBadge } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
-import { DataTable } from "@/components/ui/core/DataTable";
-import { OperationDialog } from "@/components/features/operations/shared/operation-dialog";
-import { OpenOperationButton } from "../operations/shared/open-operation-button";
+import { OpenOperationButton } from "@/components/common/open-operation";
+import { DataTable } from "@/components/ui/core/data-table";
 
 export interface CompanyTableProps {
   empresas: CompanyRecord[];
@@ -49,7 +48,6 @@ export function CompanyTable({
   sectores,
 }: CompanyTableProps) {
   const router = useRouter();
-  const [selectedCompany, setSelectedCompany] = useState<CompanyRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>(FILTER_ALL);
   const [dividendFilter, setDividendFilter] = useState<DividendFilter>(FILTER_ALL);
@@ -99,8 +97,8 @@ export function CompanyTable({
   ]);
 
   const columns = useMemo(
-    () => getCompanyColumns(scanQuoteByCompanyId, setSelectedCompany),
-    [scanQuoteByCompanyId]
+    () => getCompanyColumns(scanQuoteByCompanyId, () => router.refresh()),
+    [scanQuoteByCompanyId, router]
   );
 
   return (
@@ -206,28 +204,23 @@ export function CompanyTable({
                   </p>
                 </div>
 
-                {empresa.ticker === undefined ? null : (
-                  <OpenOperationButton
-                    ticker={empresa.ticker}
-                    onClick={() => setSelectedCompany(empresa)}
-                  />
+                {empresa.ticker !== undefined && (
+                  <div className="col-span-2 pt-2">
+                    <OpenOperationButton
+                      companyId={empresa.id}
+                      ticker={empresa.ticker}
+                      companyName={empresa.nombre}
+                      precioActual={scanQuoteByCompanyId.get(empresa.id)?.price ?? empresa.precio}
+                      onSuccess={() => router.refresh()}
+                      fullWidth
+                    />
+                  </div>
                 )}
               </div>
             )}
           </div>
         )}
       />
-
-      {selectedCompany && (
-        <OperationDialog
-          companyId={selectedCompany.id}
-          ticker={selectedCompany.ticker}
-          companyName={selectedCompany.nombre}
-          precioActual={scanQuoteByCompanyId.get(selectedCompany.id)?.price ?? selectedCompany.precio}
-          onClose={() => setSelectedCompany(null)}
-          onSuccess={() => router.refresh()}
-        />
-      )}
     </div>
   );
 }
