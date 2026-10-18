@@ -2,7 +2,7 @@ import { Column } from "@/components/ui/core/DataTable";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
-import { OpenOperationButton } from "../operations/open-operation-button";
+import { OpenOperationButton } from "../operations/shared/open-operation-button";
 
 interface GetBullishColumnsProps {
   onOpenOperation: (signal: BullishSignal) => void;

@@ -5,4 +5,5 @@ export interface OperacionesRepository {
   create(input: CreateOperacionInput): Promise<Operacion>;
   close(id: number, precioSalida: number, comisiones?: number): Promise<Operacion>;
   updateMaxPrice(id: number, currentPrice: number): Promise<void>;
+  getClosed(): Promise<Operacion[]>;
 }

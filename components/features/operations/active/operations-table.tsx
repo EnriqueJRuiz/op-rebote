@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
-import { CloseOperationDialog } from "./close-operation-dialog";
-import { getOperationColumns } from "./operation-columns";
-import { OperationMobileRow } from "./operation-mobile-row";
+import { CloseOperationDialog } from "../shared/close-operation-dialog";
+import { getOperationColumns } from "../active/operation-columns";
+import { OperationMobileRow } from "../active/operation-mobile-row";
 import { DataTable } from "@/components/ui/core/DataTable";
 
 interface OperationsTableProps {

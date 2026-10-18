@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { BullishSignal } from "@/domain/models/bullish-impulse";
-import { OpenOperationButton } from "../operations/open-operation-button";
+import { OpenOperationButton } from "../operations/shared/open-operation-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function renderBullishMobileRow(

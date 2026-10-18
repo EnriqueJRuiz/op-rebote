@@ -8,3 +8,11 @@ export class CloseOperationUseCase {
     return this.operacionesRepository.close(id, precioSalida, comisiones);
   }
 }
+
+export class GetClosedOperationsUseCase {
+  constructor(private readonly operacionesRepository: OperacionesRepository) {}
+
+  async execute(): Promise<Operacion[]> {
+    return await this.operacionesRepository.getClosed();
+  }
+}

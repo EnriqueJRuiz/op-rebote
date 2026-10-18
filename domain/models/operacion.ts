@@ -20,6 +20,12 @@ export interface Operacion {
   trailing_stop_pct: number | null;
   precio_actual?: number | null;
   precio_anterior_lote?: number | null;
+  // Campos para persistir cálculos clave
+  precio_stop_loss?: number | null;
+  objetivo_pct?: number | null;
+  precio_objetivo?: number | null;
+  comision_entrada?: number; 
+  comision_salida?: number; 
 }
 
 export interface CreateOperacionInput {
@@ -27,4 +33,7 @@ export interface CreateOperacionInput {
   precio_entrada: number;
   capital_invertido: number;
   trailing_stop_pct?: number;
+  objetivo_pct?: number;
+  comision_entrada?: number; 
+  comision_salida?: number; 
 }

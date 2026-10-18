@@ -22,7 +22,7 @@ import {
 import { DataTable } from "@/components/ui/core/DataTable";
 import { FollowButton } from "@/components/common/follow-button";
 import { getOpportunityColumns } from "./opportunity-columns";
-import { OpenOperationButton } from "../operations/open-operation-button";
+import { OpenOperationButton } from "../operations/shared/open-operation-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 interface OpportunityBlockProps {

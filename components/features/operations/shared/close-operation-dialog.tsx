@@ -4,7 +4,7 @@ import { ReactNode, useId } from "react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { Operacion } from "@/domain/models/operacion";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { OperationDialogFrame } from "./operation-dialog-frame";
+import { OperationDialogFrame } from "../shared/operation-dialog-frame";
 import {
   formatOperationCapital,
   formatOperationPrice,
@@ -12,8 +12,8 @@ import {
   formatOperationSignedPercent,
   getOperationName,
   getOperationTicker,
-} from "./operation-cells";
-import { useCloseOperationForm } from "./use-close-operation-form";
+} from "../shared/operation-cells";
+import { useCloseOperationForm } from "../shared/use-close-operation-form";
 
 const RESULT_TONES = {
   gain: { box: "border-emerald-200 bg-emerald-50/60", text: "text-emerald-700" },
@@ -43,10 +43,8 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
   const { resultado } = form;
   const tone = RESULT_TONES[form.resultTone];
 
-  const commissionFields = [
-    { key: "entry", label: texts.entryCommission, value: form.entryCommissionInput, onChange: form.setEntryCommissionInput },
-    { key: "exit", label: texts.exitCommission, value: form.exitCommissionInput, onChange: form.setExitCommissionInput },
-  ];
+  // Comisiones obtenidas de la base de datos para la operación
+  const comisionesBD = operacion.comisiones_broker ?? 0;
 
   return (
     <OperationDialogFrame
@@ -96,34 +94,7 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
           </p>
         </div>
 
-        <div>
-          {/* items-end: si una etiqueta salta de línea en pantallas estrechas, los campos siguen alineados. */}
-          <div className="grid grid-cols-2 items-end gap-3">
-            {commissionFields.map((field) => (
-              <div key={field.key}>
-                <label htmlFor={`${fieldId}-${field.key}-commission`} className={UI_STYLES.form.label}>
-                  {field.label}
-                </label>
-                <input
-                  id={`${fieldId}-${field.key}-commission`}
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  min="0"
-                  placeholder="0"
-                  value={field.value}
-                  onChange={(event) => field.onChange(event.target.value)}
-                  aria-describedby={`${fieldId}-commissions-hint`}
-                  className={UI_STYLES.form.input}
-                />
-              </div>
-            ))}
-          </div>
-          <p id={`${fieldId}-commissions-hint`} className={UI_STYLES.form.hint}>
-            {texts.commissionsHint}
-          </p>
-        </div>
-
+        {/* Resumen de Datos y Cálculo del Resultado con la fila de Comisiones */}
         <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 text-sm">
           <SummaryRow label={UI_TEXT.table.columns.entryPrice}>
             {formatOperationPrice(operacion.precio_entrada)}
@@ -132,11 +103,14 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
           <SummaryRow label={texts.exitAmount}>
             {resultado ? formatOperationCapital(resultado.importeSalida) : UI_TEXT.table.values.notAvailable}
           </SummaryRow>
-          {resultado && resultado.costes > 0 && (
-            <SummaryRow label={texts.costs}>{formatOperationSignedCapital(-resultado.costes)}</SummaryRow>
-          )}
+
+          {/* Fila dedicada a los costes/comisiones de la BD */}
+          <SummaryRow label={texts.costs}>
+            {formatOperationSignedCapital(-comisionesBD)}
+          </SummaryRow>
         </dl>
 
+        {/* Caja de Resultado Final con las comisiones descontadas */}
         <div className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-3 ${tone.box}`}>
           <span className="text-sm font-medium text-slate-700">{texts.result}</span>
           <span className={`text-right tabular-nums ${tone.text}`}>

@@ -11,7 +11,7 @@ import {
   getOperationName,
   getOperationTicker,
   MaxPriceValue,
-} from "./operation-cells";
+} from "../shared/operation-cells";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 interface OperationMobileRowProps {
@@ -24,16 +24,21 @@ interface OperationMobileRowProps {
 export function OperationMobileRow({ operacion, expanded, onToggle, onClose }: OperationMobileRowProps) {
   const ticker = getOperationTicker(operacion);
   const current = operacion.precio_actual ?? null;
-  const maxPrice = Math.max(operacion.max_price ?? operacion.precio_entrada, current ?? operacion.precio_entrada);
+  const entry = operacion.precio_entrada;
+
+  const maxPrice = Math.max(operacion.max_price ?? entry, current ?? entry);
   const stopPct = operacion.trailing_stop_pct ?? 2;
   const stopPrice = maxPrice * (1 - stopPct / 100);
   const stopHit = current != null && current <= stopPrice;
   const breakEven = operacion.precio_equilibrio_cero_perdidas;
-  const tradingLoss = !stopHit && current != null && current <= breakEven;
+  const tradingLoss = !stopHit && current != null && current < operacion.precio_entrada;
   const alertLabel = stopHit ? "STOP LOSS" : tradingLoss ? "TRADING LOSS" : null;
 
-  const previous = operacion.precio_anterior_lote;
-  const variation = current != null && previous != null && previous > 0 ? ((current - previous) / previous) * 100 : null;
+  // CORREGIDO: Usamos el precio de entrada como base exactamente igual que en VariationCell de escritorio
+  const variation = current != null && entry != null && entry > 0 
+    ? ((current - entry) / entry) * 100 
+    : null;
+
   const trendClass = variation == null ? "text-slate-500" : variation > 0 ? "text-emerald-700" : variation < 0 ? "text-rose-700" : "text-slate-500";
   const TrendIcon = variation == null || variation === 0 ? Minus : variation > 0 ? TrendingUp : TrendingDown;
 
@@ -42,8 +47,6 @@ export function OperationMobileRow({ operacion, expanded, onToggle, onClose }: O
     : tradingLoss
       ? "bg-fuchsia-50 border-fuchsia-200"
       : "";
-
-  const closePrice = current ?? operacion.precio_entrada;
 
   return (
     <div className={`${UI_STYLES.table.mobileRow} ${alertBgClass}`}>
@@ -77,7 +80,7 @@ export function OperationMobileRow({ operacion, expanded, onToggle, onClose }: O
           <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.entryPrice}</p>
             <p className={`${UI_STYLES.table.mobileValue} tabular-nums`}>
-              {formatOperationPrice(operacion.precio_entrada)}
+              {formatOperationPrice(entry)}
             </p>
           </div>
           <div>

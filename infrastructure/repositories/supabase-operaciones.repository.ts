@@ -33,38 +33,53 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
   }
 
   async create(input: CreateOperacionInput): Promise<Operacion> {
-    const precioEntrada = input.precio_entrada;
-    const capital = input.capital_invertido;
-    const cantidadAcciones = capital / precioEntrada;
+  const precioEntrada = input.precio_entrada;
+  const capital = input.capital_invertido;
+  const cantidadAcciones = capital / precioEntrada;
+  const trailingStopPct = input.trailing_stop_pct ?? 2.00;
+  const objetivoPct = input.objetivo_pct ?? 5.00;
+  
+  // Comisiones reales configuradas por el usuario
+  const comisionEntrada = input.comision_entrada ?? 1.00;
+  const comisionSalida = input.comision_salida ?? 1.00;
+  const comisionesTotal = comisionEntrada + comisionSalida;
 
-    const nuevaOperacion = {
-      empresa_id: input.empresa_id,
-      tipo_operacion: "COMPRA",
-      es_simulacion: true,
-      precio_entrada: precioEntrada,
-      precio_equilibrio_cero_perdidas: precioEntrada,
-      capital_invertido: capital,
-      cantidad_acciones: cantidadAcciones,
-      comisiones_broker: 0,
-      impuestos: 0,
-      fecha_apertura: new Date().toISOString(),
-      max_price: precioEntrada,
-      trailing_stop_pct: input.trailing_stop_pct ?? 2.00,
-      resultado_estado: "ACTIVA",
-    };
+  // --- CÁLCULOS EXACTOS ---
+  const precioEquilibrio = (capital + comisionesTotal) / cantidadAcciones;
+  const precioStopLoss = precioEntrada * (1 - trailingStopPct / 100);
+  const precioObjetivo = precioEntrada * (1 + objetivoPct / 100);
 
-    const { data, error } = await this.supabase
-      .from(APP_CONFIG.DB.TABLES.OPERACIONES)
-      .insert([nuevaOperacion])
-      .select()
-      .single();
+  const nuevaOperacion = {
+    empresa_id: input.empresa_id,
+    tipo_operacion: "COMPRA",
+    es_simulacion: true,
+    precio_entrada: precioEntrada,
+    precio_equilibrio_cero_perdidas: precioEquilibrio,
+    capital_invertido: capital,
+    cantidad_acciones: cantidadAcciones,
+    comisiones_broker: comisionesTotal,
+    impuestos: 0,
+    fecha_apertura: new Date().toISOString(),
+    max_price: precioEntrada,
+    trailing_stop_pct: trailingStopPct,
+    objetivo_pct: objetivoPct,
+    precio_stop_loss: precioStopLoss,
+    precio_objetivo: precioObjetivo,
+    resultado_estado: "ACTIVA",
+  };
 
-    if (error) {
-      throw new Error(`Error al crear la operación: ${error.message}`);
-    }
+  const { data, error } = await this.supabase
+    .from(APP_CONFIG.DB.TABLES.OPERACIONES)
+    .insert([nuevaOperacion])
+    .select()
+    .single();
 
-    return data;
+  if (error) {
+    throw new Error(`Error al crear la operación: ${error.message}`);
   }
+
+  return data;
+}
 
   async close(id: number, precioSalida: number, comisiones?: number): Promise<Operacion> {
     // El precio de salida y las comisiones los escribe el usuario: no se guarda nada que no sea válido.
@@ -122,7 +137,35 @@ export class SupabaseOperacionesRepository implements OperacionesRepository {
         .eq("id", id);
     }
   }
+  
+  async getClosed(): Promise<Operacion[]> {
+    const { data, error } = await this.supabase
+      .from(APP_CONFIG.DB.TABLES.OPERACIONES)
+      .select(`
+        *,
+        empresas (
+          ticker,
+          nombre
+        )
+      `)
+      .neq("resultado_estado", "ACTIVA")
+      .order("fecha_cierre", { ascending: false });
+
+    if (error) {
+      throw new Error(`Error al obtener operaciones cerradas: ${error.message}`);
+    }
+
+    // Mapeamos igual que en getActive() para rellenar ticker y nombre
+    return (data || []).map((row: any) => ({
+      ...row,
+      ticker: row.empresas?.ticker ?? "",
+      nombre: row.empresas?.nombre ?? "",
+    }));
+  }
+  
 }
+
+
 
 // Instancia por defecto para inyectar en los adaptadores de entrada
 export const operacionesRepository = new SupabaseOperacionesRepository();

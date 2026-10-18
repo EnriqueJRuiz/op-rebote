@@ -1,5 +1,8 @@
-import { obtenerOperacionesActivasAction } from "@/app/actions/operaciones.actions";
-import { OperationsPanel } from "@/components/features/operations";
+import { 
+  obtenerOperacionesActivasAction, 
+  obtenerHistorialOperacionesAction 
+} from "@/app/actions/operaciones.actions";
+import { OperationsContainer } from "@/components/features/operations"; 
 import { AutoRefresh } from "@/components/ui/layout/auto-refresh";
 
 import { UI_TEXT } from "@/domain/literales.constantes";
@@ -12,8 +15,10 @@ export const revalidate = 0;
 export default async function OperacionesPage() {
   const { scanHistoryRepository } = createApplicationDependencies();
 
-  const [operaciones, scanStatus] = await Promise.all([
+  // 1. Obtenemos en paralelo las operaciones activas, las cerradas y el estado del escaneo
+  const [operacionesActivas, operacionesCerradas, scanStatus] = await Promise.all([
     obtenerOperacionesActivasAction(),
+    obtenerHistorialOperacionesAction(),
     scanHistoryRepository.getLatestScanStatus().catch((error) => {
       console.warn("No se pudo cargar el estado del último escaneo:", error);
       return null as ScanStatus | null;
@@ -29,7 +34,11 @@ export default async function OperacionesPage() {
           <p className="text-slate-500">{UI_TEXT.pages.operations.description}</p>
         </div>
 
-        <OperationsPanel initialOperaciones={operaciones} />
+        {/* 2. Usamos OperationsContainer pasándole ambas listas */}
+        <OperationsContainer 
+          activas={operacionesActivas} 
+          cerradas={operacionesCerradas} 
+        />
       </div>
     </main>
   );

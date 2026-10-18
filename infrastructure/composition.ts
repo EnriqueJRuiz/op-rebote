@@ -8,7 +8,7 @@ import { SupabaseScanHistoryRepository } from "./repositories/supabase-scan-hist
 import { SupabaseOperacionesRepository } from "@/infrastructure/repositories/supabase-operaciones.repository";
 import { GetActiveOperationsUseCase } from "@/application/use-cases/get-active-operations.use-case";
 import { OpenOperationUseCase } from "@/application/use-cases/open-operation.use-case";
-import { CloseOperationUseCase } from "@/application/use-cases/close-operation.use-case";
+import { CloseOperationUseCase , GetClosedOperationsUseCase} from "@/application/use-cases/close-operation.use-case";
 import { ScanReboundsUseCase } from "@/application/use-cases/scan-rebounds.use-case";
 
 export function createApplicationDependencies() {
@@ -26,8 +26,9 @@ export function createApplicationDependencies() {
     syncMarketUniverse: new SyncMarketUniverseUseCase(marketRepository, companiesRepository),
     runBacktest: new RunBacktestUseCase(marketRepository, backtestRepository),
     getActiveOperations: new GetActiveOperationsUseCase(operacionesRepository, scanHistoryRepository),
+    getClosedOperations: new GetClosedOperationsUseCase(operacionesRepository),
     openOperation: new OpenOperationUseCase(operacionesRepository),
-    closeOperation: new CloseOperationUseCase(operacionesRepository),
+    closeOperation: new CloseOperationUseCase(operacionesRepository), // <-- Utiliza aquí la clase importada
     scanRebounds: new ScanReboundsUseCase(
       marketRepository,
       companiesRepository,
@@ -37,4 +38,3 @@ export function createApplicationDependencies() {
     ),
   };
 }
-

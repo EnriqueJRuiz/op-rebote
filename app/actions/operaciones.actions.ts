@@ -37,3 +37,13 @@ export async function cerrarOperacionAction(id: number, precioSalida: number, co
     return { success: false, error: message };
   }
 }
+
+export async function obtenerHistorialOperacionesAction() {
+  try {
+    const { getClosedOperations } = createApplicationDependencies();
+    return await getClosedOperations.execute();
+  } catch (error) {
+    console.error("Error al obtener el historial de operaciones:", error);
+    return [];
+  }
+}

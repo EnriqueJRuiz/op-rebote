@@ -13,7 +13,7 @@ import {
   BatchPriceCell,
   VariationCell,
   TrailingStopCell,
-} from "./operation-cells";
+} from "../shared/operation-cells";
 import { Column } from "@/components/ui/core/DataTable";
 
 export function getOperationColumns(onClose: (operacion: Operacion) => void): Column<Operacion>[] {

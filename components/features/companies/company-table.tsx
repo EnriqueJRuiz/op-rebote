@@ -21,8 +21,8 @@ import {
 import { DividendBadge } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
 import { DataTable } from "@/components/ui/core/DataTable";
-import { OperationDialog } from "@/components/features/operations/operation-dialog";
-import { OpenOperationButton } from "../operations/open-operation-button";
+import { OperationDialog } from "@/components/features/operations/shared/operation-dialog";
+import { OpenOperationButton } from "../operations/shared/open-operation-button";
 
 export interface CompanyTableProps {
   empresas: CompanyRecord[];
