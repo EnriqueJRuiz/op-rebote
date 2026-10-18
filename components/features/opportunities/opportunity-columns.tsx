@@ -24,7 +24,7 @@ import { CompanyHistoryTrigger } from "@/components/common/history/company-histo
 
 export function getOpportunityColumns(
   filterThresholds: OpportunityFilterThresholds,
-  getOpportunityColumns: (opportunity: StockCandidate) => void
+  onOpenOperation: (opportunity: StockCandidate) => void
 ): Column<StockCandidate>[] {
   return [
     {
@@ -124,10 +124,9 @@ export function getOpportunityColumns(
     },
     {
       header: UI_TEXT.table.columns.operate,
-      // Sin idEmpresa no se puede abrir una operación, así que la celda queda vacía.
       render: (opportunity) =>
-        opportunity.idEmpresa === undefined ? null : (
-          <OpenOperationButton ticker={opportunity.ticker} onClick={() => getOpportunityColumns(opportunity)} />
+        opportunity.ticker === undefined ? null : (
+          <OpenOperationButton ticker={opportunity.ticker} onClick={() => onOpenOperation(opportunity)} />
         ),
       headerClassName: "text-right",
       cellClassName: "text-right",
