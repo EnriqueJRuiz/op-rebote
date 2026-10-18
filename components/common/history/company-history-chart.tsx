@@ -8,7 +8,7 @@ import {
   HistogramSeries,
   LineSeries,
   TickMarkType,
-  type AutoscaleInfoProvider,
+  LineStyle,
   type Time,
   type UTCTimestamp,
 } from "lightweight-charts";
@@ -89,8 +89,6 @@ function makePriceCandles(points: CompanyHistoryPoint[]): Candle[] {
   return candles;
 }
 
-// Los niveles (máx./mín. de sesión, sesión anterior y 5 días) incluyen las velas de pre-market y after-hours.
-// Poner a false para calcularlos solo con la sesión regular (lo que muestra el gráfico de TradingView).
 const LEVELS_INCLUDE_EXTENDED_HOURS = true;
 
 type ChartLevel = {
@@ -98,7 +96,7 @@ type ChartLevel = {
   value: number;
   color: string;
   includeInOneSessionScale: boolean;
-  lineStyle?: number;
+  lineStyle?: LineStyle;
 };
 
 const EMA_LINES = [
@@ -124,14 +122,12 @@ function makeBarCandles(bars: IntradayBar[]): Candle[] {
     }));
 }
 
-// Las velas de pre-market y after-hours se pintan más claras.
 function toCandleData(candle: Candle) {
   if (!candle.extended) return candle;
   const color = candle.close >= candle.open ? EXTENDED_UP : EXTENDED_DOWN;
   return { ...candle, color, wickColor: color, borderColor: color };
 }
 
-// Una vela por sesión: apertura, máximo, mínimo y cierre del día (cierre regular, salvo en la sesión en curso).
 function aggregateSessions(candles: Candle[]): Candle[] {
   const bySession = new Map<string, Candle[]>();
   for (const candle of candles) {
@@ -154,7 +150,6 @@ function aggregateSessions(candles: Candle[]): Candle[] {
   });
 }
 
-// EMA clásica: se inicia con la media simple de las primeras "length" velas.
 function computeEma(candles: Candle[], length: number): Map<number, number> {
   const values = new Map<number, number>();
   if (candles.length < length) return values;
@@ -168,7 +163,6 @@ function computeEma(candles: Candle[], length: number): Map<number, number> {
   return values;
 }
 
-// lightweight-charts pinta en UTC; se formatea en hora de Madrid para que coincida con TradingView.
 const CHART_TIME_ZONE = "Europe/Madrid";
 const crosshairTimeFormat = new Intl.DateTimeFormat("es-ES", {
   timeZone: CHART_TIME_ZONE,
@@ -237,12 +231,10 @@ function analyzePrice(candles: Candle[], dailyCloses: Candle[], visibleSessions:
   const sessionLows = recentDaily.map((candle) => candle.low);
   const firstHigh = sessionHighs[0];
   const lastHigh = sessionHighs[sessionHighs.length - 1];
-  const firstLow = sessionLows[0];
-  const lastLow = sessionLows[sessionLows.length - 1];
   const higherHighs = sessionHighs.length < 2 || lastHigh > firstHigh;
   const lowerHighs = sessionHighs.length >= 2 && lastHigh < firstHigh;
-  const higherLows = sessionLows.length < 2 || lastLow > firstLow;
-  const lowerLows = sessionLows.length >= 2 && lastLow < firstLow;
+  const higherLows = sessionLows.length < 2 || sessionLows[sessionLows.length - 1] > sessionLows[0];
+  const lowerLows = sessionLows.length >= 2 && sessionLows[sessionLows.length - 1] < sessionLows[0];
 
   const firstHalf = recentDaily.slice(0, Math.max(1, Math.floor(recentDaily.length / 2)));
   const lastHalf = recentDaily.slice(Math.max(1, Math.floor(recentDaily.length / 2)));
@@ -315,10 +307,11 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
     if (!container || (points.length === 0 && !useBars)) return;
 
     const mobileViewport = window.matchMedia("(max-width: 639px)");
-    // Con velas de Yahoo hay panel de volumen debajo, así que se deja más margen inferior.
+    
     const getScaleMargins = () => mobileViewport.matches
-      ? { top: 0.05, bottom: useBars ? 0.25 : 0.05 }
-      : { top: 0.2, bottom: useBars ? 0.28 : 0.1 };
+      ? { top: 0.02, bottom: useBars ? 0.22 : 0.05 }
+      : { top: 0.02, bottom: useBars ? 0.25 : 0.05 };
+
     const scaleMargins = getScaleMargins();
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -335,6 +328,8 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
       rightPriceScale: {
         borderColor: "rgba(148, 163, 184, 0.2)",
         scaleMargins,
+        alignLabels: true,
+        entireTextOnly: false,
       },
       localization: { timeFormatter: formatCrosshairTime },
       timeScale: {
@@ -344,6 +339,7 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
       },
       crosshair: { vertLine: { labelBackgroundColor: "#475569" }, horzLine: { labelBackgroundColor: "#475569" } },
     });
+
     if (metric === "precio") {
       const allCandles = useBars && bars ? makeBarCandles(bars) : makePriceCandles(points);
       const allSessions = [...new Set(allCandles.map((candle) => candle.session))];
@@ -363,7 +359,6 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
 
       if (visibleCandles.length > 0) {
         const recentSession = visibleCandles[visibleCandles.length - 1].session;
-        // Con velas de Yahoo, los niveles pueden calcularse solo con la sesión regular (ver LEVELS_INCLUDE_EXTENDED_HOURS).
         const levelCandles = useBars && !LEVELS_INCLUDE_EXTENDED_HOURS
           ? allCandles.filter((candle) => !candle.extended)
           : allCandles;
@@ -379,22 +374,8 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
         const dailyCloses = useBars ? aggregateSessions(allCandles) : [...lastBySession.values()];
         const analysis = analyzePrice(allCandles, dailyCloses, visibleSessions);
         onPriceAnalysis?.(analysis);
-        const dailyCloseIndexes = new Map(dailyCloses.map((candle, index) => [candle.session, index]));
-        const makeLevelData = (value: number) => visibleCandles.map(({ time }) => ({ time, value }));
 
-        // Cierre anterior (cierre regular de la sesión previa) y apertura de hoy (primera vela regular), solo con velas de Yahoo.
-        // La etiqueta del eje muestra cuánto se aleja el precio actual de cada uno.
-        const lastClose = visibleCandles[visibleCandles.length - 1].close;
-        const previousClose = useBars && dailyCloses.length >= 2 ? dailyCloses[dailyCloses.length - 2].close : undefined;
-        const todayRegularCandles = useBars
-          ? allCandles.filter((candle) => candle.session === recentSession && !candle.extended)
-          : [];
-        const openPrice = todayRegularCandles.length > 0 ? todayRegularCandles[0].open : undefined;
-        const changeFrom = (reference: number) => {
-          const change = ((lastClose - reference) / reference) * 100;
-          return `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
-        };
-
+        // Títulos simplificados (solo "CA" y "AP") para evitar etiquetas excesivamente anchas que se solapen
         const levels: ChartLevel[] = [
           { title: "SH", value: Math.max(...recentSessionCandles.map((candle) => candle.high)), color: "#f59e0b", includeInOneSessionScale: true },
           { title: "SL", value: Math.min(...recentSessionCandles.map((candle) => candle.low)), color: "#f59e0b", includeInOneSessionScale: true },
@@ -406,31 +387,32 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
             : []),
           { title: "RH", value: Math.max(...recentFiveSessionCandles.map((candle) => candle.high)), color: "#a78bfa", includeInOneSessionScale: false },
           { title: "RL", value: Math.min(...recentFiveSessionCandles.map((candle) => candle.low)), color: "#a78bfa", includeInOneSessionScale: false },
-          ...(previousClose !== undefined
-            ? [{ title: `CA ${changeFrom(previousClose)}`, value: previousClose, color: "#64748b", includeInOneSessionScale: true, lineStyle: 1 }]
+          ...(dailyCloses.length >= 2 && useBars
+            ? [{ title: "CA", value: dailyCloses[dailyCloses.length - 2].close, color: "#64748b", includeInOneSessionScale: true, lineStyle: LineStyle.Dotted }]
             : []),
-          ...(openPrice !== undefined
-            ? [{ title: `AP ${changeFrom(openPrice)}`, value: openPrice, color: "#1e3a8a", includeInOneSessionScale: true, lineStyle: 1 }]
-            : []),
+          ...(() => {
+            const todayRegular = useBars ? allCandles.filter((c) => c.session === recentSession && !c.extended) : [];
+            const openVal = todayRegular.length > 0 ? todayRegular[0].open : undefined;
+            return openVal !== undefined
+              ? [{ title: "AP", value: openVal, color: "#1e3a8a", includeInOneSessionScale: true, lineStyle: LineStyle.Dotted }]
+              : [];
+          })(),
         ];
 
         for (const level of levels) {
-          const autoscaleInfoProvider: AutoscaleInfoProvider = (getAutoscaleInfo) =>
-            sessions === 1 && !level.includeInOneSessionScale ? null : getAutoscaleInfo();
-          const line = chart.addSeries(LineSeries, {
+          if (sessions === 1 && !level.includeInOneSessionScale) continue;
+
+          candleSeries.createPriceLine({
+            price: level.value,
             color: level.color,
             lineWidth: 1,
-            lineStyle: level.lineStyle ?? 2,
+            lineStyle: level.lineStyle ?? LineStyle.Dashed,
+            axisLabelVisible: true,
             title: useBars ? level.title : "",
-            priceLineVisible: false,
-            lastValueVisible: useBars,
-            autoscaleInfoProvider,
           });
-          line.setData(makeLevelData(level.value));
         }
 
         if (useBars) {
-          // Tendencias: EMA 20 y EMA 50 sobre todas las velas descargadas (el calentamiento no se ve en pantalla).
           for (const ema of EMA_LINES) {
             const values = computeEma(allCandles, ema.length);
             const data = visibleCandles.flatMap(({ time }) => {
@@ -461,25 +443,6 @@ export function CompanyHistoryChart({ points, bars, metric, sessions, className,
               color: candle.close >= candle.open ? "rgba(34, 197, 94, 0.35)" : "rgba(239, 68, 68, 0.35)",
             })),
           );
-        } else {
-          const smaData = visibleCandles.flatMap(({ time, session, close }) => {
-            const sessionIndex = dailyCloseIndexes.get(session);
-            if (sessionIndex === undefined || sessionIndex < 49) return [];
-            const previous49Closes = dailyCloses
-              .slice(sessionIndex - 49, sessionIndex)
-              .reduce((sum, candle) => sum + candle.close, 0);
-            return [{ time, value: (previous49Closes + close) / 50 }];
-          });
-          if (smaData.length > 0) {
-            const sma = chart.addSeries(LineSeries, {
-              color: "#38bdf8",
-              lineWidth: 2,
-              title: UI_TEXT.table.history.priceAnalysis.sma50Title,
-              priceLineVisible: false,
-              lastValueVisible: false,
-            });
-            sma.setData(smaData);
-          }
         }
       }
     } else {
