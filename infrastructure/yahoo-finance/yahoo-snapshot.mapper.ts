@@ -61,6 +61,13 @@ export class YahooSnapshotMapper {
     return Number(lastRsi.toFixed(2));
   }
 
+  calculateRecentMinimumRsi(closes: number[], days = 3): number | undefined {
+    if (closes.length <= YahooSnapshotMapper.RSI_PERIOD) return undefined;
+    const values = RSI.calculate({ values: closes, period: YahooSnapshotMapper.RSI_PERIOD });
+    const recent = values.slice(-days).filter((value) => Number.isFinite(value));
+    return recent.length ? Number(Math.min(...recent).toFixed(2)) : undefined;
+  }
+
   calculatePreviousRsi(closes: number[]): number | undefined {
     if (closes.length <= YahooSnapshotMapper.RSI_PERIOD) return undefined;
 
@@ -116,6 +123,9 @@ export class YahooSnapshotMapper {
       : undefined;
 
     const sma200 = this.calculateSma(allCloses);
+    const previousSessionLow = recentLows.length >= 2 ? recentLows[recentLows.length - 2] : undefined;
+    const reboteInicial = typeof previousSessionLow === "number" && previousSessionLow > 0 && precioActual > previousSessionLow;
+    const reboteConfirmado = reboteInicial && typeof precioAnterior === "number" && precioActual > precioAnterior;
     const distSma200Pct = sma200 !== undefined && sma200 > 0 && precioActual > 0
       ? Number((((precioActual - sma200) / sma200) * 100).toFixed(2))
       : undefined;
@@ -126,6 +136,9 @@ export class YahooSnapshotMapper {
       precio: precioActual,
       rsi: this.calculateRsi(rsiCloses),
       rsiAnterior: this.calculatePreviousRsi(rsiCloses),
+      rsiMinimoReciente: this.calculateRecentMinimumRsi(rsiCloses, 3),
+      reboteInicial,
+      reboteConfirmado,
       volumen: volumenActual,
       capitalizacion: marketCap,
       esValido: false,

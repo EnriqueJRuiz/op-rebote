@@ -135,8 +135,8 @@ export const UI_TEXT = {
   },
   table: {
     titles: {
-      TIER_0: "Dividend Kings en rebote",
-      TIER_1: "Candidatas prioritarias de rebote",
+      TIER_0: "Kings y Aristócratas de calidad en rebote",
+      TIER_1: "Rebotes confirmados",
       TOP: "Gran capitalización (TOP)",
       MID: "Capitalización media (MID)",
       ALL: "Todas las empresas",

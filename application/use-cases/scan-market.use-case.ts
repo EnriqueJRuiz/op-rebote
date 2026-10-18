@@ -69,6 +69,9 @@ export class ScanMarketUseCase {
     const evaluacion = evaluateCandidateTierAndExit({
       rsi: stock.rsi,
       esValido: stock.esValido,
+      fundamentalesValidos: stock.fundamentalesValidos,
+      rsiMinimoReciente: stock.rsiMinimoReciente,
+      reboteConfirmado: stock.reboteConfirmado,
       dividendTier: stock.dividendTier,
       origenCategoria: stock.categoria,
     });

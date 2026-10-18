@@ -64,7 +64,9 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
       .filter((close): close is number => close !== null && close !== undefined);
 
     const recentLows = chartResult.quotes.map((quote) => quote.low);
+    // Excluir la última vela del promedio para no comparar el volumen actual consigo mismo.
     const historicalVolumes = chartResult.quotes
+      .slice(0, -1)
       .map((q) => q.volume)
       .filter((v): v is number => v !== null && v !== undefined);
 

@@ -12,7 +12,7 @@ export interface OpportunityFilterThresholds {
 }
 
 const MIN_SMA_DISTANCE_PCT = -10;
-const MIN_RELATIVE_VOLUME = 1;
+const MIN_RELATIVE_VOLUME = 0.9;
 const MIN_BACKTEST_CASES = 20;
 const MAX_BACKTEST_STAGNATION_PCT = 50;
 

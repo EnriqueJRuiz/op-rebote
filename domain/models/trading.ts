@@ -70,6 +70,14 @@ export interface StockCandidate extends Company {
   bolsa?: string;
   rsi: number;
   rsiAnterior?: number;
+  /** Mínimo RSI(14) de las últimas sesiones completas, calculado antes de persistir. */
+  rsiMinimoReciente?: number;
+  /** Precio actual por encima del mínimo de la sesión anterior. */
+  reboteInicial?: boolean;
+  /** Confirmación adicional: precio actual por encima del cierre anterior. */
+  reboteConfirmado?: boolean;
+  /** Fundamentales completos y dentro de los límites exigidos. */
+  fundamentalesValidos?: boolean;
   capitalizacion?: number;
   esValido: boolean;
   motivoDescarte?: string;
