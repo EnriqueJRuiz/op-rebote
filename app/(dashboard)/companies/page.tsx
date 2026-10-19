@@ -34,12 +34,12 @@ export default async function EmpresasRadarPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8 text-slate-800">
+    <main className="min-h-screen bg-slate-50 p-3 text-slate-800 sm:p-6 lg:p-8">
       <AutoRefresh renderedScannedAt={scanStatus?.scannedAt ?? null} />
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <div className="mb-5 flex flex-col gap-4 sm:mb-8 sm:gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">{UI_TEXT.pages.companies.title}</h1>
+            <h1 className="mb-1 text-2xl font-bold sm:mb-2 sm:text-3xl">{UI_TEXT.pages.companies.title}</h1>
             <p className="text-slate-500">{UI_TEXT.pages.companies.description}</p>
             {scanStatus && (
               <p className="mt-1 text-xs text-slate-400">

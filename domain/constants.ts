@@ -1,5 +1,7 @@
 // lib/constants.ts
 
+import { UI_TEXT } from "./literales.constantes";
+
 export const APP_CONFIG = {
   NAME: "Operación Rebote para Torpes",
   BASE_CURRENCY: "EUR",
@@ -41,7 +43,7 @@ export const APP_ROUTES = {
   HOME: "/",
   OPORTUNIDADES: "/oportunidades",
   SEGUIMIENTO: "/seguimiento",
-  EMPRESAS_RADAR: "/empresas-radar",
+  EMPRESAS_RADAR: "/companies",
   IMPULSO_ALCISTA: "/impulso-alcista",
   OPERACIONES: "/operaciones",
 } as const;
@@ -77,3 +79,65 @@ export function getDividendTier(ticker: string): DividendTier {
   if ((DIVIDEND_ARISTOCRATS as readonly string[]).includes(ticker)) return DIVIDEND_TIERS.ARISTOCRAT;
   return null;
 }
+
+// ==========================================
+// BOLSAS Y SESIONES DE MERCADO
+// ==========================================
+
+export const BOLSAS_AMERICANA: string[] = [
+  'NYSE', 
+  'NasdaqCM', 
+  'NasdaqGM', 
+  'NasdaqGS', 
+  'OTC Markets OTCPK',
+];
+
+export const BOLSAS_CANADIENSE: string[] = [
+  'Canadian Sec',
+];
+
+export const BOLSAS_REINO_UNIDO: string[] = [
+  'Cboe UK', 
+  'LSE',
+];
+
+export const BOLSAS_EUROPEA: string[] = [
+  'Amsterdam', 
+  'Brussels', 
+  'Copenhagen', 
+  'Helsinki', 
+  'Lisbon', 
+  'Milan', 
+  'Oslo', 
+  'Paris', 
+  'Stockholm', 
+  'XETRA', 
+  'Hanover', 
+  'MCE', 
+  'Swiss', 
+  'IOB',
+];
+
+// Aliases de compatibilidad
+export const AMERICANA = BOLSAS_AMERICANA;
+export const CANADIENSE = BOLSAS_CANADIENSE;
+export const UK_SUIZA = BOLSAS_REINO_UNIDO;
+export const EUROPEA = BOLSAS_EUROPEA;
+
+export const MARKET_SESSIONS = {
+  ALL: "all",
+  AMERICANA: "AMERICANA",
+  EUROPEA: "EUROPEA",
+  CANADIENSE: "CANADIENSE",
+  REINO_UNIDO_SUIZA: "REINO_UNIDO_SUIZA",
+} as const;
+
+export type MarketSessionFilter = typeof MARKET_SESSIONS[keyof typeof MARKET_SESSIONS]
+
+export const MARKET_SESSION_OPTIONS = [
+  { value: MARKET_SESSIONS.ALL, label: UI_TEXT.table.filters.sessionAll },
+  { value: MARKET_SESSIONS.AMERICANA, label: UI_TEXT.table.filters.sessionAmericana },
+  { value: MARKET_SESSIONS.EUROPEA, label: UI_TEXT.table.filters.sessionEuropea },
+  { value: MARKET_SESSIONS.REINO_UNIDO_SUIZA, label: UI_TEXT.table.filters.sessionReinoUnido },
+  { value: MARKET_SESSIONS.CANADIENSE, label: UI_TEXT.table.filters.sessionCanada },
+];

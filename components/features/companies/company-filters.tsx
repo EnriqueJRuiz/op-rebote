@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, Crown, ChessBishop } from "lucide-react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
+import { MARKET_SESSION_OPTIONS, MarketSessionFilter } from "@/domain/constants";
 
 export const FILTER_ALL = "all" as const;
 
@@ -43,7 +44,7 @@ export function TableFilterSelect<Value extends string>({
   label,
   value,
   options,
-  onChange,
+  onChange = () => {},
   className = "",
 }: {
   id: string;
@@ -109,7 +110,6 @@ export function DividendFilterSelect({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        // Usamos exactamente la misma clase de estilo y añadimos pr-8 para que el texto no tape la flecha absoluta
         className={`w-full flex items-center text-left pr-8 ${UI_STYLES.filter.select}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -120,7 +120,6 @@ export function DividendFilterSelect({
         </span>
       </button>
 
-      {/* Posicionamiento absoluto idéntico al del componente TableFilterSelect */}
       <ChevronDown
         className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${UI_STYLES.filter.icon}`}
         size={15}
@@ -168,6 +167,8 @@ interface CompanyFiltersProps {
   onSectorFilterChange: (value: string) => void;
   dividendFilter: DividendFilter;
   onDividendFilterChange: (value: DividendFilter) => void;
+  marketSessionFilter: MarketSessionFilter;
+  onMarketSessionFilterChange: (value: MarketSessionFilter) => void;
   sectores: string[];
 }
 
@@ -181,10 +182,15 @@ export function CompanyFilters({
   onSectorFilterChange,
   dividendFilter,
   onDividendFilterChange,
+  marketSessionFilter,
+  onMarketSessionFilterChange,
   sectores,
 }: CompanyFiltersProps) {
   const searchInputId = `company-search-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sectorInputId = `company-sector-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  const sessionInputId = `company-session-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  const priceInputId = `company-price-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  
   const sectorLabel = UI_TEXT.table.columns.sector;
 
   const sectorOptions: FilterOption<string>[] = [
@@ -193,9 +199,9 @@ export function CompanyFilters({
   ];
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap">
       {/* Búsqueda */}
-      <div className="relative w-full sm:min-w-60 sm:flex-1">
+      <div className="relative col-span-2 w-full sm:min-w-60 sm:flex-1">
         <Search
           className={`absolute left-3 top-1/2 -translate-y-1/2 ${UI_STYLES.filter.icon}`}
           size={16}
@@ -216,29 +222,39 @@ export function CompanyFilters({
 
       {/* Último precio */}
       <TableFilterSelect
-        id={`company-price-${title.toLowerCase().replace(/\s+/g, "-")}`}
+        id={priceInputId}
         label={UI_TEXT.table.filters.priceAriaLabel}
         value={priceFilter}
         options={PRICE_FILTER_OPTIONS}
         onChange={onPriceFilterChange}
-        className="sm:min-w-48 sm:flex-none"
+        className="sm:min-w-44 sm:flex-none"
+      />
+
+      {/* Sesión de Mercado */}
+      <TableFilterSelect
+        id={sessionInputId}
+        label={UI_TEXT.table.filters.sessionAriaLabel}
+        value={marketSessionFilter}
+        options={MARKET_SESSION_OPTIONS}
+        onChange={onMarketSessionFilterChange}
+        className="sm:min-w-44 sm:flex-none"
       />
 
       {/* Sector */}
       <TableFilterSelect
         id={sectorInputId}
-        label={UI_TEXT.table.filters.sectorAriaLabel}
+        label={sectorLabel}
         value={sectorFilter}
         options={sectorOptions}
         onChange={onSectorFilterChange}
-        className="sm:min-w-48 sm:flex-none"
+        className="sm:min-w-44 sm:flex-none"
       />
 
-      {/* Dividendo (usando el selector personalizado con iconos reales) */}
+      {/* Dividendo (componente especializado con iconos) */}
       <DividendFilterSelect
         value={dividendFilter}
         onChange={onDividendFilterChange}
-        className="sm:min-w-48 sm:flex-none"
+        className="sm:min-w-44 sm:flex-none"
       />
     </div>
   );

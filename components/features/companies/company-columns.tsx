@@ -18,18 +18,18 @@ export function formatScannedPrice(value: number, currency?: string) {
   return currency ? `${formatted} ${currency}` : formatted;
 }
 
-export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCompanyId: Map<number, CompanyScanQuote>) {
+export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCompanyId: Map<number, CompanyScanQuote>, showEye = true) {
   const quote = scanQuoteByCompanyId.get(empresa.id);
   if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) {
     return (
-      <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio">
+      <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio" showEye={showEye}>
         <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>
       </CompanyHistoryTrigger>
     );
   }
 
   return (
-    <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio">
+    <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio" showEye={showEye}>
       <span className="inline-flex flex-col items-end whitespace-nowrap">
         <span className="inline-block w-22.5 text-right font-medium text-slate-800">
           {formatScannedPrice(quote.price, empresa.moneda)}

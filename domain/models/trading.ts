@@ -44,6 +44,8 @@ export interface CompanyRecord extends Company {
   total_cash?: number;
   total_debt?: number;
   fundamentales_actualizados_en?: string;
+  sesion_mercado?: string;
+
 }
 
 export interface CompanyScanQuote {

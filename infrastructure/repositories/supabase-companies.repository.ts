@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CompaniesRepositoryPort } from "@/application/ports/companies-repository.port";
 import { CompanyMetadata, CompanyRecord, UniverseStock } from "@/domain/models/trading";
 import { APP_CONFIG, getDividendTier } from "@/domain/constants";
+import { obtenerSesionMercado } from "@/domain/rules/universe.rules";
 
 export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
   private supabase = createClient(
@@ -24,6 +25,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       capitalizacion: stock.marketCap,
       categoria: stock.categoria || APP_CONFIG.CATEGORIES.MID,
       dividend_tier: getDividendTier(stock.ticker),
+      sesion_mercado: obtenerSesionMercado(stock.exchange ?? null),
     }));
 
     const { error } = await this.supabase
@@ -51,7 +53,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
     }
   }
 
-  async updateCompanyMetadataByTicker(
+ async updateCompanyMetadataByTicker(
     ticker: string,
     nombre: string,
     metadata: CompanyMetadata
@@ -61,6 +63,7 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       .update({
         nombre,
         dividend_tier: getDividendTier(ticker),
+        sesion_mercado: obtenerSesionMercado(metadata.bolsa ?? null),
         ...this.toDatabaseMetadata(metadata),
       })
       .eq(APP_CONFIG.DB.COLUMNS.TICKER, ticker);
@@ -99,7 +102,8 @@ export class SupabaseCompaniesRepository implements CompaniesRepositoryPort {
       .from(APP_CONFIG.DB.TABLES.EMPRESAS)
       .select(`id, ticker, nombre, tipo_activo, es_dividendo, dividend_rate, dividend_yield, sector, industria
         , pais, bolsa, moneda, web, categoria, capitalizacion, current_ratio, debt_to_equity, return_on_equity
-        , profit_margin, free_cash_flow, total_cash, total_debt, dividend_tier, fundamentales_actualizados_en`)
+        , profit_margin, free_cash_flow, total_cash, total_debt, dividend_tier, fundamentales_actualizados_en
+        , sesion_mercado`)
       .order(APP_CONFIG.DB.COLUMNS.TICKER, { ascending: true });
 
     if (error) {
