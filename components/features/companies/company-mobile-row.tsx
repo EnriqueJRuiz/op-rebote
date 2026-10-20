@@ -2,11 +2,13 @@ import { ChevronDown } from "lucide-react";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
-import { DividendBadge } from "@/components/ui/core/trading-cells";
+import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyAnalyzeButton } from "@/components/common/history/company-analyze-button";
 import { OpenOperationButton } from "@/components/common/open-operation";
-import { renderCompanyScannedPrice } from "./company-columns";
+import { renderCompanyScannedPriceRow } from "./company-columns";
+import { CompanyCell } from "./company-cell";
+import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 export function renderCompanyMobileRow(
   empresa: CompanyRecord,
@@ -28,22 +30,36 @@ export function renderCompanyMobileRow(
           className="flex min-w-0 flex-1 flex-col gap-1 rounded-md py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           aria-expanded={expanded}
         >
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="shrink-0 font-mono text-[11px] font-medium tracking-wide text-slate-500">
-              {empresa.ticker}
-            </span>
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <CompanyCell name={empresa.nombre} ticker={empresa.ticker} website={empresa.web} size={32} className="flex-1" />
             <DividendBadge empresa={empresa} hideYield={true} />
-          </span>
-          <span className="block truncate text-sm font-semibold leading-snug text-slate-900">
-            {empresa.nombre}
           </span>
         </button>
 
-        {!expanded && (
-          <div className="w-26 shrink-0 pl-1 text-right">
-            {renderCompanyScannedPrice(empresa, scanQuoteByCompanyId, false)}
-          </div>
-        )}
+        <div className="min-w-16 shrink-0 pl-1 text-right">
+          <CompanyHistoryTrigger
+            companyId={empresa.id}
+            ticker={empresa.ticker}
+            companyName={empresa.nombre}
+            currency={empresa.moneda}
+            metric="precio"
+            showEye={false}
+          >
+            {(() => {
+              const quote = scanQuoteByCompanyId.get(empresa.id);
+
+              return quote && Number.isFinite(quote.price) && quote.price > 0 ? (
+                <PriceChange
+                  price={quote.price}
+                  previousPrice={quote.previousDayPrice}
+                  className="justify-end"
+                />
+              ) : (
+                <span className="text-xs text-slate-400">—</span>
+              );
+            })()}
+          </CompanyHistoryTrigger>
+        </div>
 
         <button
           type="button"
@@ -63,11 +79,11 @@ export function renderCompanyMobileRow(
         <div className={UI_STYLES.table.mobileDetails}>
           {/* Fila 1: Precio actual (ocupa todo el ancho o primera sección) */}
           
-          <div className={`{UI_STYLES.table.mobileDetails} col-span-full flex w-full gap-2 pt-2`}>
+          <div className="col-span-full flex w-full gap-2 pt-2">
             <div className="col-span-full w-1/3">
                 <p className={UI_STYLES.table.mobileLabel}>Precio actual</p>
                 <div className="mt-1">
-                {renderCompanyScannedPrice(empresa, scanQuoteByCompanyId, false)}
+                {renderCompanyScannedPriceRow(empresa, scanQuoteByCompanyId, false)}
                 </div>
             </div>
             <div className="col-span-full w-1/3">
@@ -84,7 +100,7 @@ export function renderCompanyMobileRow(
                 )}
                 </p>
             </div>
-            <div className="col-span-fullw-1/3">
+            <div className="min-w-0 w-1/3">
             <p className={UI_STYLES.table.mobileLabel}>
               {UI_TEXT.table.columns.sector}
             </p>

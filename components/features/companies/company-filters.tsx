@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Search, Crown, ChessBishop } from "lucide-react";
+import { ChevronDown, Search, Crown, ChessBishop, SlidersHorizontal, X } from "lucide-react";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { MARKET_SESSION_OPTIONS, MarketSessionFilter } from "@/domain/constants";
@@ -186,6 +186,9 @@ export function CompanyFilters({
   onMarketSessionFilterChange,
   sectores,
 }: CompanyFiltersProps) {
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
   const searchInputId = `company-search-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sectorInputId = `company-sector-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sessionInputId = `company-session-${title.toLowerCase().replace(/\s+/g, "-")}`;
@@ -198,64 +201,187 @@ export function CompanyFilters({
     ...sectores.map((sector) => ({ value: sector, label: `${sectorLabel}: ${sector}` })),
   ];
 
+  // Contar cuántos filtros activos hay para mostrar un badge en el botón
+  const activeFiltersCount = [
+    priceFilter !== FILTER_ALL,
+    marketSessionFilter !== FILTER_ALL,
+    sectorFilter !== FILTER_ALL,
+    dividendFilter !== FILTER_ALL,
+  ].filter(Boolean).length;
+
+  // Cerrar modal al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsMobileFilterOpen(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
-    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap">
-      {/* Búsqueda */}
-      <div className="relative col-span-2 w-full sm:min-w-60 sm:flex-1">
-        <Search
-          className={`absolute left-3 top-1/2 -translate-y-1/2 ${UI_STYLES.filter.icon}`}
-          size={16}
-          aria-hidden="true"
-        />
-        <label htmlFor={searchInputId} className="sr-only">
-          {UI_TEXT.table.columns.searchByNameOrTicker}
-        </label>
-        <input
-          id={searchInputId}
-          type="search"
-          value={searchTerm}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={UI_TEXT.table.columns.searchByNameOrTicker}
-          className={UI_STYLES.filter.input}
-        />
+    <div className="w-full">
+      {/* BARRA PRINCIPAL: Búsqueda + Botón de Filtros (Móvil) */}
+      <div className="flex items-center gap-2">
+        {/* Buscador (ocupa todo el espacio restante) */}
+        <div className="relative flex-1 sm:min-w-60">
+          <Search
+            className={`absolute left-3 top-1/2 -translate-y-1/2 ${UI_STYLES.filter.icon}`}
+            size={16}
+            aria-hidden="true"
+          />
+          <label htmlFor={searchInputId} className="sr-only">
+            {UI_TEXT.table.columns.searchByNameOrTicker}
+          </label>
+          <input
+            id={searchInputId}
+            type="search"
+            value={searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={UI_TEXT.table.columns.searchByNameOrTicker}
+            className={UI_STYLES.filter.input}
+          />
+        </div>
+
+        {/* Botón de Filtros solo visible en móvil */}
+        <button
+          type="button"
+          onClick={() => setIsMobileFilterOpen(true)}
+          className="relative flex items-center justify-center gap-2 h-10 px-3.5 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:hidden shrink-0"
+          aria-expanded={isMobileFilterOpen}
+          aria-label="Abrir filtros"
+        >
+          <SlidersHorizontal size={16} className="text-slate-500" />
+          <span>Filtros</span>
+          {activeFiltersCount > 0 && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[11px] font-semibold text-white">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+
+        {/* FILTROS EN ESCRITORIO (sm:flex) - Permanece exactamente como el original */}
+        <div className="hidden sm:flex sm:items-center sm:gap-2 sm:flex-wrap">
+          <TableFilterSelect
+            id={priceInputId}
+            label={UI_TEXT.table.filters.priceAriaLabel}
+            value={priceFilter}
+            options={PRICE_FILTER_OPTIONS}
+            onChange={onPriceFilterChange}
+            className="sm:min-w-44 sm:flex-none"
+          />
+
+          <TableFilterSelect
+            id={sessionInputId}
+            label={UI_TEXT.table.filters.sessionAriaLabel}
+            value={marketSessionFilter}
+            options={MARKET_SESSION_OPTIONS}
+            onChange={onMarketSessionFilterChange}
+            className="sm:min-w-44 sm:flex-none"
+          />
+
+          <TableFilterSelect
+            id={sectorInputId}
+            label={sectorLabel}
+            value={sectorFilter}
+            options={sectorOptions}
+            onChange={onSectorFilterChange}
+            className="sm:min-w-44 sm:flex-none"
+          />
+
+          <DividendFilterSelect
+            value={dividendFilter}
+            onChange={onDividendFilterChange}
+            className="sm:min-w-44 sm:flex-none"
+          />
+        </div>
       </div>
 
-      {/* Último precio */}
-      <TableFilterSelect
-        id={priceInputId}
-        label={UI_TEXT.table.filters.priceAriaLabel}
-        value={priceFilter}
-        options={PRICE_FILTER_OPTIONS}
-        onChange={onPriceFilterChange}
-        className="sm:min-w-44 sm:flex-none"
-      />
+      {/* MODAL / DIÁLOGO DE FILTROS EN MÓVIL */}
+      {isMobileFilterOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center sm:hidden bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          {/* Backdrop click to close */}
+          <div className="fixed inset-0" onClick={() => setIsMobileFilterOpen(false)} />
 
-      {/* Sesión de Mercado */}
-      <TableFilterSelect
-        id={sessionInputId}
-        label={UI_TEXT.table.filters.sessionAriaLabel}
-        value={marketSessionFilter}
-        options={MARKET_SESSION_OPTIONS}
-        onChange={onMarketSessionFilterChange}
-        className="sm:min-w-44 sm:flex-none"
-      />
+          <div
+            ref={modalRef}
+            className="relative z-10 w-full rounded-t-2xl bg-white p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+          >
+            {/* Cabecera del Dialog */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal size={18} className="text-slate-700" />
+                <h3 className="font-semibold text-slate-800 text-base">Filtros de búsqueda</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-      {/* Sector */}
-      <TableFilterSelect
-        id={sectorInputId}
-        label={sectorLabel}
-        value={sectorFilter}
-        options={sectorOptions}
-        onChange={onSectorFilterChange}
-        className="sm:min-w-44 sm:flex-none"
-      />
+            {/* Formulario de Filtros en columna vertical */}
+            <div className="space-y-3.5 pt-1">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Último Precio</label>
+                <TableFilterSelect
+                  id={`${priceInputId}-mobile`}
+                  label={UI_TEXT.table.filters.priceAriaLabel}
+                  value={priceFilter}
+                  options={PRICE_FILTER_OPTIONS}
+                  onChange={onPriceFilterChange}
+                  className="w-full"
+                />
+              </div>
 
-      {/* Dividendo (componente especializado con iconos) */}
-      <DividendFilterSelect
-        value={dividendFilter}
-        onChange={onDividendFilterChange}
-        className="sm:min-w-44 sm:flex-none"
-      />
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Sesión de Mercado</label>
+                <TableFilterSelect
+                  id={`${sessionInputId}-mobile`}
+                  label={UI_TEXT.table.filters.sessionAriaLabel}
+                  value={marketSessionFilter}
+                  options={MARKET_SESSION_OPTIONS}
+                  onChange={onMarketSessionFilterChange}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Sector</label>
+                <TableFilterSelect
+                  id={`${sectorInputId}-mobile`}
+                  label={sectorLabel}
+                  value={sectorFilter}
+                  options={sectorOptions}
+                  onChange={onSectorFilterChange}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Dividendo</label>
+                <DividendFilterSelect
+                  value={dividendFilter}
+                  onChange={onDividendFilterChange}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Botón de Confirmación */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-md shadow-sm transition-colors text-center"
+              >
+                Aplicar filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

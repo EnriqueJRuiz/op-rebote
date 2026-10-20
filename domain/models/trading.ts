@@ -45,6 +45,10 @@ export interface CompanyRecord extends Company {
   total_debt?: number;
   fundamentales_actualizados_en?: string;
   sesion_mercado?: string;
+  rsi: number;
+  rsiAnterior?: number;
+  rsiMinimoReciente?: number;
+  sma200?: number;
 
 }
 

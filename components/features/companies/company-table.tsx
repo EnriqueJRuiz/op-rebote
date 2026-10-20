@@ -79,7 +79,6 @@ export function CompanyTable({
       if (dividendFilter === "aristocrat" && empresa.dividend_tier !== DIVIDEND_TIERS.ARISTOCRAT) return false;
       if (dividendFilter === "no" && empresa.es_dividendo) return false;
 
-      console.log("Filtro seleccionado:", marketSessionFilter);
       // FILTRAR POR SESIÓN DE MERCADO ──
       if (marketSessionFilter !== MARKET_SESSIONS.ALL && empresa.sesion_mercado !== marketSessionFilter) {
         return false;

@@ -7,6 +7,7 @@ import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 import { OpenOperationButton } from "@/components/common/open-operation";
+import { CompanyCell } from "./company-cell";
 import { Column } from "@/components/ui/core/data-table";
 
 export function formatScannedPrice(value: number, currency?: string) {
@@ -31,14 +32,35 @@ export function renderCompanyScannedPrice(empresa: CompanyRecord, scanQuoteByCom
   return (
     <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio" showEye={showEye}>
       <span className="inline-flex flex-col items-end whitespace-nowrap">
-        <span className="inline-block w-22.5 text-right font-medium text-slate-800">
-          {formatScannedPrice(quote.price, empresa.moneda)}
-        </span>
         <PriceChange
           price={quote.price}
           previousPrice={quote.previousDayPrice}
           className="mt-0.5 justify-end"
         />
+        <span className="inline-block w-22.5 text-right font-medium text-slate-800">
+          {formatScannedPrice(quote.price, empresa.moneda)}
+        </span>
+      </span>
+    </CompanyHistoryTrigger>
+  );
+}
+
+export function renderCompanyScannedPriceRow(empresa: CompanyRecord, scanQuoteByCompanyId: Map<number, CompanyScanQuote>, showEye = true) {
+  const quote = scanQuoteByCompanyId.get(empresa.id);
+  if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) {
+    return (
+      <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio" showEye={showEye}>
+        <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>
+      </CompanyHistoryTrigger>
+    );
+  }
+
+  return (
+    <CompanyHistoryTrigger companyId={empresa.id} ticker={empresa.ticker} companyName={empresa.nombre} currency={empresa.moneda} metric="precio" showEye={showEye}>
+      <span className="inline-flex flex-col items-end whitespace-nowrap">
+        <span className="inline-block w-22.5 text-right font-medium text-slate-800">
+          {formatScannedPrice(quote.price, empresa.moneda)}
+        </span>
       </span>
     </CompanyHistoryTrigger>
   );
@@ -68,12 +90,9 @@ export function getCompanyColumns(
       header: UI_TEXT.table.columns.name,
       sortValue: (empresa) => empresa.nombre,
       render: (empresa) => (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span className={UI_STYLES.badge.ticker}>{empresa.ticker}</span>
-            <DividendBadge empresa={empresa} hideYield={true} />
-          </div>
-          <span className="mt-0.5 text-sm font-normal text-slate-500">{empresa.nombre}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <CompanyCell name={empresa.nombre} ticker={empresa.ticker} website={empresa.web} size={36} className="flex-1" />
+          <DividendBadge empresa={empresa} hideYield={true} />
         </div>
       ),
     },
