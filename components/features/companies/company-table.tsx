@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { DIVIDEND_TIERS, MARKET_SESSIONS, MarketSessionFilter } from "@/domain/constants";
 import { UI_TEXT } from "@/domain/literales.constantes";
+import { useMarketClock } from "@/components/common/market-status";
+import { getMarketStatus } from "@/domain/rules/market-status.rules";
 import {
   CompanyFilters,
   DividendFilter,
   FILTER_ALL,
+  MarketStatusFilter,
   PriceFilter,
 } from "./company-filters";
 import {
@@ -48,6 +51,10 @@ export function CompanyTable({
   const [dividendFilter, setDividendFilter] = useState<DividendFilter>(FILTER_ALL);
   const [sectorFilter, setSectorFilter] = useState<string>(FILTER_ALL);
   const [marketSessionFilter, setMarketSessionFilter] = useState<MarketSessionFilter>("all");
+  const [marketStatusFilter, setMarketStatusFilter] = useState<MarketStatusFilter>(FILTER_ALL);
+  const marketClock = useMarketClock();
+  // Con "Todas" el reloj no interviene: así la lista no se recalcula cada minuto sin necesidad.
+  const statusFilterClock = marketStatusFilter === "open" ? marketClock : null;
 
   const scanQuoteByCompanyId = useMemo(
     () => new Map(scanQuotes.map((quote) => [quote.companyId, quote])),
@@ -84,6 +91,11 @@ export function CompanyTable({
         return false;
       }
 
+      // Solo cuenta la sesión regular. Sin hora (antes de montar la página) no se puede saber: no se muestra.
+      if (marketStatusFilter === "open") {
+        if (!statusFilterClock || getMarketStatus(empresa.bolsa, statusFilterClock) !== "REGULAR") return false;
+      }
+
       if (sectorFilter !== FILTER_ALL && getCompanySector(empresa) !== sectorFilter)
         return false;
 
@@ -95,6 +107,8 @@ export function CompanyTable({
     priceFilter,
     dividendFilter,
     marketSessionFilter,
+    marketStatusFilter,
+    statusFilterClock,
     sectorFilter,
     scanQuoteByCompanyId,
   ]);
@@ -118,6 +132,8 @@ export function CompanyTable({
         onDividendFilterChange={setDividendFilter}
         marketSessionFilter={marketSessionFilter}
         onMarketSessionFilterChange={setMarketSessionFilter}
+        marketStatusFilter={marketStatusFilter}
+        onMarketStatusFilterChange={setMarketStatusFilter}
         sectores={sectores}
       />
 

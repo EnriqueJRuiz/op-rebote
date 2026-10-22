@@ -240,6 +240,10 @@ export const UI_TEXT = {
       sessionEuropea: "Sesión: Europea",
       sessionReinoUnido: "Sesión: Reino Unido",
       sessionCanada: "Sesión: Canadá",
+      marketStatusLabel: "Estado de la bolsa",
+      marketStatusAriaLabel: "Filtrar por estado de la bolsa",
+      marketStatusAll: "Bolsa: Todas",
+      marketStatusOpen: "Bolsa: Abiertas ahora",
       clear: "Limpiar filtros",
       noResults: "No hay empresas que coincidan con los filtros.",
     },
@@ -340,6 +344,15 @@ export const UI_TEXT = {
       byColumn: (label: string) => `Ordenar por ${label.toLowerCase()}`,
       sortBy: "Ordenar por",
       reverse: "Invertir el orden",
+    },
+  },
+  market: {
+    status: {
+      REGULAR: "Bolsa abierta",
+      PRE: "Premarket",
+      POST: "Postmarket",
+      CLOSED: "Bolsa cerrada",
+      UNKNOWN: "Estado de la bolsa desconocido",
     },
   },
   operations: {

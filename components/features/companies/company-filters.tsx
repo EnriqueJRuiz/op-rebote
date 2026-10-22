@@ -9,6 +9,8 @@ import { MARKET_SESSION_OPTIONS, MarketSessionFilter } from "@/domain/constants"
 export const FILTER_ALL = "all" as const;
 
 export type PriceFilter = typeof FILTER_ALL | "up" | "down";
+// De momento solo cuenta la sesión regular como "abierta" (premarket y postmarket no son operables).
+export type MarketStatusFilter = typeof FILTER_ALL | "open";
 export type DividendFilter = typeof FILTER_ALL | "yes" | "king" | "aristocrat" | "no";
 
 export interface FilterOption<Value extends string> {
@@ -21,6 +23,11 @@ export const PRICE_FILTER_OPTIONS: FilterOption<PriceFilter>[] = [
   { value: FILTER_ALL, label: UI_TEXT.table.filters.priceAll },
   { value: "up", label: UI_TEXT.table.filters.priceUp },
   { value: "down", label: UI_TEXT.table.filters.priceDown },
+];
+
+export const MARKET_STATUS_FILTER_OPTIONS: FilterOption<MarketStatusFilter>[] = [
+  { value: FILTER_ALL, label: UI_TEXT.table.filters.marketStatusAll },
+  { value: "open", label: UI_TEXT.table.filters.marketStatusOpen },
 ];
 
 export const DIVIDEND_FILTER_OPTIONS: FilterOption<DividendFilter>[] = [
@@ -169,6 +176,8 @@ interface CompanyFiltersProps {
   onDividendFilterChange: (value: DividendFilter) => void;
   marketSessionFilter: MarketSessionFilter;
   onMarketSessionFilterChange: (value: MarketSessionFilter) => void;
+  marketStatusFilter: MarketStatusFilter;
+  onMarketStatusFilterChange: (value: MarketStatusFilter) => void;
   sectores: string[];
 }
 
@@ -184,6 +193,8 @@ export function CompanyFilters({
   onDividendFilterChange,
   marketSessionFilter,
   onMarketSessionFilterChange,
+  marketStatusFilter,
+  onMarketStatusFilterChange,
   sectores,
 }: CompanyFiltersProps) {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -192,6 +203,7 @@ export function CompanyFilters({
   const searchInputId = `company-search-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sectorInputId = `company-sector-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const sessionInputId = `company-session-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  const marketStatusInputId = `company-market-status-${title.toLowerCase().replace(/\s+/g, "-")}`;
   const priceInputId = `company-price-${title.toLowerCase().replace(/\s+/g, "-")}`;
   
   const sectorLabel = UI_TEXT.table.columns.sector;
@@ -205,6 +217,7 @@ export function CompanyFilters({
   const activeFiltersCount = [
     priceFilter !== FILTER_ALL,
     marketSessionFilter !== FILTER_ALL,
+    marketStatusFilter !== FILTER_ALL,
     sectorFilter !== FILTER_ALL,
     dividendFilter !== FILTER_ALL,
   ].filter(Boolean).length;
@@ -280,6 +293,15 @@ export function CompanyFilters({
           />
 
           <TableFilterSelect
+            id={marketStatusInputId}
+            label={UI_TEXT.table.filters.marketStatusAriaLabel}
+            value={marketStatusFilter}
+            options={MARKET_STATUS_FILTER_OPTIONS}
+            onChange={onMarketStatusFilterChange}
+            className="sm:min-w-44 sm:flex-none"
+          />
+
+          <TableFilterSelect
             id={sectorInputId}
             label={sectorLabel}
             value={sectorFilter}
@@ -343,6 +365,18 @@ export function CompanyFilters({
                   value={marketSessionFilter}
                   options={MARKET_SESSION_OPTIONS}
                   onChange={onMarketSessionFilterChange}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{UI_TEXT.table.filters.marketStatusLabel}</label>
+                <TableFilterSelect
+                  id={`${marketStatusInputId}-mobile`}
+                  label={UI_TEXT.table.filters.marketStatusAriaLabel}
+                  value={marketStatusFilter}
+                  options={MARKET_STATUS_FILTER_OPTIONS}
+                  onChange={onMarketStatusFilterChange}
                   className="w-full"
                 />
               </div>

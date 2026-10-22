@@ -31,7 +31,7 @@ export function renderCompanyMobileRow(
           aria-expanded={expanded}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2">
-            <CompanyCell name={empresa.nombre} ticker={empresa.ticker} website={empresa.web} size={32} className="flex-1" />
+            <CompanyCell name={empresa.nombre} ticker={empresa.ticker} website={empresa.web} bolsa={empresa.bolsa} size={32} className="flex-1" />
             <DividendBadge empresa={empresa} hideYield={true} />
           </span>
         </button>
