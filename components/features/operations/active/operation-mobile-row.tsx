@@ -78,6 +78,17 @@ export function OperationMobileRow({ operacion, expanded, onToggle, onClose }: O
       {expanded && (
         <div className={UI_STYLES.table.mobileDetails}>
           <div>
+            <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.operations.daysOpenHeader}</p>
+            <p className={`${UI_STYLES.table.mobileValue} tabular-nums`}>
+              {(() => {
+                const openedAt = new Date(operacion.fecha_apertura).getTime();
+                return Number.isNaN(openedAt)
+                  ? "-"
+                  : UI_TEXT.operations.daysOpen(Math.max(0, Math.floor((Date.now() - openedAt) / 86400000)));
+              })()}
+            </p>
+          </div>
+          <div>
             <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.entryPrice}</p>
             <p className={`${UI_STYLES.table.mobileValue} tabular-nums`}>
               {formatOperationPrice(entry)}

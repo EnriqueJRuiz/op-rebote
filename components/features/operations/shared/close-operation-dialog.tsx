@@ -96,6 +96,12 @@ export function CloseOperationDialog({ operacion, onClose, onClosed }: CloseOper
 
         {/* Resumen de Datos y Cálculo del Resultado con la fila de Comisiones */}
         <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 text-sm">
+          <SummaryRow label={UI_TEXT.operations.dateFrom}>
+            {new Date(operacion.fecha_apertura).toLocaleDateString("es-ES")}
+          </SummaryRow>
+          <SummaryRow label={UI_TEXT.operations.dateUntilToday}>
+            {new Date().toLocaleDateString("es-ES")}
+          </SummaryRow>
           <SummaryRow label={UI_TEXT.table.columns.entryPrice}>
             {formatOperationPrice(operacion.precio_entrada)}
           </SummaryRow>

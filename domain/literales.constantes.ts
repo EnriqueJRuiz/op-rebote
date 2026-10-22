@@ -356,6 +356,10 @@ export const UI_TEXT = {
     },
   },
   operations: {
+    daysOpenHeader: "Días abierta",
+    daysOpen: (days: number) => `${days} ${days === 1 ? "día" : "días"}`,
+    dateFrom: "Desde",
+    dateUntilToday: "Hasta (hoy)",
     openButton: "Abrir operación",
     closeButton: "Cerrar operación",
     openAria: (ticker: string) => `Abrir operación de ${ticker}`,

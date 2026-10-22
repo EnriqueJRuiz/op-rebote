@@ -58,6 +58,20 @@ export function getOperationColumns(onClose: (operacion: Operacion) => void): Co
       },
     },
     {
+      header: UI_TEXT.operations.daysOpenHeader,
+      sortValue: (operacion) => {
+        const openedAt = new Date(operacion.fecha_apertura).getTime();
+        return Number.isNaN(openedAt) ? -1 : Math.max(0, Math.floor((Date.now() - openedAt) / 86400000));
+      },
+      render: (operacion) => {
+        const openedAt = new Date(operacion.fecha_apertura).getTime();
+        if (Number.isNaN(openedAt)) return <span className="whitespace-nowrap text-sm tabular-nums">-</span>;
+        const days = Math.max(0, Math.floor((Date.now() - openedAt) / 86400000));
+        return <span className="whitespace-nowrap text-sm tabular-nums">{UI_TEXT.operations.daysOpen(days)}</span>;
+      },
+      cellClassName: "whitespace-nowrap tabular-nums",
+    },
+    {
       header: UI_TEXT.table.columns.entryPrice,
       sortValue: (operacion) => operacion.precio_entrada,
       render: (operacion) => formatOperationPrice(operacion.precio_entrada),
