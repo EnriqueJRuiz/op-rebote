@@ -1,15 +1,23 @@
+
 "use client";
 
 import { useEffect } from "react";
 
+type OrientationLock = ScreenOrientation & {
+  lock: (orientation: "portrait") => Promise<void>;
+};
+
 export function OrientationLock() {
   useEffect(() => {
     const lockOrientation = async () => {
-      if (window.matchMedia("(max-width: 767px)").matches) {
+      if (
+        window.matchMedia("(max-width: 767px)").matches &&
+        "orientation" in screen
+      ) {
         try {
-          await screen.orientation.lock("portrait");
+          await (screen.orientation as OrientationLock).lock("portrait");
         } catch {
-          // El navegador puede impedir el bloqueo.
+          // Chrome puede exigir pantalla completa para bloquear la orientación.
         }
       }
     };
