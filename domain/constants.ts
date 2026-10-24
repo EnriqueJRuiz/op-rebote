@@ -32,6 +32,7 @@ export const APP_CONFIG = {
   ASSET_TYPES: {
     EQUITY: "EQUITY",
     ETF: "ETF",
+    INDEX_FUND: "MUTUALFUND",
   },
 
   CATEGORIES: {

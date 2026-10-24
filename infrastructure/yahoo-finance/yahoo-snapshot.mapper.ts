@@ -174,7 +174,9 @@ export class YahooSnapshotMapper {
         summary?.assetProfile?.sector ??
         (quote.quoteType === APP_CONFIG.ASSET_TYPES.ETF
           ? APP_CONFIG.DB.DEFAULTS.ETF_SECTOR
-          : APP_CONFIG.DB.DEFAULTS.SECTOR),
+          : quote.quoteType === APP_CONFIG.ASSET_TYPES.INDEX_FUND
+            ? "Fondo indexado"
+            : APP_CONFIG.DB.DEFAULTS.SECTOR),
       dividendRate: this.getYahooNumber(summary?.summaryDetail?.dividendRate),
       dividendYield: this.getYahooNumber(summary?.summaryDetail?.dividendYield),
       industria: summary?.assetProfile?.industry,

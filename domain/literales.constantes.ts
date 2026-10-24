@@ -51,6 +51,22 @@ export const UI_TEXT = {
       addInvalid: "Yahoo no devolvió una cotización válida de un ETF para añadir.",
       addSuccess: (name: string) => `${name} se añadió a ETF.`,
     },
+    MUTUALFUND: {
+      tab: "Indexados",
+      subtitle: "Fondos de inversión indexados que vigila el radar.",
+      recordsLabel: "fondos indexados",
+      emptyTable: "Aún no hay fondos indexados en el radar. Pulsa «Añadir fondo indexado» para buscar uno.",
+      emptySearch: "No hay fondos indexados que coincidan con la búsqueda.",
+      addButton: "Añadir fondo indexado",
+      addTitle: "Añadir fondo indexado al radar",
+      addDescription: "Busca por nombre o ticker.",
+      addPlaceholder: "Nombre o ticker",
+      addEmptyQuery: "Escribe un nombre o ticker para buscar.",
+      addAlreadyExists: "Ese fondo indexado ya está en el radar.",
+      addNotFound: "No encontramos ningún fondo indexado con ese nombre o ticker en Yahoo Finance.",
+      addInvalid: "Yahoo no devolvió una cotización válida de un fondo indexado para añadir.",
+      addSuccess: (name: string) => `${name} se añadió a Fondos indexados.`,
+    },
   },
   pages: {
     operations: {
@@ -78,7 +94,7 @@ export const UI_TEXT = {
     },
     companies: {
       title: "Mercado",
-      description: "Acciones y ETF que vigila el radar.",
+      description: "Acciones, ETF y fondos indexados que vigila el radar.",
       addSearch: "Buscar",
       addSearching: "Buscando...",
       addSaving: "Añadiendo...",

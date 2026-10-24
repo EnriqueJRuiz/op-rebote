@@ -91,7 +91,21 @@ export function getCompanyColumns(
       sortValue: (empresa) => empresa.nombre,
       render: (empresa) => (
         <div className="flex min-w-0 items-center gap-2">
-          <CompanyCell name={empresa.nombre} ticker={empresa.ticker} website={empresa.web} bolsa={empresa.bolsa} size={36} className="flex-1" />
+          <CompanyCell
+            name={empresa.nombre}
+            ticker={empresa.ticker}
+            website={empresa.web}
+            bolsa={empresa.bolsa}
+            size={36}
+            className="flex-1"
+            assetMark={
+              empresa.tipo_activo?.toUpperCase() === "ETF"
+                ? "ETF"
+                : empresa.tipo_activo?.toUpperCase() === "MUTUALFUND"
+                  ? "FI"
+                  : undefined
+            }
+          />
           <DividendBadge empresa={empresa} hideYield={true} />
         </div>
       ),

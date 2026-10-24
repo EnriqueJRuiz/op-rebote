@@ -52,6 +52,7 @@ export function CompanyTable({
   const router = useRouter();
   const kindText = UI_TEXT.assetKinds[assetKind];
   const isEtfTable = assetKind === APP_CONFIG.ASSET_TYPES.ETF;
+  const isFundTable = assetKind === APP_CONFIG.ASSET_TYPES.INDEX_FUND;
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>(FILTER_ALL);
   const [dividendFilter, setDividendFilter] = useState<DividendFilter>(FILTER_ALL);
@@ -141,7 +142,7 @@ export function CompanyTable({
         marketStatusFilter={marketStatusFilter}
         onMarketStatusFilterChange={setMarketStatusFilter}
         sectores={sectores}
-        showEquityFilters={!isEtfTable}
+        showEquityFilters={!isEtfTable && !isFundTable}
       />
 
       <DataTable

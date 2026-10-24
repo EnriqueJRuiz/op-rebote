@@ -9,6 +9,8 @@ export interface CompanyCellProps {
   bolsa?: string | null;
   size?: number;
   className?: string;
+  /** Sustituye el logo habitual por una marca para ETF o fondos indexados. */
+  assetMark?: "ETF" | "FI";
 }
 
 /** Identidad visual compartida de una empresa para celdas de escritorio y móvil. */
@@ -19,10 +21,22 @@ export function CompanyCell({
   bolsa,
   size = 36,
   className = "",
+  assetMark,
 }: CompanyCellProps) {
   return (
     <div className={`flex min-w-0 items-center gap-2.5 ${className}`}>
-      <CompanyLogo name={name} ticker={ticker} website={website} size={size} />
+      {assetMark ? (
+        <span
+          aria-label={assetMark === "ETF" ? "ETF" : "Fondo indexado"}
+          title={assetMark === "ETF" ? "ETF" : "Fondo indexado"}
+          className="inline-flex shrink-0 items-center justify-center rounded-md border border-slate-300 bg-slate-100 font-extrabold leading-none text-slate-600"
+          style={{ width: size, height: size, fontSize: assetMark === "ETF" ? 10 : 12 }}
+        >
+          {assetMark}
+        </span>
+      ) : (
+        <CompanyLogo name={name} ticker={ticker} website={website} size={size} />
+      )}
       <div className="flex min-w-0 flex-col gap-0.5">
         <div className="flex min-w-0 items-center gap-1.5">
           <MarketStatusDot bolsa={bolsa} />

@@ -6,6 +6,7 @@ import { CompanySearchMatch, UniverseStock } from "@/domain/models/trading";
 import {
   AssetKind,
   isEtf,
+  isIndexFund,
   isSupportedAssetType,
   matchesAssetKind,
   resolveAssetKind,
@@ -117,8 +118,8 @@ async function addCompanyByTicker(
     const marketCap = Number.isFinite(stock.capitalizacion) && stock.capitalizacion! > 0
       ? stock.capitalizacion!
       : 0;
-    // Yahoo no informa de capitalización en los ETF: se tratan como TOP (activos grandes y líquidos).
-    const categoria = isEtf(metadata.tipoActivo) || marketCap >= UNIVERSE_RULES.TOP.MIN_MARKET_CAP
+    // Yahoo no informa siempre de capitalización en ETF y fondos indexados: se tratan como TOP.
+    const categoria = isEtf(metadata.tipoActivo) || isIndexFund(metadata.tipoActivo) || marketCap >= UNIVERSE_RULES.TOP.MIN_MARKET_CAP
       ? APP_CONFIG.CATEGORIES.TOP
       : APP_CONFIG.CATEGORIES.MID;
 

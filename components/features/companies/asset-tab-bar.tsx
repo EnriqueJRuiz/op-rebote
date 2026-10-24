@@ -10,9 +10,13 @@ export interface AssetTab {
   count: number;
 }
 
-const TAB_ICONS: Record<AssetKind, typeof TrendingUp> = {
+const TAB_ICONS: Partial<Record<AssetKind, typeof TrendingUp>> = {
   EQUITY: TrendingUp,
-  ETF: Layers,
+};
+
+const TAB_MARKS: Partial<Record<AssetKind, string>> = {
+  ETF: "ETF",
+  MUTUALFUND: "FI",
 };
 
 export const assetTabId = (kind: AssetKind) => `asset-tab-${kind}`;
@@ -73,6 +77,7 @@ export function AssetTabBar({ tabs, active, onChange }: AssetTabBarProps) {
         {tabs.map((tab, index) => {
           const isActive = tab.kind === active;
           const Icon = TAB_ICONS[tab.kind];
+          const mark = TAB_MARKS[tab.kind];
 
           return (
             <button
@@ -92,15 +97,12 @@ export function AssetTabBar({ tabs, active, onChange }: AssetTabBarProps) {
                 isActive ? "text-white" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Icon size={16} aria-hidden="true" />
+              {/* {mark ? (
+                <span aria-hidden="true" className={`inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-[10px] font-extrabold leading-none ${isActive ? "border-white/70 bg-white/15 text-white" : "border-slate-300 bg-slate-100 text-slate-600"}`}>
+                  {mark}
+                </span>
+              ) : Icon ? <Icon size={16} aria-hidden="true" /> : null} */}
               <span>{UI_TEXT.assetKinds[tab.kind].tab}</span>
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-xs font-medium tabular-nums transition-colors duration-200 ${
-                  isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {tab.count}
-              </span>
             </button>
           );
         })}
