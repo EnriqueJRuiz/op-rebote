@@ -4,6 +4,7 @@ import { IntradayBar } from "@/domain/models/intraday";
 import { mapIntradayBars } from "./yahoo-intraday.mapper";
 import { CompanyMetadata, CompanySearchMatch, StockCandidate, UniverseStock } from "@/domain/models/trading";
 import { isSupportedAssetType } from "@/domain/rules/asset-type.rules";
+import { extractIsin } from "@/domain/rules/isin.rules";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 import {
@@ -119,7 +120,8 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
     const result = await this.yf.search(query, {
       quotesCount: 10,
       newsCount: 0,
-      enableFuzzyQuery: true,
+      // Un ISIN es un código exacto: la búsqueda aproximada solo serviría para desviarlo.
+      enableFuzzyQuery: extractIsin(query) === null,
       enableCb: false,
       enableNavLinks: false,
     });

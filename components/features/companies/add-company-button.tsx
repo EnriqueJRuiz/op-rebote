@@ -78,6 +78,12 @@ export function AddCompanyButton({ kind }: { kind: AssetKind }) {
       } else if (result.status === "empty") {
         setDialogTone("error");
         setDialogMessage(text.addEmptyQuery);
+      } else if (result.status === "invalid_isin") {
+        setDialogTone("error");
+        setDialogMessage(UI_TEXT.pages.companies.addInvalidIsin);
+      } else if (result.status === "other_kind") {
+        setDialogTone("info");
+        setDialogMessage(UI_TEXT.pages.companies.addOtherTab(UI_TEXT.assetKinds[result.kind].tab));
       } else {
         setDialogTone("error");
         setDialogMessage(UI_TEXT.pages.companies.addSearchError);

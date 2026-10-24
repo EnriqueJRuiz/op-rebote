@@ -11,6 +11,7 @@ import {
   matchesAssetKind,
   resolveAssetKind,
 } from "@/domain/rules/asset-type.rules";
+import { extractIsin, hasValidIsinChecksum } from "@/domain/rules/isin.rules";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
@@ -30,12 +31,17 @@ export async function searchCompanyToAddAction(
   const searchTerm = query.trim();
   if (!searchTerm) return { status: "empty" as const };
 
+  // Si lo escrito tiene forma de ISIN se comprueba el dígito de control y se busca en mayúsculas y sin espacios.
+  const isin = extractIsin(searchTerm);
+  if (isin && !hasValidIsinChecksum(isin)) return { status: "invalid_isin" as const };
+  const yahooQuery = isin ?? searchTerm;
+
   const kind = resolveAssetKind(assetKind);
   const dependencies = createApplicationDependencies();
 
   try {
     const companies = await dependencies.companiesRepository.getCompanies();
-    const normalizedTerm = normalize(searchTerm);
+    const normalizedTerm = normalize(yahooQuery);
     const existingCompanies = companies.filter(
       (company) =>
         matchesAssetKind(company.tipo_activo, kind) &&
@@ -54,9 +60,15 @@ export async function searchCompanyToAddAction(
       };
     }
 
-    const found = await dependencies.marketRepository.searchCompanies(searchTerm);
+    const found = await dependencies.marketRepository.searchCompanies(yahooQuery);
     const matches = found.filter((match) => matchesAssetKind(match.tipoActivo, kind));
-    if (matches.length === 0) return { status: "not_found" as const };
+    if (matches.length === 0) {
+      // Un ISIN no dice de qué tipo es el activo: si Yahoo lo conoce pero es de otra pestaña, se avisa de cuál.
+      if (found.length > 0) {
+        return { status: "other_kind" as const, kind: resolveAssetKind(found[0].tipoActivo) };
+      }
+      return { status: "not_found" as const };
+    }
 
     const exactMatches = matches.filter((match) =>
       normalize(match.ticker) === normalizedTerm ||
