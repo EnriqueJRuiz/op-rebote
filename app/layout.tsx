@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import "./globals.css";
+import { OrientationLock } from "@/components/pwa/orientation-lock";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang={UI_TEXT.metadata.language}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <OrientationLock />
+        {children}
+      </body>
     </html>
   );
 }
