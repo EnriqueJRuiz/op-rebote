@@ -8,12 +8,15 @@ import {
   searchCompanyToAddAction,
 } from "@/app/actions/add-company";
 import { CompanySearchMatch } from "@/domain/models/trading";
+import { AssetKind } from "@/domain/rules/asset-type.rules";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 
 type FeedbackTone = "error" | "info" | "success";
 
-export function AddCompanyButton() {
+// Cada pestaña tiene su propio botón: la de acciones solo busca acciones y la de ETF solo ETF.
+export function AddCompanyButton({ kind }: { kind: AssetKind }) {
+  const text = UI_TEXT.assetKinds[kind];
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<CompanySearchMatch[]>([]);
@@ -40,7 +43,7 @@ export function AddCompanyButton() {
 
   const finishAdding = (name: string) => {
     setOpen(false);
-    setNotice(UI_TEXT.pages.companies.addSuccess(name));
+    setNotice(text.addSuccess(name));
     setMatches([]);
     setQuery("");
     router.refresh();
@@ -50,7 +53,7 @@ export function AddCompanyButton() {
     event.preventDefault();
     if (!query.trim()) {
       setDialogTone("error");
-      setDialogMessage(UI_TEXT.pages.companies.addEmptyQuery);
+      setDialogMessage(text.addEmptyQuery);
       return;
     }
 
@@ -58,23 +61,23 @@ export function AddCompanyButton() {
     setDialogMessage("");
     setMatches([]);
     try {
-      const result = await searchCompanyToAddAction(query);
+      const result = await searchCompanyToAddAction(query, kind);
       if (result.status === "added") {
         finishAdding(result.nombre);
       } else if (result.status === "already_exists") {
         setMatches(result.matches);
         setMatchesAlreadySaved(true);
         setDialogTone("info");
-        setDialogMessage(UI_TEXT.pages.companies.addAlreadyExists);
+        setDialogMessage(text.addAlreadyExists);
       } else if (result.status === "matches") {
         setMatches(result.matches);
         setMatchesAlreadySaved(false);
       } else if (result.status === "not_found") {
         setDialogTone("info");
-        setDialogMessage(UI_TEXT.pages.companies.addNotFound);
+        setDialogMessage(text.addNotFound);
       } else if (result.status === "empty") {
         setDialogTone("error");
-        setDialogMessage(UI_TEXT.pages.companies.addEmptyQuery);
+        setDialogMessage(text.addEmptyQuery);
       } else {
         setDialogTone("error");
         setDialogMessage(UI_TEXT.pages.companies.addSearchError);
@@ -91,17 +94,17 @@ export function AddCompanyButton() {
     setBusy(match.ticker);
     setDialogMessage("");
     try {
-      const result = await addSelectedCompanyAction(match.ticker);
+      const result = await addSelectedCompanyAction(match.ticker, kind);
       if (result.status === "added") {
         finishAdding(result.nombre);
       } else if (result.status === "already_exists") {
         setMatches(result.matches);
         setMatchesAlreadySaved(true);
         setDialogTone("info");
-        setDialogMessage(UI_TEXT.pages.companies.addAlreadyExists);
+        setDialogMessage(text.addAlreadyExists);
       } else if (result.status === "invalid") {
         setDialogTone("error");
-        setDialogMessage(UI_TEXT.pages.companies.addInvalid);
+        setDialogMessage(text.addInvalid);
       } else {
         setDialogTone("error");
         setDialogMessage(UI_TEXT.pages.companies.addSearchError);
@@ -122,7 +125,7 @@ export function AddCompanyButton() {
         className={UI_STYLES.button.primaryFull}
       >
         <Plus size={16} aria-hidden="true" />
-        {UI_TEXT.pages.companies.addButton}
+        {text.addButton}
       </button>
       {notice && <p className="text-right text-sm text-emerald-700" role="status">{notice}</p>}
 
@@ -145,10 +148,10 @@ export function AddCompanyButton() {
             <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
               <div>
                 <h2 id="add-company-title" className="text-lg font-bold text-slate-900">
-                  {UI_TEXT.pages.companies.addTitle}
+                  {text.addTitle}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  {UI_TEXT.pages.companies.addDescription}
+                  {text.addDescription}
                 </p>
               </div>
               <button
@@ -171,8 +174,8 @@ export function AddCompanyButton() {
                   maxLength={120}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={UI_TEXT.pages.companies.addPlaceholder}
-                  aria-label={UI_TEXT.pages.companies.addPlaceholder}
+                  placeholder={text.addPlaceholder}
+                  aria-label={text.addPlaceholder}
                   className={`${UI_STYLES.filter.input} min-w-0 flex-1`}
                 />
                 <button

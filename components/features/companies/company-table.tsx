@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
-import { DIVIDEND_TIERS, MARKET_SESSIONS, MarketSessionFilter } from "@/domain/constants";
+import { APP_CONFIG, DIVIDEND_TIERS, MARKET_SESSIONS, MarketSessionFilter } from "@/domain/constants";
+import { AssetKind } from "@/domain/rules/asset-type.rules";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { useMarketClock } from "@/components/common/market-status";
 import { getMarketStatus } from "@/domain/rules/market-status.rules";
@@ -26,6 +27,8 @@ export interface CompanyTableProps {
   title: string;
   scanQuotes: CompanyScanQuote[];
   sectores: string[];
+  // Pestaña a la que pertenece la tabla. Por defecto es la de acciones, igual que antes.
+  assetKind?: AssetKind;
 }
 
 function normalizeSearch(value: string) {
@@ -44,8 +47,11 @@ export function CompanyTable({
   title,
   scanQuotes,
   sectores,
+  assetKind = APP_CONFIG.ASSET_TYPES.EQUITY,
 }: CompanyTableProps) {
   const router = useRouter();
+  const kindText = UI_TEXT.assetKinds[assetKind];
+  const isEtfTable = assetKind === APP_CONFIG.ASSET_TYPES.ETF;
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>(FILTER_ALL);
   const [dividendFilter, setDividendFilter] = useState<DividendFilter>(FILTER_ALL);
@@ -135,6 +141,7 @@ export function CompanyTable({
         marketStatusFilter={marketStatusFilter}
         onMarketStatusFilterChange={setMarketStatusFilter}
         sectores={sectores}
+        showEquityFilters={!isEtfTable}
       />
 
       <DataTable
@@ -143,13 +150,9 @@ export function CompanyTable({
         columns={columns}
         rowKey={(empresa) => empresa.id}
         initialSortIndex={1}
-        recordsLabel={UI_TEXT.table.pagination.companyRecords}
+        recordsLabel={kindText.recordsLabel}
         showMobileSort
-        emptyMessage={
-          normalizedSearchTerm
-            ? UI_TEXT.table.emptyStates.noCompaniesMatchSearch
-            : UI_TEXT.table.emptyStates.companies
-        }
+        emptyMessage={normalizedSearchTerm ? kindText.emptySearch : kindText.emptyTable}
         mobileRow={(empresa, expanded, toggle) =>
           renderCompanyMobileRow(empresa, expanded, toggle, scanQuoteByCompanyId, () => router.refresh())
         }

@@ -179,6 +179,8 @@ interface CompanyFiltersProps {
   marketStatusFilter: MarketStatusFilter;
   onMarketStatusFilterChange: (value: MarketStatusFilter) => void;
   sectores: string[];
+  // En la pestaña de ETF no hay sector ni dividendos que filtrar, así que esos dos selectores se ocultan.
+  showEquityFilters?: boolean;
 }
 
 export function CompanyFilters({
@@ -196,6 +198,7 @@ export function CompanyFilters({
   marketStatusFilter,
   onMarketStatusFilterChange,
   sectores,
+  showEquityFilters = true,
 }: CompanyFiltersProps) {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -218,8 +221,8 @@ export function CompanyFilters({
     priceFilter !== FILTER_ALL,
     marketSessionFilter !== FILTER_ALL,
     marketStatusFilter !== FILTER_ALL,
-    sectorFilter !== FILTER_ALL,
-    dividendFilter !== FILTER_ALL,
+    showEquityFilters && sectorFilter !== FILTER_ALL,
+    showEquityFilters && dividendFilter !== FILTER_ALL,
   ].filter(Boolean).length;
 
   // Cerrar modal al hacer clic fuera o presionar Escape
@@ -301,20 +304,24 @@ export function CompanyFilters({
             className="sm:min-w-44 sm:flex-none"
           />
 
-          <TableFilterSelect
-            id={sectorInputId}
-            label={sectorLabel}
-            value={sectorFilter}
-            options={sectorOptions}
-            onChange={onSectorFilterChange}
-            className="sm:min-w-44 sm:flex-none"
-          />
+          {showEquityFilters && (
+            <>
+              <TableFilterSelect
+                id={sectorInputId}
+                label={sectorLabel}
+                value={sectorFilter}
+                options={sectorOptions}
+                onChange={onSectorFilterChange}
+                className="sm:min-w-44 sm:flex-none"
+              />
 
-          <DividendFilterSelect
-            value={dividendFilter}
-            onChange={onDividendFilterChange}
-            className="sm:min-w-44 sm:flex-none"
-          />
+              <DividendFilterSelect
+                value={dividendFilter}
+                onChange={onDividendFilterChange}
+                className="sm:min-w-44 sm:flex-none"
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -381,26 +388,30 @@ export function CompanyFilters({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Sector</label>
-                <TableFilterSelect
-                  id={`${sectorInputId}-mobile`}
-                  label={sectorLabel}
-                  value={sectorFilter}
-                  options={sectorOptions}
-                  onChange={onSectorFilterChange}
-                  className="w-full"
-                />
-              </div>
+              {showEquityFilters && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Sector</label>
+                    <TableFilterSelect
+                      id={`${sectorInputId}-mobile`}
+                      label={sectorLabel}
+                      value={sectorFilter}
+                      options={sectorOptions}
+                      onChange={onSectorFilterChange}
+                      className="w-full"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Dividendo</label>
-                <DividendFilterSelect
-                  value={dividendFilter}
-                  onChange={onDividendFilterChange}
-                  className="w-full"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Dividendo</label>
+                    <DividendFilterSelect
+                      value={dividendFilter}
+                      onChange={onDividendFilterChange}
+                      className="w-full"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Botón de Confirmación */}

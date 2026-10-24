@@ -23,8 +23,15 @@ export const APP_CONFIG = {
     },
     DEFAULTS: {
       SECTOR: "Desconocido",
+      ETF_SECTOR: "ETF",
       ASSET_TYPE: "STOCK",
     },
+  },
+
+  // Tipos de activo de Yahoo Finance (quoteType) que se pueden añadir al radar.
+  ASSET_TYPES: {
+    EQUITY: "EQUITY",
+    ETF: "ETF",
   },
 
   CATEGORIES: {

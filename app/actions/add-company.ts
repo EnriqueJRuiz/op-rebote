@@ -3,6 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { APP_CONFIG, APP_ROUTES } from "@/domain/constants";
 import { CompanySearchMatch, UniverseStock } from "@/domain/models/trading";
+import {
+  AssetKind,
+  isEtf,
+  isSupportedAssetType,
+  matchesAssetKind,
+  resolveAssetKind,
+} from "@/domain/rules/asset-type.rules";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { createApplicationDependencies } from "@/infrastructure/composition";
 
@@ -14,18 +21,25 @@ function normalize(value: string) {
     .toLocaleLowerCase("es-ES");
 }
 
-export async function searchCompanyToAddAction(query: string) {
+// Cada pestaña (acciones o ETF) busca y añade solo su propio tipo de activo.
+export async function searchCompanyToAddAction(
+  query: string,
+  assetKind: AssetKind = APP_CONFIG.ASSET_TYPES.EQUITY
+) {
   const searchTerm = query.trim();
   if (!searchTerm) return { status: "empty" as const };
 
+  const kind = resolveAssetKind(assetKind);
   const dependencies = createApplicationDependencies();
 
   try {
     const companies = await dependencies.companiesRepository.getCompanies();
     const normalizedTerm = normalize(searchTerm);
-    const existingCompanies = companies.filter((company) =>
-      normalize(company.ticker) === normalizedTerm ||
-      normalize(company.nombre).includes(normalizedTerm)
+    const existingCompanies = companies.filter(
+      (company) =>
+        matchesAssetKind(company.tipo_activo, kind) &&
+        (normalize(company.ticker) === normalizedTerm ||
+          normalize(company.nombre).includes(normalizedTerm))
     );
 
     if (existingCompanies.length > 0) {
@@ -39,7 +53,8 @@ export async function searchCompanyToAddAction(query: string) {
       };
     }
 
-    const matches = await dependencies.marketRepository.searchCompanies(searchTerm);
+    const found = await dependencies.marketRepository.searchCompanies(searchTerm);
+    const matches = found.filter((match) => matchesAssetKind(match.tipoActivo, kind));
     if (matches.length === 0) return { status: "not_found" as const };
 
     const exactMatches = matches.filter((match) =>
@@ -48,23 +63,27 @@ export async function searchCompanyToAddAction(query: string) {
     );
 
     if (exactMatches.length === 1) {
-      return addCompanyByTicker(exactMatches[0].ticker, dependencies);
+      return addCompanyByTicker(exactMatches[0].ticker, dependencies, kind);
     }
 
     return { status: "matches" as const, matches };
   } catch (error) {
-    console.error("Error buscando una empresa para añadir al radar:", error);
+    console.error("Error buscando un activo para añadir al radar:", error);
     return { status: "error" as const };
   }
 }
 
-export async function addSelectedCompanyAction(ticker: string) {
-  return addCompanyByTicker(ticker, createApplicationDependencies());
+export async function addSelectedCompanyAction(
+  ticker: string,
+  assetKind: AssetKind = APP_CONFIG.ASSET_TYPES.EQUITY
+) {
+  return addCompanyByTicker(ticker, createApplicationDependencies(), resolveAssetKind(assetKind));
 }
 
 async function addCompanyByTicker(
   ticker: string,
-  dependencies: ReturnType<typeof createApplicationDependencies>
+  dependencies: ReturnType<typeof createApplicationDependencies>,
+  kind: AssetKind
 ) {
   const normalizedTicker = ticker.trim().toUpperCase();
   if (!normalizedTicker) return { status: "invalid" as const };
@@ -87,7 +106,8 @@ async function addCompanyByTicker(
     );
     if (
       !metadata ||
-      metadata.tipoActivo.toUpperCase() !== "EQUITY" ||
+      !isSupportedAssetType(metadata.tipoActivo) ||
+      !matchesAssetKind(metadata.tipoActivo, kind) ||
       !Number.isFinite(stock.precio) ||
       stock.precio <= 0
     ) {
@@ -97,7 +117,8 @@ async function addCompanyByTicker(
     const marketCap = Number.isFinite(stock.capitalizacion) && stock.capitalizacion! > 0
       ? stock.capitalizacion!
       : 0;
-    const categoria = marketCap >= UNIVERSE_RULES.TOP.MIN_MARKET_CAP
+    // Yahoo no informa de capitalización en los ETF: se tratan como TOP (activos grandes y líquidos).
+    const categoria = isEtf(metadata.tipoActivo) || marketCap >= UNIVERSE_RULES.TOP.MIN_MARKET_CAP
       ? APP_CONFIG.CATEGORIES.TOP
       : APP_CONFIG.CATEGORIES.MID;
 

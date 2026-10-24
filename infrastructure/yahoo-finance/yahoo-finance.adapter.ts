@@ -3,6 +3,7 @@ import { MarketRepositoryPort } from "@/application/ports/market-repository.port
 import { IntradayBar } from "@/domain/models/intraday";
 import { mapIntradayBars } from "./yahoo-intraday.mapper";
 import { CompanyMetadata, CompanySearchMatch, StockCandidate, UniverseStock } from "@/domain/models/trading";
+import { isSupportedAssetType } from "@/domain/rules/asset-type.rules";
 import { UNIVERSE_RULES } from "@/domain/rules/universe.rules";
 import { STRATEGY_CONFIG } from "@/domain/config/strategy.config";
 import {
@@ -125,7 +126,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
 
     return result.quotes.flatMap((quote) => {
       const fields = quote as Record<string, unknown>;
-      if (fields.quoteType !== "EQUITY" || typeof fields.symbol !== "string") return [];
+      if (!isSupportedAssetType(fields.quoteType) || typeof fields.symbol !== "string") return [];
 
       return [{
         ticker: fields.symbol,
@@ -137,6 +138,7 @@ export class YahooFinanceAdapter implements MarketRepositoryPort {
           (typeof fields.exchDisp === "string" && fields.exchDisp) ||
           (typeof fields.exchange === "string" && fields.exchange) ||
           "",
+        tipoActivo: String(fields.quoteType).trim().toUpperCase(),
       }];
     });
   }

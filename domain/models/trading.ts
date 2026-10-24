@@ -13,6 +13,8 @@ export interface CompanySearchMatch {
   ticker: string;
   nombre: string;
   bolsa: string;
+  // quoteType de Yahoo ("EQUITY" o "ETF"); permite separar las búsquedas por pestaña.
+  tipoActivo?: string;
 }
 
 export type TierLevel =
