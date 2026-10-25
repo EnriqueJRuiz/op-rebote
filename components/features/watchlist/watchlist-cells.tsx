@@ -3,8 +3,16 @@
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
-import { getFloorDistanceTrend } from "@/components/ui/core/trading-cells";
+import { getFloorDistanceTrend, PriceChange } from "@/components/ui/core/trading-cells";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
+import { formatScannedPrice } from "@/components/features/companies/company-columns";
+
+/** Variación diaria en %, o null si no hay precio actual o previo válidos. Sirve para ordenar la columna de precio. */
+export function getRowChangePercent(row: WatchlistRowData): number | null {
+  if (!Number.isFinite(row.precio) || row.precio <= 0) return null;
+  if (!row.precioAnterior || row.precioAnterior <= 0) return null;
+  return ((row.precio - row.precioAnterior) / row.precioAnterior) * 100;
+}
 
 export function getFloorDistancePercent(row: WatchlistRowData): number | null {
   const { precio, minimoReciente } = row;
@@ -116,47 +124,40 @@ export function RsiBadge({ rsi }: { rsi?: number }) {
   );
 }
 
-export function PriceCell({ row }: { row: WatchlistRowData }) {
+interface PriceCellProps {
+  row: WatchlistRowData;
+  // En la tabla se muestra la variación sobre el precio; en la fila móvil ya aparece en la barra.
+  showChange?: boolean;
+  showEye?: boolean;
+}
+
+export function PriceCell({ row, showChange = true, showEye = true }: PriceCellProps) {
   const price = row.precio;
   if (!Number.isFinite(price) || price <= 0) {
     return <span className={UI_STYLES.text.secondary}>{UI_TEXT.table.values.notAvailable}</span>;
   }
 
-  const changePercent = row.precioAnterior && row.precioAnterior > 0
-    ? ((price - row.precioAnterior) / row.precioAnterior) * 100
-    : undefined;
-
-  const changeStyle = changePercent === undefined
-    ? ""
-    : changePercent > 0
-      ? UI_STYLES.badge.success
-      : changePercent < 0
-        ? UI_STYLES.badge.danger
-        : "text-slate-500";
-
   return (
-    <div className="leading-tight">
-      <CompanyHistoryTrigger
-        companyId={row.idEmpresa}
-        ticker={row.ticker}
-        companyName={row.nombre}
-        currency={row.moneda}
-        metric="precio"
-      >
-        <span className="font-semibold text-slate-900">
-          {price.toLocaleString("es-ES", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
-          {row.moneda ? ` ${row.moneda}` : ""}
+    <CompanyHistoryTrigger
+      companyId={row.idEmpresa}
+      ticker={row.ticker}
+      companyName={row.nombre}
+      currency={row.moneda}
+      metric="precio"
+      showEye={showEye}
+    >
+      <span className="inline-flex flex-col items-end whitespace-nowrap">
+        {showChange && (
+          <PriceChange
+            price={price}
+            previousPrice={row.precioAnterior}
+            className="mt-0.5 justify-end"
+          />
+        )}
+        <span className="inline-block w-22.5 text-right font-medium text-slate-800">
+          {formatScannedPrice(price, row.moneda)}
         </span>
-      </CompanyHistoryTrigger>
-      {changePercent !== undefined && (
-        <span
-          className={`mt-0.5 flex items-center gap-0.5 text-xs font-medium ${changeStyle}`}
-          title={UI_TEXT.table.columns.previousDayChange}
-        >
-          <span aria-hidden="true">{changePercent >= 0 ? "▲" : "▼"}</span>
-          {Math.abs(changePercent).toFixed(2)}%
-        </span>
-      )}
-    </div>
+      </span>
+    </CompanyHistoryTrigger>
   );
 }

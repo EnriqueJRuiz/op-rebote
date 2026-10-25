@@ -1,14 +1,10 @@
-import { ChevronDown } from "lucide-react";
 import { UI_STYLES } from "@/styles/ui-styles";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
-import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
-import { FollowButton } from "@/components/common/follow-button";
 import { CompanyAnalyzeButton } from "@/components/common/history/company-analyze-button";
 import { OpenOperationButton } from "@/components/common/open-operation";
 import { renderCompanyScannedPriceRow } from "./company-columns";
-import { CompanyCell } from "./company-cell";
-import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
+import { MobileRowHeader, MobileRowPriceChange } from "@/components/common/mobile/mobile-row-header";
 
 export function renderCompanyMobileRow(
   empresa: CompanyRecord,
@@ -19,75 +15,23 @@ export function renderCompanyMobileRow(
 ) {
   return (
     <div className={UI_STYLES.table.mobileRow}>
-      <div className="flex min-w-0 items-center gap-2 py-3">
-        <div className="shrink-0">
-          <FollowButton ticker={empresa.ticker} size={17} />
-        </div>
-
-        <button
-          type="button"
-          onClick={toggle}
-          className="flex min-w-0 flex-1 flex-col gap-1 rounded-md py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-          aria-expanded={expanded}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-2">
-            <CompanyCell
-              name={empresa.nombre}
-              ticker={empresa.ticker}
-              website={empresa.web}
-              bolsa={empresa.bolsa}
-              size={32}
-              className="flex-1"
-              assetMark={
-                empresa.tipo_activo?.toUpperCase() === "ETF"
-                  ? "ETF"
-                  : empresa.tipo_activo?.toUpperCase() === "MUTUALFUND"
-                    ? "FI"
-                    : undefined
-              }
-            />
-            <DividendBadge empresa={empresa} hideYield={true} />
-          </span>
-        </button>
-
-        <div className="min-w-16 shrink-0 pl-1 text-right">
-          <CompanyHistoryTrigger
+      <MobileRowHeader
+        ticker={empresa.ticker}
+        name={empresa.nombre}
+        empresa={empresa}
+        expanded={expanded}
+        onToggle={toggle}
+        trailing={
+          <MobileRowPriceChange
             companyId={empresa.id}
             ticker={empresa.ticker}
-            companyName={empresa.nombre}
+            name={empresa.nombre}
             currency={empresa.moneda}
-            metric="precio"
-            showEye={false}
-          >
-            {(() => {
-              const quote = scanQuoteByCompanyId.get(empresa.id);
-
-              return quote && Number.isFinite(quote.price) && quote.price > 0 ? (
-                <PriceChange
-                  price={quote.price}
-                  previousPrice={quote.previousDayPrice}
-                  className="justify-end"
-                />
-              ) : (
-                <span className="text-xs text-slate-400">—</span>
-              );
-            })()}
-          </CompanyHistoryTrigger>
-        </div>
-
-        <button
-          type="button"
-          onClick={toggle}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-          aria-expanded={expanded}
-          aria-label={`${expanded ? "Ocultar detalles de" : "Mostrar detalles de"} ${empresa.nombre}`}
-        >
-          <ChevronDown
-            className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
-            size={18}
+            price={scanQuoteByCompanyId.get(empresa.id)?.price}
+            previousPrice={scanQuoteByCompanyId.get(empresa.id)?.previousDayPrice}
           />
-        </button>
-      </div>
+        }
+      />
 
       {expanded && (
         <div className={UI_STYLES.table.mobileDetails}>

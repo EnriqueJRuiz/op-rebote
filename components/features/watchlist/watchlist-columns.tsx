@@ -1,7 +1,6 @@
 "use client";
 
 import { UI_TEXT } from "@/domain/literales.constantes";
-import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData } from "./watchlist-types";
 import {
   PriceCell,
@@ -10,12 +9,15 @@ import {
   Sma200Distance,
   BacktestInfo,
   getFloorDistancePercent,
+  getRowChangePercent,
 } from "./watchlist-cells";
 import { Column } from "@/components/ui/core/data-table";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
+import { OpenOperationButton } from "@/components/common/open-operation";
+import { AssetNameCell } from "@/components/common/asset-name-cell";
 
-export function getWatchlistColumns(): Column<WatchlistRowData>[] {
+export function getWatchlistColumns(onOperationOpened: () => void): Column<WatchlistRowData>[] {
   return [
     {
       header: "",
@@ -29,18 +31,13 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
     {
       header: UI_TEXT.table.columns.name,
       sortValue: (r) => r.nombre,
-      render: (r) => (
-        <span className="font-bold text-slate-900">{r.nombre}</span>
-      ),
+      render: (r) => <AssetNameCell name={r.nombre} ticker={r.ticker} empresa={r.empresa} />,
     },
     {
-      header: UI_TEXT.table.columns.ticker,
-      sortValue: (r) => r.ticker,
-      render: (r) => <span className={UI_STYLES.badge.ticker}>{r.ticker}</span>,
-    },
-    {
-      header: UI_TEXT.table.columns.price,
-      sortValue: (r) => r.precio,
+      header: UI_TEXT.table.columns.lastPrice,
+      sortValue: getRowChangePercent,
+      sortLabel: UI_TEXT.table.columns.change,
+      firstSortDirection: "desc",
       render: (r) => <PriceCell row={r} />,
     },
     {
@@ -94,6 +91,21 @@ export function getWatchlistColumns(): Column<WatchlistRowData>[] {
       header: UI_TEXT.table.columns.backtest,
       sortValue: (r) => r.backtestExitoPct ?? -Infinity,
       render: (r) => <BacktestInfo row={r} />,
+    },
+    {
+      header: UI_TEXT.table.columns.operate,
+      render: (r) =>
+        r.idEmpresa === undefined ? null : (
+          <OpenOperationButton
+            companyId={r.idEmpresa}
+            ticker={r.ticker}
+            companyName={r.nombre}
+            precioActual={r.precio}
+            onSuccess={onOperationOpened}
+          />
+        ),
+      headerClassName: "text-right",
+      cellClassName: "text-right",
     },
   ];
 }

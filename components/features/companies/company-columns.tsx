@@ -3,11 +3,11 @@
 import { CompanyRecord, CompanyScanQuote } from "@/domain/models/trading";
 import { UI_TEXT } from "@/domain/literales.constantes";
 import { UI_STYLES } from "@/styles/ui-styles";
-import { DividendBadge, PriceChange } from "@/components/ui/core/trading-cells";
+import { PriceChange } from "@/components/ui/core/trading-cells";
 import { FollowButton } from "@/components/common/follow-button";
 import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 import { OpenOperationButton } from "@/components/common/open-operation";
-import { CompanyCell } from "./company-cell";
+import { AssetNameCell } from "@/components/common/asset-name-cell";
 import { Column } from "@/components/ui/core/data-table";
 
 export function formatScannedPrice(value: number, currency?: string) {
@@ -90,24 +90,7 @@ export function getCompanyColumns(
       header: UI_TEXT.table.columns.name,
       sortValue: (empresa) => empresa.nombre,
       render: (empresa) => (
-        <div className="flex min-w-0 items-center gap-2">
-          <CompanyCell
-            name={empresa.nombre}
-            ticker={empresa.ticker}
-            website={empresa.web}
-            bolsa={empresa.bolsa}
-            size={36}
-            className="flex-1"
-            assetMark={
-              empresa.tipo_activo?.toUpperCase() === "ETF"
-                ? "ETF"
-                : empresa.tipo_activo?.toUpperCase() === "MUTUALFUND"
-                  ? "FI"
-                  : undefined
-            }
-          />
-          <DividendBadge empresa={empresa} hideYield={true} />
-        </div>
+        <AssetNameCell name={empresa.nombre} ticker={empresa.ticker} empresa={empresa} />
       ),
     },
     {

@@ -7,6 +7,8 @@ export interface WatchlistTableProps {
 }
 
 export interface WatchlistRowData {
+  // Ficha de la empresa en la tabla de Mercado: aporta logo, bolsa, tipo de activo y dividendos a la celda de nombre.
+  empresa?: CompanyRecord;
   idEmpresa?: number;
   ticker: string;
   nombre: string;

@@ -1,25 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWatchlist } from "@/context/watchlist-context";
 import { UI_TEXT } from "@/domain/literales.constantes";
-import { UI_STYLES } from "@/styles/ui-styles";
 import { WatchlistRowData, WatchlistTableProps } from "./watchlist-types";
 import { WatchlistSummary } from "./watchlist-summary";
-import { WatchlistFilters } from "./watchlist-filters";
+import { AssetTypeFilter, WatchlistFilters } from "./watchlist-filters";
+import { matchesAssetKind } from "@/domain/rules/asset-type.rules";
+import { FILTER_ALL } from "@/components/features/companies/company-filters";
 import { WatchlistEmptyState } from "./watchlist-empty-state";
 import { getWatchlistColumns } from "./watchlist-columns";
-import {
-  PriceCell,
-  RsiBadge,
-  FloorDistance,
-  Sma200Distance,
-  BacktestInfo,
-} from "./watchlist-cells";
+import { renderWatchlistMobileRow } from "./watchlist-mobile-row";
 import { DataTable } from "@/components/ui/core/data-table";
-import { FollowButton } from "@/components/common/follow-button";
-import { CompanyHistoryTrigger } from "@/components/common/history/company-history-trigger";
 
 function normalizeSearch(value: string) {
   return value
@@ -29,9 +22,10 @@ function normalizeSearch(value: string) {
 }
 
 export function WatchlistTable({ candidates, allCompanies, scanQuotes }: WatchlistTableProps) {
+  const router = useRouter();
   const { followedTickers } = useWatchlist();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<AssetTypeFilter>(FILTER_ALL);
 
   const candidateByTicker = useMemo(() => {
     const map = new Map();
@@ -61,6 +55,7 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
 
       if (cand) {
         return {
+          empresa: comp,
           idEmpresa: cand.idEmpresa || comp?.id,
           ticker: cand.ticker,
           nombre: cand.nombre,
@@ -90,6 +85,7 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
       if (comp) {
         const quote = quoteByCompanyId.get(comp.id);
         return {
+          empresa: comp,
           idEmpresa: comp.id,
           ticker: comp.ticker,
           nombre: comp.nombre,
@@ -113,13 +109,13 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
       if (!match) return false;
     }
 
-    if (statusFilter === "oversold" && (row.rsi === undefined || row.rsi > 30)) return false;
-    if (statusFilter === "out_oversold" && (row.rsi === undefined || row.rsi <= 30)) return false;
+    if (typeFilter !== FILTER_ALL && !matchesAssetKind(row.empresa?.tipo_activo, typeFilter)) return false;
 
     return true;
   });
 
-  const columns = useMemo(() => getWatchlistColumns(), []);
+  const handleOperationOpened = useCallback(() => router.refresh(), [router]);
+  const columns = useMemo(() => getWatchlistColumns(handleOperationOpened), [handleOperationOpened]);
 
   if (followedTickers.length === 0) {
     return <WatchlistEmptyState />;
@@ -132,8 +128,8 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
       <WatchlistFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
       />
 
       <DataTable
@@ -145,90 +141,11 @@ export function WatchlistTable({ candidates, allCompanies, scanQuotes }: Watchli
         initialSortIndex={1}
         recordsLabel={UI_TEXT.table.pagination.watchlistRecords}
         emptyMessage={
-          normalizedSearch || statusFilter !== "all"
+          normalizedSearch || typeFilter !== FILTER_ALL
             ? UI_TEXT.table.emptyStates.watchlistFilter
             : UI_TEXT.table.emptyStates.watchlist
         }
-        mobileRow={(r, expanded, toggle) => (
-          <div className={UI_STYLES.table.mobileRow}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="py-2 pl-1">
-                <FollowButton ticker={r.ticker} />
-              </div>
-              <button
-                type="button"
-                onClick={toggle}
-                className={`${UI_STYLES.table.mobileRowButton} flex-1`}
-                aria-expanded={expanded}
-              >
-                <span className={UI_STYLES.table.mobileRowTitle}>{r.nombre}</span>
-                <ChevronDown
-                  className={`${UI_STYLES.table.mobileRowIcon} ${expanded ? "rotate-180" : ""}`}
-                  size={18}
-                />
-              </button>
-            </div>
-            {expanded && (
-              <div className={UI_STYLES.table.mobileDetails}>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.ticker}</p>
-                  <p className="mt-1">
-                    <span className={UI_STYLES.badge.tickerLarge}>{r.ticker}</span>
-                  </p>
-                </div>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.price}</p>
-                  <div className="mt-1">
-                    <PriceCell row={r} />
-                  </div>
-                </div>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.rsi}</p>
-                  <div className="mt-1">
-                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="rsi">
-                      <RsiBadge rsi={r.rsi} />
-                    </CompanyHistoryTrigger>
-                  </div>
-                </div>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.volume}</p>
-                  <div className={`${UI_STYLES.table.mobileValue} mt-1 flex flex-col items-start`}>
-                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
-                      {r.volumen?.toLocaleString() ?? "-"}
-                    </CompanyHistoryTrigger>
-                  {r.volumenRelativo !== undefined && (
-                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="volumen_relativo">
-                      <span className="mt-0.5 text-xs text-slate-500">RVOL {r.volumenRelativo.toFixed(2)}x</span>
-                    </CompanyHistoryTrigger>
-                  )}
-                  </div>
-                </div>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.recentFloor}</p>
-                  <div className={`${UI_STYLES.table.mobileValue} mt-1`}>
-                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="distancia_suelo_pct">
-                      <FloorDistance row={r} />
-                    </CompanyHistoryTrigger>
-                  </div>
-                </div>
-                <div>
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.sma200}</p>
-                  <div className={`${UI_STYLES.table.mobileValue} mt-1`}>
-                    <CompanyHistoryTrigger companyId={r.idEmpresa} ticker={r.ticker} companyName={r.nombre} currency={r.moneda} metric="dist_sma200_pct">
-                      <Sma200Distance row={r} />
-                    </CompanyHistoryTrigger>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <p className={UI_STYLES.table.mobileLabel}>{UI_TEXT.table.columns.backtest}</p>
-                  <div className="mt-1">
-                    <BacktestInfo row={r} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        mobileRow={(r, expanded, toggle) => renderWatchlistMobileRow(r, expanded, toggle, handleOperationOpened)}
       />
     </div>
   );
